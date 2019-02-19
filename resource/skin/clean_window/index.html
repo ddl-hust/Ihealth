@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+
+<!--一个html文件必须要有一个html的标签-->
+<html>
+	<head>
+		<title> 擦玻璃 </title>
+		<meta charset="utf-8">
+		<link rel="stylesheet" type="text/css" href="clean_window.css">
+	</head>
+	
+	<body>
+		<!-- 总界面 -->
+		<div id="contentdiv">
+			<!-- 开始界面 -->
+			<div id="startdiv">
+				<button onclick="begin()">Start Game</button>
+			</div>
+			
+			<!-- 游戏界面 -->
+			<div id="maindiv">
+				<!-- 分数 -->
+				<div id="scorediv">
+					<label>Score:</label>
+					<label id="score">0</label>
+				</div>
+				
+				<!-- 结束界面 -->
+				<div id="enddiv">
+					<p id="planetext">Total Score</p>
+					<p id="totalscore">0</p>
+					<div>
+						<a id="restartend" href="javascript:;" onclick="restart()">Restart</a>
+					</div>
+				</div>
+			</div>
+		</div>
+		<script src='src/window.js'></script>
+		<script src='src/rag.js'></script>
+		<script src='src/clean_window.js'></script>
+	</body>
+</html>

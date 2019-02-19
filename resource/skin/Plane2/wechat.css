@@ -1,0 +1,87 @@
+
+/*这个body是还没有start游戏时候的封面*/
+body{
+    background: url("image/timg.png");
+}
+*{
+    margin: 0px;
+    padding: 0px;
+}
+#contentdiv{
+    width: 100%;
+    height: 100%;
+
+}
+/*
+#startdiv{
+    width: 100%;
+    height:650px;
+    position: absolute;
+    background: url(image/game_cloud.png) no-repeat;
+    background-size: 100%;
+}
+*/
+#startdiv button{
+    width: 150px;
+    height: 30px;
+    position: absolute;
+    left: 50%;
+    margin-left: -75px;
+    top: 340px;
+    border: 1px solid gray;
+    border-radius: 30px;
+    background-color: gray;
+}
+
+/*这就是我们打飞机的主页面*/
+#maindiv{
+    width: 100%;
+    height:100%;
+    position: absolute;
+    background: url("image/timg.png");
+    background-size: 100%;
+    display: none;
+    overflow: hidden;
+}
+
+/*显示分数*/
+#scorediv{
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    font-size: 30px;
+    font-weight: bold;
+}
+
+/*enddiv显示飞机爆了的信息*/
+#enddiv{
+    position: absolute;
+    top: 210px;
+    left: 50%;
+    width: 100px;
+    margin-left: -60px;
+    padding: 10px;
+    border:1px solid gray;
+    background-color: gray;
+    display: none;
+    border-radius: 5px;
+    z-index: 10;
+    text-align: center;
+}
+
+#planetext{
+    color: #ffffff;
+    padding: 10px;
+    border-radius: 10px;
+    border:1px solid #ccc;
+}
+#restartend{
+    text-decoration: none;
+    color: gray;
+    display: block;
+    background: #ffffff;
+    border-radius: 5px;
+}
+#totalscore{
+    color: #ffffff;
+}

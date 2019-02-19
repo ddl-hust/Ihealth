@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Window>
+    <HorizontalLayout name="systemset_info_edit_page" bordersize="1" bkimage="main_page_bg.png" visible="false">
+        <VerticalLayout width="360">
+            <Control height="480"/>
+            <HorizontalLayout height="118">
+                <Control width="57"/>
+                <Button width="68" name="systemset_info_return" normalimage="btn_return.png" hotimage="btn_return.png" pushedimage="btn_return.png"/>
+                <Control />
+            </HorizontalLayout>
+            <Control />
+        </VerticalLayout>
+        <VerticalLayout width="1203">
+            <Control height="59"/>
+            <HorizontalLayout height="32">
+                <Control />
+                <Button name="systemset_welcom" text="Welcome Liquan！" textcolor="#FFBECDE1" height="32" align="right" font="11"/>
+            </HorizontalLayout>
+            <Control height="80"/>
+            <HorizontalLayout height="35">
+                <Label text="系统设置" align="left" height="35" textcolor="#FF253C6E" font="4"/>
+            </HorizontalLayout>
+
+			<Control height="80"/>
+
+            <HorizontalLayout height="35">
+            	<Label text="握力传感器开关" align="left" width="220" textcolor="#FF253C6E" font="4"/>
+                <CheckBox name="grip_strength_enable" width="60" normalimage="file='checkbox_on_off.png' source='343,518,473,560'" selectedimage="file='checkbox_on_off.png' source='509,518,639,560'" disabledimage="file='checkbox_on_off.png' source='343,518,473,560'"/>
+            </HorizontalLayout>
+
+            <Control height="80"/>
+
+            <HorizontalLayout height="35">
+                <Label text="关节运动范围设置" align="left" height="35" textcolor="#FF253C6E" font="4"/>
+            </HorizontalLayout>
+			
+	
+            <HorizontalLayout height="35" >
+                <Label text="肩部外展内收范围最大值" alian="left" height="35" width="230" textcolor="#FF253C6E" font="3" />
+                <Control width="20" />
+                <Edit name="saa_rom_edit" align="left" height="35" width="100" textcolor="#ffff471a" font="3" />
+                <Control width="100" />
+                <Label text="肩部屈伸范围最大值" align="left" height="35" width="190" textcolor="#FF253C6E" font="3" />
+                <Control width="20" />
+                <Edit name="sfe_rom_edit" align="left" height="35" width="100" textcolor="#ffff471a"  font="3" />
+                <Control />
+            </HorizontalLayout>
+          
+
+		     <Control height="810"/>
+             <Label text="华中科技大学同济医学院监制" height="22" textcolor="#FF253C6E" font="3" align="centervcenter"/>
+            <Label text="Supervised By Tongji Medical College,Huazhong University of Science and Technology" height="22" textcolor="#FF253C6E" font="3" align="centervcenter"/>
+            <Control height="17"/>
+        </VerticalLayout>
+        <Control width="480"/>
+    </HorizontalLayout>
+</Window>
