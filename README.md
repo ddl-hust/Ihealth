@@ -27,4 +27,8 @@ ihealth是一个康复机器人的工程，实验室内部合作开发。没钱�
   
 ## some issue
 1. How to complie cross-platform ,for now we don't have wke source code ,only dll and lib file ,for one way we could find the source file and then cmake or we could find alktervie for wke ,because it's only a web
-2.
+2. header safe style should keep the same  ##progame once better##
+3. for single unit we should all test it ,write test code 
+4. for now if we want refactor the code structure ,we must make sure all data flow ,get the UML file .
+5. we should have our own code style  maybe can use google style 
+6. msybe we should code review by some experienceed brother 

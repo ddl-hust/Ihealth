@@ -1,4 +1,4 @@
-﻿#pragma once
+﻿#pragma once 
 // Adlink head file////////
 #include <APS168.h>
 #include <ErrorCodeDef.h>
@@ -51,7 +51,7 @@ public:
 	static const double Unit_Convert;
 
 private:
-	ControlCard();
+	ControlCard(); //why all constructor are private ???
 	void LoadParamFromFile();
 	void LoadAxisParam(I32 board_id);
 	void VelMove(short AxisId, double Vel);

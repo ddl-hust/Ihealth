@@ -20,12 +20,12 @@ public:
 	void PressureStep();
 	bool IsFire();
 	// 获取机器人末端位置
-	void CalculatePlaneXY(short Axis_X, short Axis_Y, double XY[2]);
+	void CalculatePlaneXY(short Axis_X, short Axis_Y, double XY[2]); //
 	// 擦窗户游戏中获取抹布位置
 	void CalculateRagXY(double XY[2]);
 	void SetDamping(float FC=0.1);
 	// 设置关节运动范围
-	void SetSAAMax(double saa);
+	void SetSAAMax(double saa);  //Does range is [ , ] ???
 	void SetSFEMax(double sfe);
 	//将力矩由主动关节换算到所有关节
 	void ActiveTorqueToAllTorque(double torque[2], double alltorque[5]);
@@ -35,19 +35,19 @@ public:
 	void MomentExport();
 	//把力矩传感器测得的数据输出到txt文件
 	void TorqueExport();
-	boundaryDetection detect;
+	boundaryDetection detect;     //maybe private better?
 	
 
 public:
 	bool is_exit_thread_;
 	bool is_moving_;
 	double six_dimension_offset_[6];
-	double elbow_offset[2];
+	double elbow_offset[2];    //what is this ?
 	double torque_offset[2];
 	double cycle_time_in_second_;
 
 private:
-	void MoveInNewThread();
+	void MoveInNewThread();  //open a new thread ?
 	void ExitMoveThread();
 	void ActMove();
 	//将原始值进行坐标变换

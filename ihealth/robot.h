@@ -3,8 +3,8 @@
 #include "boundarydetection.h"
 #include "control_card.h"
 #include"active_control.h"
-#include"emgcontrl.h"
-#include "EyeMode.h"
+//#include"emgcontrl.h"
+//#include "EyeMode.h"
 
 
 class Robot {
