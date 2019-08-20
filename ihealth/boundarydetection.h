@@ -33,7 +33,7 @@ public:
      //获取两个力矩传感器的数据
      void getTorqueData();
 	 //获取拉力传感器数据
-	 void GetPullSensorData();
+	 void GetPullSensorData();   
 
 	 void getTorqueData(double data[2]);
 	 //获取关节角度
@@ -45,6 +45,10 @@ public:
 		
 	 void SetRobot(Robot *pRobot);
 	 bool is_error_happens_;
+
+	 static double shoulder_torque;
+	 static double elbow_torque;
+
 
 private:
      //光电行程开关的示数，0-ORG0，1-MEL0，2-ORG1，3-MEL1

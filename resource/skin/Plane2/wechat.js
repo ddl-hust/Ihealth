@@ -1,4 +1,3 @@
-
 var startdiv=document.getElementById('startdiv');
 var maindiv=document.getElementById('maindiv');
 var score=document.getElementById('score');
@@ -7,6 +6,7 @@ var enddiv=document.getElementById('enddiv');
 var tid;
 var scores=0;
 var positionY=0;
+var refresh=1;
 window.setgameover = 2;
 window.getGameOver = function (){
     return window.setgameover
@@ -15,8 +15,6 @@ window.setStart = 0;
 window.getStartGame = function (){
     return window.setStart
 }
-
-
 //开始游戏按钮
 var Checkint = 120;
 if(true){
@@ -87,9 +85,8 @@ function plane(x,y,imgsrc,speed,w,h,boomsrc,hp,dietime,score){
 // 	plane.call(this,x,y,"image/我的飞机.gif");
 // }
 //创建本方飞机对象
-//var selfplane=new plane((document.documentElement.clientWidth/2)-36,580,"image/my_enemy.gif",null,null,null,null,null,null,null);
-// 最右边是734
-var selfplane=new plane(0,601,"image/my_enemy.gif",null,null,null,null,null,null,null);
+//(document.documentElement.clientWidth/2)-36 580
+var selfplane=new plane((document.documentElement.clientWidth/2)-33, 601,"image/my_enemy.gif",null,null,null,null,null,null,null);
 //本方飞机移动
 var selfmove=function(x,y){
 	//var e=window.event||arguments[0];
@@ -105,11 +102,10 @@ var selfmove=function(x,y){
 };
 
 function getWidth() {
-	var x = document.documentElement.clientWidth;//selfplane.x*2;
-	return x
+	return document.documentElement.clientWidth
 };
 function getHeight() {
-	return document.documentElement.clientHeight;// selfplane.y
+	return 601
 };
 
 function getScore() {
@@ -136,10 +132,33 @@ function getNandu() {
 //-------------------敌方飞机--------------------
 // 创建敌方飞机构造函数
 function enemy(x,y,imgsrc,speed,w,h,boomsrc,hp,dietime,score){
-	plane.call(this,random(0,document.documentElement.clientWidth),0,imgsrc,speed,w,h,boomsrc,hp,dietime,score);
+	//plane.call(this,random(0,document.documentElement.clientWidth),0,imgsrc,speed,w,h,boomsrc,hp,dietime,score);
+	var creat=random1(0,0)+random2(0,0)+random3(0,0);
+		if(creat==0){
+	plane.call(this,100,0,imgsrc,speed,w,h,boomsrc,hp,dietime,score);
+	}
+	else if(creat==1) {
+		plane.call(this,300,0,imgsrc,speed,w,h,boomsrc,hp,dietime,score);
+	}
+    else if(creat==2){
+		plane.call(this,500,0,imgsrc,speed,w,h,boomsrc,hp,dietime,score);
+	}
+	else if(creat==3){
+		plane.call(this,700,0,imgsrc,speed,w,h,boomsrc,hp,dietime,score);
+	}
 }
-function random(x,y){
-	return Math.floor(Math.random()*(y-x)+x);
+function random1(x,y){
+	return Math.round(Math.random());
+}
+function random2(x,y){
+	return Math.round(Math.random());
+}
+function random3(x,y){
+	return Math.round(Math.random());
+}
+//boss级飞机因宽度太大应当在正中央创建，故单独建立
+function bossenemy(x,y,imgsrc,speed,w,h,boomsrc,hp,dietime,score){
+	plane.call(this,400,0,imgsrc,speed,w,h,boomsrc,hp,dietime,score);
 }
 // 事件监听
 if(document.addEventListener){
@@ -202,23 +221,36 @@ function start(){
 		positionY=0;
 	}
 	time1++;
-	if(time1==100){
-		time2++;
-		if (time2%5==0) {
-			enemies.push(new enemy(25,clientWidth,'image/enemy3_fly_1.png',1,46,64,'image/enemy3_fly_1_boom.gif',5,400,500));
-		}
-		if (time2==20) {
-			enemies.push(new enemy(57,clientWidth,'image/enemy2_fly_1.png',1,110,170,'image/enemy2_fly_1_boom.gif',20,600,1000));
-			time2=0;
-		}else{
-			enemies.push(new enemy(5,clientWidth,'image/enemy1_fly_1.png',1,34,24,'image/enemy1_fly_1_boom.gif',1,200,10));
-		}
+	
+	if(time1==80){
+		if(refresh==1){	
+		 time2++;
+		 if (time2==20) {
+			 //enemies.push(new enemy(57,clientWidth,'image/10.png',1,110,170,'image/enemy2_fly_1_boom.gif',20,600,1000));
+			  enemies.push(new bossenemy(57,clientWidth,'image/4.png',1,200,129,'image/4.gif',20,600,1000));
+			 time2=0;
+		 }
+		 else if (time2%5==0) {
+			 //enemies.push(new enemy(25,clientWidth,'image/6.png',1,46,64,'image/enemy3_fly_1_boom.gif',5,400,500));
+			  enemies.push(new enemy(25,clientWidth,'image/2.png',1,120,91,'image/2.gif',5,400,500));
+		 }
+		 else{
+			 //enemies.push(new enemy(5,clientWidth,'image/4.png',1,34,24,'image/enemy1_fly_1_boom.gif',1,200,10));
+			  enemies.push(new enemy(5,clientWidth,'image/3.png',1,80,44,'image/3.gif',1,200,10));
+		 }
+		 if(refresh>0){
+		     refresh--;
+		     }
+	}
 		time1=0;
 	}
 	 //遍历数组,调用move函数
   	var enemylen = enemies.length;
   	for (var i = 0; i < enemylen; i++) {
+		if(enemies[i].planenode.offsetTop<250){
     	enemies[i].move();
+		}
+    	//enemies[i].move();
     	//飞机掉落之后要移除
     	if(enemies[i].planenode.offsetTop>768){
     	maindiv.removeChild(enemies[i].planenode);//删除节点
@@ -289,6 +321,7 @@ function start(){
 
                             //飞机标记为死亡
                             enemies[j].planeisdie = true;
+							refresh++;
 
                             //统计分数
                             scores += enemies[j].score;
@@ -305,8 +338,3 @@ function start(){
         }
     }
 }
-
-
-
-
-

@@ -2,6 +2,10 @@
 #include <windows.h>
 #include <process.h> 
 #include<iostream>
+#include<fstream>
+
+using namespace std;
+
 #define TIMER_SLEEP   0.1
 const double Comfort_Pos[2]={0,0};//开始运动的初始位置，人觉得舒服的位置
 bool is_exit_thread_ = false;
@@ -21,6 +25,7 @@ PassiveControl::PassiveControl() {
 	is_busy_ = false;
 	in_record_status_ = false;
 	in_move_status_ = false;
+	is_teach = false;
 }
 
 void PassiveControl::SetActiveControl(ActiveControl *p) {
@@ -44,10 +49,11 @@ unsigned int __stdcall RecordOrMoveThread(PVOID pParam) {
 		//延时 TIMER_SLEEP s
 		while (TRUE) {
 			end = GetTickCount();
-			if (end - start >= TIMER_SLEEP*1000) {
+			if (end - start >= TIMER_SLEEP * 1000) {
 				start = end;
 				break;
-			} else {
+			}
+			else {
 				SwitchToThread();
 			}
 		}
@@ -64,16 +70,24 @@ unsigned int __stdcall RecordOrMoveThread(PVOID pParam) {
 		//是否开始运动
 		if (passive->in_move_status_) {
 			passive->MoveStep();
+			passive->SampleStep();
 		}
-		
+
 		loop_counter_in_thread++;
 	}
+	if (passive->is_teach) {
+		//passive->TeachPosData();
+		passive->CruveSmoothing();
+	}
+
+	passive->InterpolationTraceExport();
+	passive->PracticalTraceExport();
+
 	passive->is_busy_ = false;
 	return 0;
 }
 
-void PassiveControl::ClearMovementSet()
-{
+void PassiveControl::ClearMovementSet(){
 	movement_set_.clear();
 }
 
@@ -162,6 +176,7 @@ void PassiveControl::BeginRecord() {
 	active_control_->StartMove();
 	in_record_status_ = true;
 	is_exit_thread_ = false;
+	is_teach = true;
 
 	// 清空record_data_
 	for (int k = 0; k < 2; k++) {
@@ -235,11 +250,89 @@ void PassiveControl::MoveStep() {
 			hermite_pos_interval_[j],
 			hermite_vel_interval_[j],
 			time);
-		APS_absolute_move(Axis[j], pos / ControlCard::Unit_Convert, 15 / ControlCard::Unit_Convert);
+		std::cout << "********************** pos *******:" <<pos<< std::endl;
+		sample_data_.Interpolation_Data[j].push_back(pos);
+		//APS_absolute_move(Axis[j], pos / ControlCard::Unit_Convert, 15 / ControlCard::Unit_Convert);
+		APS_ptp_v(Axis[j], option, pos / ControlCard::Unit_Convert, 15 / ControlCard::Unit_Convert, NULL);
 	}
 	is_busy_ = true;
 }
 
+void PassiveControl::SampleStep() {
+	double joint_angle[2]{ 0 };
+	ControlCard::GetInstance().GetEncoderData(joint_angle);
+	for (int i = 0; i < 2; i++) {
+		sample_data_.target_positions[i].push_back(joint_angle[i]);
+	}
+}
+
 void PassiveControl::SetHWND(HWND hWnd) {
 	hWnd_ = hWnd;
+}
+
+void PassiveControl::CruveSmoothing() {
+	for (int i = 0; i < 2; ++i) {
+		max_pos[i] = GetMaxData(record_data_.target_positions[i]);
+	}
+	array_size = record_data_.target_positions[0].size();
+	if (array_size % 2 == 0) {
+		array_size++;
+	}
+	curve_x = array_size - 1;
+	DrawSincruve();
+	is_teach = false;
+}
+
+double PassiveControl::GetMaxData(std::vector<double> &data) {
+	double maxdata = data[0];
+	for (int i = 1; i<data.size(); ++i) {
+		if (abs(maxdata)<abs(data[i])) {
+			maxdata = data[i];
+		}
+	}
+	return maxdata;
+}
+
+void PassiveControl::DrawSincruve() {
+	double curve_pi = M_PI / curve_x;
+	for (int j = 0; j < 2; ++j) {
+		for (int i = 0; i < array_size; ++i) {
+			record_data_.target_positions[j][i] = sin(i * curve_pi)*max_pos[j];
+			record_data_.target_velocitys[j][i] = cos(i * curve_pi)*max_pos[j] * curve_pi;
+		}
+		for (int i = 0; i < 2; ++i) {
+			record_data_.target_positions[i][array_size - 1] = 0;
+		}
+	}
+}
+
+void PassiveControl::TeachPosData() {
+	ofstream dataFile1;
+	dataFile1.open("teach_position_data.txt", ofstream::app);
+	dataFile1 << "shoulder" << "   " << "elbow" << endl;
+	for (int i = 0; i < record_data_.target_positions[0].size(); ++i) {
+		dataFile1 << record_data_.target_positions[0][i] << "        " << record_data_.target_positions[1][i] << endl;
+	}
+	dataFile1.close();
+}
+
+void PassiveControl::InterpolationTraceExport() {
+	ofstream dataFile2;
+	dataFile2.open("interpolation_trace_data2.txt", ofstream::app);
+	dataFile2 << "shoulder" << "   " << "elbow" << endl;
+	dataFile2 << "test for input" << std::endl;
+	for (int i = 0; i < sample_data_.Interpolation_Data[0].size(); ++i) {
+		dataFile2 << sample_data_.Interpolation_Data[0][i] << "        " << sample_data_.Interpolation_Data[1][i] << endl;
+	}
+	dataFile2.close();
+}
+
+void PassiveControl::PracticalTraceExport() {
+	ofstream dataFile3;
+	dataFile3.open("practice_trace_data.txt", ofstream::app);
+	dataFile3 << "shoulder" << "   " << "elbow" << endl;
+	for (int i = 0; i < sample_data_.target_positions[0].size(); ++i) {
+		dataFile3 << sample_data_.target_positions[0][i] << "        " << sample_data_.target_positions[1][i] << endl;
+	}
+	dataFile3.close();
 }

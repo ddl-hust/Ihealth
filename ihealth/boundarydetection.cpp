@@ -13,7 +13,7 @@
 #define ShoulderTorqueLimit 100.0
 #define ElbowTorqueLimit 100.0
 
-#define PullLimit 4.0 /*实际电压需要除以2*/
+#define PullLimit 6.0 /*实际电压需要除以2*/
 
 double rawTorqueData[5]={0};
 double raw_pull_data[20] = { 0 };
@@ -21,11 +21,14 @@ double raw_pull_data[20] = { 0 };
 const char *TCH = "Dev2/ai4:5";//力矩采集通道
 const char *pull_sensor_channel = "Dev2/ai0:3";
 
+double boundaryDetection::shoulder_torque = 0.0;
+double boundaryDetection::elbow_torque = 0.0;
+
 
 HHOOK   hHook;
 LRESULT   __stdcall   CBTHookProc(long   nCode, WPARAM   wParam, LPARAM   lParam) {
 	if (nCode == HCBT_ACTIVATE) {
-		SetDlgItemText((HWND)wParam, IDOK, L"复位");
+		SetDlgItemText((HWND)wParam, IDOK, L"停止");
 		UnhookWindowsHookEx(hHook);
 	}
 	return   0;
@@ -265,10 +268,15 @@ void boundaryDetection::check() {
 		}
 	}
 
-	// 力矩保护
+	//// 力矩保护
 	//DataAcquisition::GetInstance().AcquisiteTorqueData();
-	//double abs_shoulder_torque = fabs(DataAcquisition::GetInstance().ShoulderTorque());
-	//double abs_elbow_torque = fabs(DataAcquisition::GetInstance().ElbowTorque());
+	//shoulder_torque = DataAcquisition::GetInstance().ShoulderTorque();
+	//elbow_torque = DataAcquisition::GetInstance().ElbowTorque();
+	//double abs_shoulder_torque = fabs(shoulder_torque);
+	//double abs_elbow_torque = fabs(elbow_torque);
+	////AllocConsole();
+	////freopen("CONOUT$", "w", stdout);
+	////printf("%lf    %lf    \n", abs_shoulder_torque, abs_elbow_torque);
 	//if (abs_shoulder_torque > ShoulderTorqueLimit || abs_elbow_torque > ElbowTorqueLimit) {
 	//	//在这里要先把动作暂停下来，我们就用post message的方式去暂停，直接调用暂停的接口。
 	//	::PostMessage(m_hWnd, TorqueError, NULL, NULL);
@@ -281,31 +289,35 @@ void boundaryDetection::check() {
 	//}
 
 	// 拉力保护
-	//DataAcquisition::GetInstance().AcquisitePullSensorData();
-	//double abs_shoulder_forward_pull = fabs(DataAcquisition::GetInstance().ShoulderForwardPull());
-	//double abs_shoulder_backward_pull = fabs(DataAcquisition::GetInstance().ShoulderBackwardPull());
-	//double abs_elbow_forward_pull = fabs(DataAcquisition::GetInstance().ElbowForwardPull());
-	//double abs_elbow_backward_pull = fabs(DataAcquisition::GetInstance().ElbowBackwardPull());
-	//if (abs_shoulder_forward_pull > PullLimit || abs_shoulder_backward_pull > PullLimit ||
-	//	abs_elbow_forward_pull > PullLimit || abs_elbow_backward_pull > PullLimit) {
-	//	// 同样需要先把动作暂停下来
-	//	::PostMessage(m_hWnd, PullForceError, NULL, NULL);
-	//	wstring msg(_T("钢丝绳拉力超出许可范围，请检查异常并联系制造商,F1="));
-	//	msg += to_wstring(abs_shoulder_forward_pull);
-	//	msg += (_T(", F2="));
-	//	msg += to_wstring(abs_shoulder_backward_pull);
-	//	msg += (_T(", F3="));
-	//	msg += to_wstring(abs_elbow_forward_pull);
-	//	msg += (_T(", F4="));
-	//	msg += to_wstring(abs_elbow_backward_pull);
-	//	msg += (_T("。"));
-	//	// 然后显示一个MessageBox去提示复位
-	//	hHook = SetWindowsHookEx(WH_CBT, (HOOKPROC)CBTHookProc, NULL, GetCurrentThreadId());
-	//	int ret = ::MessageBox(m_hWnd, msg.c_str(), _T("拉力保护"), MB_OK | MB_ICONEXCLAMATION);
-	//	if (ret == IDOK) {
-	//		ControlCard::GetInstance().ResetPosition();
-	//	}
-	//}
+	DataAcquisition::GetInstance().AcquisitePullSensorData();
+	double abs_shoulder_forward_pull = fabs(DataAcquisition::GetInstance().ShoulderForwardPull());
+	double abs_shoulder_backward_pull = fabs(DataAcquisition::GetInstance().ShoulderBackwardPull());
+	double abs_elbow_forward_pull = fabs(DataAcquisition::GetInstance().ElbowForwardPull());
+	double abs_elbow_backward_pull = fabs(DataAcquisition::GetInstance().ElbowBackwardPull());
+	if (abs_shoulder_forward_pull > PullLimit || abs_shoulder_backward_pull > PullLimit ||
+		abs_elbow_forward_pull > PullLimit || abs_elbow_backward_pull > PullLimit) {
+		// 同样需要先把动作暂停下来
+		::PostMessage(m_hWnd, PullForceError, NULL, NULL);
+		wstring msg(_T("钢丝绳拉力超出许可范围，请检查异常,F1="));
+		msg += to_wstring(abs_shoulder_forward_pull);
+		msg += (_T(", F2="));
+		msg += to_wstring(abs_shoulder_backward_pull);
+		msg += (_T(", F3="));
+		msg += to_wstring(abs_elbow_forward_pull);
+		msg += (_T(", F4="));
+		msg += to_wstring(abs_elbow_backward_pull);
+		msg += (_T("。"));
+		// 然后显示一个MessageBox去提示复位
+		hHook = SetWindowsHookEx(WH_CBT, (HOOKPROC)CBTHookProc, NULL, GetCurrentThreadId());
+		int ret = ::MessageBox(m_hWnd, msg.c_str(), _T("拉力保护"), MB_OK | MB_ICONEXCLAMATION);
+		if (ret == IDOK) {
+			//ControlCard::GetInstance().ResetPosition();
+			m_pRobot->ActiveStopMove();
+		}
+	}
+//	AllocConsole();
+//	freopen("CONOUT$", "w", stdout);
+//	printf("shoulder:%lf    %lf \n elbow:%lf     %lf\n", abs_shoulder_forward_pull, abs_shoulder_backward_pull,abs_elbow_forward_pull,abs_elbow_backward_pull);
 }
 
 

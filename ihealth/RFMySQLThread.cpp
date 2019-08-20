@@ -63,12 +63,12 @@ std::string RFReplaceString(std::string & src, std::string find, std::string rep
 		{         
 			dest += src.substr(start);        
 			break;  
-		}  
+		}
 
-		dest += src.substr(start, i - start);  
-		dest += replacement;  
+		dest += src.substr(start, i - start);
+		dest += replacement;
 		i += len;  
-	}  
+	}
 
 	return dest;  
 }  
@@ -201,6 +201,7 @@ int RFMySQLThread::Login(EventArg *pArg)
 			login_state = -2;
 			if (stmt.Step() > 0) {
 				login_state = -3;
+				//在Step执行后，会获得检索的结果集，然后用GetInt(0)将结果集的一行转换成int型变量后赋值给变量id，下面的一长串也是一样的操作
 				int id = stmt.GetInt(0);
 				stmt.Finalize();
 
@@ -929,6 +930,9 @@ int RFMySQLThread::AddPatientTrainDetails(EventArg* pArg)
 
 
 		std::vector<double> angle;
+
+
+
 		for (int i = 0; i < pParam->emg_angle[0].size(); i++) {
 			angle.push_back(pParam->emg_angle[0].at(i));
 			angle.push_back(pParam->emg_angle[1].at(i));

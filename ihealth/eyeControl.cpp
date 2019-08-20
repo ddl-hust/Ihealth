@@ -108,7 +108,7 @@ void EyeControl::initRobotSurface()
 			MatrixXd theta(6, 1);
 			motorU(0) = mMaxAngle0 * i / mSteps0;
 			motorU(1) = mMaxAngle1 * j / mSteps1;
-			fwd_geo_coup(motorU, theta);
+			ActiveJointsAngleToAllJointsAngle(motorU, theta);
 			MatrixXd T0h(4, 4);
 			fwd_geo_kineB(theta, T0h);
 			pRobotSurface->at<cv::Vec3d>(i, j)[0] = T0h(0, 3);

@@ -24,3 +24,7 @@ ihealth是一个康复机器人的工程，实验室内部合作开发。没钱�
   * 需要OpenCV、Eigen、Boost、TBB的路径，如果报错，自己多尝试一下，可能路径的层次不对；
   * 此外还有几个库，像NI、WKE，也要手动添加，放在ihealth文件夹里了（这个后面或许会抽出来)
   * 注意需要把动态库dll所在的文件夹设置到path环境变量中。
+  
+## some issue
+1. How to complie cross-platform ,for now we don't have wke source code ,only dll and lib file ,for one way we could find the source file and then cmake or we could find alktervie for wke ,because it's only a web
+2.

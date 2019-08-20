@@ -10,23 +10,48 @@ using namespace std;
 const char *DataAcquisition::kTorqueChannel = "dev2/ai4:5";
 const char *DataAcquisition::kPullSensorChannel = "dev2/ai0:3";
 const char *DataAcquisition::kGripChannel = "dev2/ai6";
-const char *DataAcquisition::kSixDimensionForceChannel = "dev3/ai0:5";
+const char *DataAcquisition::kSixDimensionForceChannel = "dev1/ai0:5";
+const char *DataAcquisition::kPressureForceChannel= "Dev3/ai1:2";
 const double DataAcquisition::kRawToReal = 2.0;
 
 Eigen::Matrix<double, 6, 6> DataAcquisition::kTransformMatrix = MatrixXd::Zero(6, 6);
 
 DataAcquisition::DataAcquisition() {
 	int status;
-	status = DAQmxCreateTask("", &m_task_handle);
-	status = DAQmxCreateAIVoltageChan(m_task_handle, kSixDimensionForceChannel, "",
+	//六维力
+	status = DAQmxCreateTask("", &s_task_handle);
+	status = DAQmxCreateAIVoltageChan(s_task_handle, kSixDimensionForceChannel, "",
 		DAQmx_Val_Diff, -10, 10, DAQmx_Val_Volts, NULL);
-	status = DAQmxCfgSampClkTiming(m_task_handle, NULL, 100, DAQmx_Val_Rising,
+	status = DAQmxCfgSampClkTiming(s_task_handle, NULL, 100, DAQmx_Val_Rising,
 		DAQmx_Val_ContSamps, 2);
 
-	status = DAQmxSetReadRelativeTo(m_task_handle, DAQmx_Val_MostRecentSamp);
-	status = DAQmxSetReadOffset(m_task_handle, 0);
-	status = DAQmxStartTask(m_task_handle);
-	status = DAQmxStopTask(m_task_handle);
+	status = DAQmxSetReadRelativeTo(s_task_handle, DAQmx_Val_MostRecentSamp);
+	status = DAQmxSetReadOffset(s_task_handle, 0);
+	status = DAQmxStartTask(s_task_handle);
+	status = DAQmxStopTask(s_task_handle);
+
+	//压力传感器
+	status = DAQmxCreateTask("", &p_task_handle);
+	status = DAQmxCreateAIVoltageChan(p_task_handle, kPressureForceChannel, "",
+		DAQmx_Val_RSE, -10, 10, DAQmx_Val_Volts, NULL);
+	status = DAQmxCfgSampClkTiming(p_task_handle, NULL, 100, DAQmx_Val_Rising,
+		DAQmx_Val_ContSamps, 2);
+
+	status = DAQmxSetReadRelativeTo(p_task_handle, DAQmx_Val_MostRecentSamp);
+	status = DAQmxSetReadOffset(p_task_handle, 0);
+	status = DAQmxStartTask(p_task_handle);
+	status = DAQmxStopTask(p_task_handle);
+
+	//力矩传感器
+	//status = DAQmxCreateTask("TorqueDataTask", &t_task_handle);
+	//status = DAQmxCreateAIVoltageChan(t_task_handle, kTorqueChannel, "TorqueDataChannel", DAQmx_Val_RSE, -10, 10, DAQmx_Val_Volts, NULL);
+	//status = DAQmxCfgSampClkTiming(t_task_handle, "OnboardClock", 1000, DAQmx_Val_Rising, DAQmx_Val_ContSamps, 10);
+
+	//status = DAQmxSetReadRelativeTo(t_task_handle, DAQmx_Val_MostRecentSamp);
+	//status = DAQmxSetReadOffset(t_task_handle, 0);
+	//status = DAQmxStartTask(t_task_handle);
+	//status = DAQmxStopTask(t_task_handle);
+
 
 	//初始化变换矩阵
 	kTransformMatrix << -0.02387, -0.16164, 0.65185, 48.29934, 0.22454, -48.21503,
@@ -45,21 +70,38 @@ DataAcquisition &DataAcquisition::GetInstance() {
 }
 
 void DataAcquisition::AcquisiteTorqueData() {
-	TaskHandle taskHandle = 0;
+	//TaskHandle taskHandle = 0;
+	int32 read = 0;
+	int status = 0;
+	//double torque_data[2]{ 0 };
+	//status = DAQmxCreateTask("TorqueDataTask", &taskHandle);
+	//status = DAQmxCreateAIVoltageChan(taskHandle, kTorqueChannel, "TorqueDataChannel", DAQmx_Val_RSE, -10, 10, DAQmx_Val_Volts, NULL);
+	//status = DAQmxCfgSampClkTiming(taskHandle, "OnboardClock", 1000, DAQmx_Val_Rising, DAQmx_Val_ContSamps, 10);
+	//status = DAQmxStartTask(taskHandle);
+	status = DAQmxReadAnalogF64(t_task_handle, 10, 0.2, DAQmx_Val_GroupByScanNumber, torque_data, 20, &read, NULL);
+	//status = DAQmxStopTask(taskHandle);
+	//status = DAQmxClearTask(taskHandle);
+
+	/*这里需要根据实际的连线确定正确的顺序*/
+	//shoulder_raw_torque_ = torque_data[1];
+	//elbow_raw_torque_ = torque_data[0];
+}
+
+void DataAcquisition::AcquisiteTorqueData(double torquedata[2]) {
 	int32 read = 0;
 	int status = 0;
 	double torque_data[2]{ 0 };
-	status = DAQmxCreateTask("TorqueDataTask", &taskHandle);
-	status = DAQmxCreateAIVoltageChan(taskHandle, kTorqueChannel, "TorqueDataChannel", DAQmx_Val_RSE, -10, 10, DAQmx_Val_Volts, NULL);
-	status = DAQmxCfgSampClkTiming(taskHandle, "OnboardClock", 1000, DAQmx_Val_Rising, DAQmx_Val_ContSamps, 10);
-	status = DAQmxStartTask(taskHandle);
-	status = DAQmxReadAnalogF64(taskHandle, 1, 0.2, DAQmx_Val_GroupByScanNumber, torque_data, 2, &read, NULL);
-	status = DAQmxStopTask(taskHandle);
-	status = DAQmxClearTask(taskHandle);
 
-	/*这里需要根据实际的连线确定正确的顺序*/
-	shoulder_raw_torque_ = torque_data[1];
-	elbow_raw_torque_ = torque_data[0];
+	//status = DAQmxCreateTask("TorqueDataTask", &taskHandle);
+	//status = DAQmxCreateAIVoltageChan(taskHandle, kTorqueChannel, "TorqueDataChannel", DAQmx_Val_RSE, -10, 10, DAQmx_Val_Volts, NULL);
+	//status = DAQmxCfgSampClkTiming(taskHandle, "OnboardClock", 1000, DAQmx_Val_Rising, DAQmx_Val_ContSamps, 10);
+	//status = DAQmxStartTask(taskHandle);
+	status = DAQmxReadAnalogF64(t_task_handle, 1, 0.2, DAQmx_Val_GroupByScanNumber, torque_data, 2, &read, NULL);
+	//status = DAQmxStopTask(taskHandle);
+	//status = DAQmxClearTask(taskHandle);
+
+	torquedata[0] = torque_data[0];
+	torquedata[1] = torque_data[1];
 }
 
 void DataAcquisition::AcquisitePullSensorData() {
@@ -82,6 +124,24 @@ void DataAcquisition::AcquisitePullSensorData() {
 	elbow_raw_backward_pull_ = pull_sensor_data[3];
 }
 
+void DataAcquisition::AcquisiteTensionData(double tension_output[2]) {
+	//TaskHandle taskHandle = 0;
+	int32 read = 0;
+	int status = 0;
+	double tension_data[2]{ 0 };
+	//status = DAQmxCreateTask("PressureDataTask", &taskHandle);
+	//status = DAQmxCreateAIVoltageChan(taskHandle, kPressureForceChannel, "PressureDataChannel", DAQmx_Val_RSE, -10, 10, DAQmx_Val_Volts, NULL);
+	//status = DAQmxCfgSampClkTiming(taskHandle, "OnboardClock", 1000, DAQmx_Val_Rising,DAQmx_Val_ContSamps, 2);
+	//status = DAQmxStartTask(taskHandle);
+	status = DAQmxReadAnalogF64(p_task_handle, 1, 0.2, DAQmx_Val_GroupByScanNumber, tension_data, 2, &read, NULL);
+	//status = DAQmxStopTask(taskHandle);
+	//status = DAQmxClearTask(taskHandle);
+
+	for (int i = 0; i < 2; ++i) {
+		tension_output[i] = tension_data[i];
+	}
+}
+
 void DataAcquisition::AcquisiteSixDemensionData(double output_buf[6]) {
 	TaskHandle taskHandle = 0;
 	int32 read = 0;
@@ -94,7 +154,7 @@ void DataAcquisition::AcquisiteSixDemensionData(double output_buf[6]) {
 	status = DAQmxReadAnalogF64(taskHandle, 1, 0.2, DAQmx_Val_GroupByScanNumber, raw_data, 6, &read, NULL);
 	status = DAQmxStopTask(taskHandle);
 	status = DAQmxClearTask(taskHandle);*/
-	status = DAQmxReadAnalogF64(m_task_handle, 1, 0.2, DAQmx_Val_GroupByScanNumber, raw_data, 6, &read, NULL);
+	status = DAQmxReadAnalogF64(s_task_handle, 1, 0.2, DAQmx_Val_GroupByScanNumber, raw_data, 6, &read, NULL);
 	//cout << "status is : " << status << endl;
 	//char buffer[256];
 	//DAQmxGetErrorString(status, buffer, 256);
@@ -157,13 +217,39 @@ double DataAcquisition::ElbowBackwardPull() {
 
 bool DataAcquisition::StartTask() {
 	int status;
-	status = DAQmxStartTask(m_task_handle);
+	status = DAQmxStartTask(p_task_handle);
 	cout << status << endl;
 	return status == 0;
 }
 
 bool DataAcquisition::StopTask() {
 	int status;
-	status = DAQmxStopTask(m_task_handle);
+	status = DAQmxStopTask(p_task_handle);
+	return status == 0;
+}
+
+bool DataAcquisition::StartTorqueTask() {
+	int status;
+	status = DAQmxStartTask(t_task_handle);
+	cout << status << endl;
+	return status == 0;
+}
+
+bool DataAcquisition::StopTorqueTask() {
+	int status;
+	status = DAQmxStopTask(t_task_handle);
+	return status == 0;
+}
+
+bool DataAcquisition::StartSixDemTask() {
+	int status;
+	status = DAQmxStartTask(s_task_handle);
+	cout << status << endl;
+	return status == 0;
+}
+
+bool DataAcquisition::StopSixDemTask() {
+	int status;
+	status = DAQmxStopTask(s_task_handle);
 	return status == 0;
 }

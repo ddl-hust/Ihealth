@@ -224,7 +224,7 @@ void ControlCard::ResetPosition() {
 		VelocityMove(ShoulderAxisId, ResetVel);
 	}
 	SetMotor(MotorOff);
-	SetClutch(ClutchOff);
+	//SetClutch(ClutchOff);
 	SetParamZero();
 }
 

@@ -12,6 +12,7 @@
 struct PassiveData {
 	std::vector<double> target_positions[2];//存储位置的数组
 	std::vector<double> target_velocitys[2];//存储速度的数组
+	std::vector<double>Interpolation_Data[2];//存储插值后的位置数组
 	double round_time;//运动时间（单位为s）
 };
 
@@ -30,6 +31,8 @@ public:
 	void MoveStep();
 	// 被动运动停止
 	void StopMove();
+	//录制运动信息
+	void SampleStep();
 	void GetCurrentMove(PassiveData& move);
 
 	// 开始录制动作
@@ -48,6 +51,20 @@ public:
 	void StoreCurrentRecord();
 	// 清除被动运动序列的数据
 	void ClearMovementSet();
+
+	//在示教后将曲线置换成正弦曲线
+	void CruveSmoothing();
+	//获取数组内的最大值
+	double GetMaxData(std::vector<double> &data);
+	//画sin曲线
+	void DrawSincruve();
+	//控制是否运行替换sin曲线函数
+	bool is_teach;
+
+	//输出txt文件
+	void InterpolationTraceExport();//插值后的轨迹
+	void PracticalTraceExport();//实际的轨迹
+	void TeachPosData();//录制的位置
 
 	// 正在进行录制或者被动运动
 	bool IsBusy();
@@ -72,6 +89,7 @@ public:
 private:
 	PassiveData record_data_;
 	PassiveData move_data_;
+	PassiveData sample_data_;
 
 	ActiveControl *active_control_ = nullptr;
 
@@ -82,6 +100,11 @@ private:
 	double hermite_time_interval_[2][2];// 插值过程中的时间区间
 	double  hermite_vel_interval_[2][2];// 插值过程中的速度区间
 	double  hermite_pos_interval_[2][2];// 插值过程中的位置区间
+
+	double max_pos[2];//储存位置的最大值
+	int array_size;//数组的个数，需要为奇数
+	int curve_x;//用于求sin曲线的x得值，应该比array_size少1
+	I32 option = 0x1000;//ptp运动模式控制
 };
 
 #endif // PASVCONTRL_H
