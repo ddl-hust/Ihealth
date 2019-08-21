@@ -3,3 +3,7 @@ build
 *.sql
 *.cfg
 .vscode/
+/ihealth/Boost_1_67_0
+/ihealth/OpenCV3_4
+/ihealth/TBB
+/ihealth/eigen
