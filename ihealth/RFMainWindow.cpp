@@ -2526,8 +2526,10 @@ bool RFMainWindow::OnActiveTrain(void *pParam)
     // 根据SAA_ROM和SFE_ROM决定游戏运动的范围 and sensitivity for every patient
     RFMainWindow::MainWindow->m_robot.activeCtrl->SetSAAMax(RFMainWindow::MainWindow->m_current_patient.SAA_ROM);
     RFMainWindow::MainWindow->m_robot.activeCtrl->SetSFEMax(RFMainWindow::MainWindow->m_current_patient.SFE_ROM);
-    // RFMainWindow::MainWindow->m_robot.activeCtrl->SetArmSensitivity(RFMainWindow::MainWindow->m_current_patient.Arm_Sensitivity); //To-Do
-
+    RFMainWindow::MainWindow->m_robot.activeCtrl->SetArmSensitivity(RFMainWindow::MainWindow->m_current_patient.Arm_Sensitivity); // To-Do
+    AllocConsole();
+    freopen("CONOUT$", "w", stdout);
+    std::cout << "********already change the sensitivity***********" <<std::endl;
     ShowActiveTrainPage();
     return true;
 }
@@ -3424,11 +3426,11 @@ bool RFMainWindow::OnSystemSetReturn(void *pParam)
     double sfe = _wtof(text);
 
     // get control_arm_sensitivity
-    CEditUI *arm_sensitivity = static_cast<CEditUI *>(m_pm.FindControl(-T("control_arm_sensitivity")));
-    test = arm_sensitivity->GetText();
-    double arm_sensitivity = _wtof(test);
+    CEditUI *arm_sensitivity = static_cast<CEditUI *>(m_pm.FindControl(_T("control_arm_sensitivity")));
+    text = arm_sensitivity->GetText();
+    double arm_sensitivity_value = _wtof(text);
     // check the range of sensitivity
-    if (arm_sensitivity > 10 || arm_sensitivity < -10) {
+    if (arm_sensitivity_value > 10 || arm_sensitivity_value < -10) {
         MessageBox(NULL, _T("the arm sensitivity should be in range [-10,10]"), _T("Set sensitivity error!"), MB_OK);
         return 0;
     }
@@ -3448,7 +3450,7 @@ bool RFMainWindow::OnSystemSetReturn(void *pParam)
     }
     RFMainWindow::MainWindow->m_current_patient.SAA_ROM = saa;
     RFMainWindow::MainWindow->m_current_patient.SFE_ROM = sfe;
-	// RFMainWindow::MainWindow->m_current_patient.Arm_Sensitivity = arm_sensitivity;
+    RFMainWindow::MainWindow->m_current_patient.Arm_Sensitivity = arm_sensitivity_value;
 
 
     return OnReturnMainPage(pParam);

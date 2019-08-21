@@ -110,7 +110,7 @@ struct PatientInfo
     int flag;
     double SAA_ROM; // 肩部的外展内收运动范围的最大值（对应肩部角度）
     double SFE_ROM; // 肩部的屈伸运动范围最大值（对应肘部角度）
-    // double Arm_Sensitivity; // the parm to adjust arm force->velocity
+    double Arm_Sensitivity; // the parm to adjust arm force->velocity
 };
 
 struct LoadPatientResult
