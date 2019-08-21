@@ -13,12 +13,12 @@
 #define ShoulderTorqueLimit 100.0
 #define ElbowTorqueLimit 100.0
 
-#define PullLimit 6.0 /*ʵ�ʵ�ѹ��Ҫ����2*/
+#define PullLimit 6.0 
 
 double rawTorqueData[5] = {0};
 double raw_pull_data[20] = {0};
 
-const char *TCH = "Dev2/ai4:5"; //���زɼ�ͨ��
+const char *TCH = "Dev2/ai4:5";
 const char *pull_sensor_channel = "Dev2/ai0:3";
 
 double boundaryDetection::shoulder_torque = 0.0;
