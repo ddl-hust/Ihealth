@@ -14,140 +14,140 @@
 
 struct ModifyPWDInfo
 {
-	int loginid;
+    int loginid;
 
-	std::wstring pwd;
-	std::wstring oldpwd;
+    std::wstring pwd;
+    std::wstring oldpwd;
 };
 
 struct LoginInfo
 {
-	std::wstring usrname;
-	std::wstring usrpwd;
-	int			role;
-	int			logined;
+    std::wstring usrname;
+    std::wstring usrpwd;
+    int role;
+    int logined;
 
-	std::wstring login_user;
+    std::wstring login_user;
 
-	int doctorid;
-	int login_id;
-	int hospitalid;
-	std::wstring employeenumber;
-	std::wstring name;
-	std::wstring sex;
-	std::wstring birthday;
-	std::wstring certid;
-	std::wstring telephone;
-	int			 bloodtype;
-	std::wstring address;
-	std::wstring education;
-	std::wstring nation;
-	std::wstring birthplace;
-	std::wstring householdprop;
-	std::wstring department;
-	std::wstring group;
-	std::wstring positon;
-	std::wstring entrydate;
-	int flag;
-	std::wstring createtime;
+    int doctorid;
+    int login_id;
+    int hospitalid;
+    std::wstring employeenumber;
+    std::wstring name;
+    std::wstring sex;
+    std::wstring birthday;
+    std::wstring certid;
+    std::wstring telephone;
+    int bloodtype;
+    std::wstring address;
+    std::wstring education;
+    std::wstring nation;
+    std::wstring birthplace;
+    std::wstring householdprop;
+    std::wstring department;
+    std::wstring group;
+    std::wstring positon;
+    std::wstring entrydate;
+    int flag;
+    std::wstring createtime;
 };
 
 struct LoadPatientParam
 {
-	int hospitalid;
-	int doctorid;
-	
-	int start;
-	int num;
+    int hospitalid;
+    int doctorid;
+
+    int start;
+    int num;
 };
 
 struct SearchPatientParam
 {
-	std::wstring patientname;
+    std::wstring patientname;
 };
 
 struct NextPatientResult
 {
-	std::wstring patientid;
+    std::wstring patientid;
 };
 
 
 struct PatientFilterParam
 {
-	int hospitalid;
-	int doctorid; 
-	std::wstring name;
-	std::wstring sex;
-	std::wstring age_from;
-	std::wstring age_to;
-	std::wstring create_from;
-	std::wstring create_to;
+    int hospitalid;
+    int doctorid;
+    std::wstring name;
+    std::wstring sex;
+    std::wstring age_from;
+    std::wstring age_to;
+    std::wstring create_from;
+    std::wstring create_to;
 };
 
 struct ExportPatientParam
 {
-	std::wstring path;
-	std::wstring savepath;
-	int patientid;
-	int hospitalid;
-	int doctorid;
+    std::wstring path;
+    std::wstring savepath;
+    int patientid;
+    int hospitalid;
+    int doctorid;
 };
 
 
 struct PatientInfo
 {
-	int id;
-	int hospitalid;
-	int doctorid;
-	std::wstring name;
-	std::wstring sex;
-	int age;
-	std::wstring createtime;
-	std::wstring lasttreattime;
-	std::wstring totaltreattime;
-	std::wstring recoverdetail;
-	std::wstring remarks;
-	int flag;
-	double SAA_ROM; // ¼ç²¿µÄÍâÕ¹ÄÚÊÕÔË¶¯·¶Î§µÄ×î´óÖµ£¨¶ÔÓ¦¼ç²¿½Ç¶È£©
-	double SFE_ROM; // ¼ç²¿µÄÇüÉìÔË¶¯·¶Î§×î´óÖµ£¨¶ÔÓ¦Öâ²¿½Ç¶È£©
+    int id;
+    int hospitalid;
+    int doctorid;
+    std::wstring name;
+    std::wstring sex;
+    int age;
+    std::wstring createtime;
+    std::wstring lasttreattime;
+    std::wstring totaltreattime;
+    std::wstring recoverdetail;
+    std::wstring remarks;
+    int flag;
+    double SAA_ROM; // ï¿½ç²¿ï¿½ï¿½ï¿½ï¿½Õ¹ï¿½ï¿½ï¿½ï¿½ï¿½Ë¶ï¿½ï¿½ï¿½Î§ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ç²¿ï¿½Ç¶È£ï¿½
+    double SFE_ROM; // ï¿½ç²¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¶ï¿½ï¿½ï¿½Î§ï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½Ó¦ï¿½â²¿ï¿½Ç¶È£ï¿½
 };
 
 struct LoadPatientResult
 {
-	int num;
-	std::list<PatientInfo> patients;
+    int num;
+    std::list<PatientInfo> patients;
 
-	int updateui;
+    int updateui;
 };
 
 struct ExportPatientResult
 {
-	int num;
-	std::list<PatientInfo> patients;
+    int num;
+    std::list<PatientInfo> patients;
 
-	int updateui;
-	std::wstring path;
-	std::wstring savepath;
+    int updateui;
+    std::wstring path;
+    std::wstring savepath;
 };
 
 struct PatientTrainInfo
 {
-	int id;
-	std::wstring name;
-	std::wstring sex;
-	std::wstring age;
-	std::wstring createtime;
+    int id;
+    std::wstring name;
+    std::wstring sex;
+    std::wstring age;
+    std::wstring createtime;
 };
 
 struct LoadPatientTrainInfoParam
 {
-	int doctorid;
-	int hospitalid;
+    int doctorid;
+    int hospitalid;
 };
 
 struct LoadPatientTrainInfoResult
 {
-	std::list<PatientTrainInfo> patienttraininfos;
+    std::list<PatientTrainInfo> patienttraininfos;
 };
 
 #define RF_ACTIVE_TRAIN_MODE 0
@@ -155,196 +155,196 @@ struct LoadPatientTrainInfoResult
 #define RF_EMG_TRAIN_MODE 2
 #define RF_EYE_TRAIN_MODE 3
 
-#define RF_TRAINTYPE_STRING_ZD _T("Ö÷¶¯ÑµÁ·")
-#define RF_TRAINTYPE_STRING_BD _T("±»¶¯ÑµÁ·")
-#define RF_TRAINTYPE_STRING_YD _T("ÑÛ¶¯ÑµÁ·")
-#define RF_TRAINTYPE_STRING_EMG _T("EMGÑµÁ·")
+#define RF_TRAINTYPE_STRING_ZD _T("ï¿½ï¿½ï¿½ï¿½Ñµï¿½ï¿½")
+#define RF_TRAINTYPE_STRING_BD _T("ï¿½ï¿½ï¿½ï¿½Ñµï¿½ï¿½")
+#define RF_TRAINTYPE_STRING_YD _T("ï¿½Û¶ï¿½Ñµï¿½ï¿½")
+#define RF_TRAINTYPE_STRING_EMG _T("EMGÑµï¿½ï¿½")
 
 struct PatientTrainDetails
 {
-	int id;
-	int patientid;
-	std::wstring traindate;
-	std::wstring content;
-	std::wstring duration;
-	//int score;
-	std::wstring traintime;
-	std::wstring createtime;
-	int flag;
+    int id;
+    int patientid;
+    std::wstring traindate;
+    std::wstring content;
+    std::wstring duration;
+    // int score;
+    std::wstring traintime;
+    std::wstring createtime;
+    int flag;
 
-	std::wstring traintype;	// 0Ö÷¶¯ÑµÁ· 1 ±»¶¯ÑµÁ· 2 EMGÄ£Ê½ 3 ÑÛ¶¯Ä£Ê½
-	std::wstring game;
-	std::wstring nandu;
-	std::wstring defen;
+    std::wstring traintype; // 0ï¿½ï¿½ï¿½ï¿½Ñµï¿½ï¿½ 1 ï¿½ï¿½ï¿½ï¿½Ñµï¿½ï¿½ 2 EMGÄ£Ê½ 3 ï¿½Û¶ï¿½Ä£Ê½
+    std::wstring game;
+    std::wstring nandu;
+    std::wstring defen;
 
 
-	std::wstring totaltreattime;
-	std::wstring lasttreattime;
-	std::wstring recoverdetail;
+    std::wstring totaltreattime;
+    std::wstring lasttreattime;
+    std::wstring recoverdetail;
 
-	std::vector<double> target_pos[2];	// ±»¶¯ÑµÁ· ÔË¶¯½Ç¶È 0 ¼ç¹Ø½Ú 1 Î»Öâ¹Ø½Ú
-	std::vector<double> target_vel[2];  //			ÔË¶¯ËÙ¶È Í¬ÉÏ
+    std::vector<double> target_pos[2]; // ï¿½ï¿½ï¿½ï¿½Ñµï¿½ï¿½ ï¿½Ë¶ï¿½ï¿½Ç¶ï¿½ 0 ï¿½ï¿½Ø½ï¿½ 1 Î»ï¿½ï¿½Ø½ï¿½
+    std::vector<double> target_vel[2]; //			ï¿½Ë¶ï¿½ï¿½Ù¶ï¿½ Í¬ï¿½ï¿½
 
-	std::vector<double> emg_signal[4];	// EMGÑµÁ·
-	std::vector<double> emg_angle[2];
+    std::vector<double> emg_signal[4]; // EMGÑµï¿½ï¿½
+    std::vector<double> emg_angle[2];
 
-	std::vector<double> target_angle;	// Ö÷¶¯ÑµÁ· ÔË¶¯½Ç¶È
-	std::vector<double> target_wl;		//			ÎÕÁ¦
+    std::vector<double> target_angle; // ï¿½ï¿½ï¿½ï¿½Ñµï¿½ï¿½ ï¿½Ë¶ï¿½ï¿½Ç¶ï¿½
+    std::vector<double> target_wl; //			ï¿½ï¿½ï¿½ï¿½
 };
 
 struct LoadPatientTrainDetailsParam
 {
-	int hospitalid;
-	int doctorid;
-	int patientid;
+    int hospitalid;
+    int doctorid;
+    int patientid;
 };
 
 struct LoadPatientTrainDetailsResult
 {
-	std::list<PatientTrainDetails> patienttraindetails;
+    std::list<PatientTrainDetails> patienttraindetails;
 };
 
-// ¶ÔÓ¦ÓÚÊý¾Ý¿âÖÐµÄpassivetrain£¬ÓÃÓÚ¼ÇÂ¼
-// ±»¶¯Ä£Ê½ÖÐÒ»ÌõÂ¼ÖÆµÄÔË¶¯Êý¾Ý
+// ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½Ðµï¿½passivetrainï¿½ï¿½ï¿½ï¿½ï¿½Ú¼ï¿½Â¼
+// ï¿½ï¿½ï¿½ï¿½Ä£Ê½ï¿½ï¿½Ò»ï¿½ï¿½Â¼ï¿½Æµï¿½ï¿½Ë¶ï¿½ï¿½ï¿½ï¿½ï¿½
 struct PassiveTrainInfo
 {
-	std::wstring id;
-	std::wstring name;
-	std::wstring traintype;
-	std::wstring timelen;
-	//std::wstring movements;
+    std::wstring id;
+    std::wstring name;
+    std::wstring traintype;
+    std::wstring timelen;
+    // std::wstring movements;
 
-	std::vector<double> target_pos[2];	// ÔË¶¯½Ç¶È 0 ¼ç¹Ø½Ú 1 Î»Öâ¹Ø½Ú
-	std::vector<double> target_vel[2];  // ÔË¶¯ËÙ¶È Í¬ÉÏ
+    std::vector<double> target_pos[2]; // ï¿½Ë¶ï¿½ï¿½Ç¶ï¿½ 0 ï¿½ï¿½Ø½ï¿½ 1 Î»ï¿½ï¿½Ø½ï¿½
+    std::vector<double> target_vel[2]; // ï¿½Ë¶ï¿½ï¿½Ù¶ï¿½ Í¬ï¿½ï¿½
 };
 
 struct LoadPassiveTrainInfoResult
 {
-	std::list<PassiveTrainInfo> passivetraininfos;
+    std::list<PassiveTrainInfo> passivetraininfos;
 };
 
 struct LoadPatientTrainDataParam
 {
-	int traindetailid;
+    int traindetailid;
 };
 
 struct PatientTrainData
 {
-	int id;
-	int traindetailid;
-	int timetrace;
-	int tracevalue;
-	int traintype;		// 1 ¹Ø½ÚÔË¶¯½Ç¶È 2 ÎÕÁ¦ 3 EMGÐÅºÅ 4 ¼ç¹Ø½ÚÁ¦¾Ø 5 Öâ¹Ø½ÚÁ¦¾Ø
+    int id;
+    int traindetailid;
+    int timetrace;
+    int tracevalue;
+    int traintype; // 1 ï¿½Ø½ï¿½ï¿½Ë¶ï¿½ï¿½Ç¶ï¿½ 2 ï¿½ï¿½ï¿½ï¿½ 3 EMGï¿½Åºï¿½ 4 ï¿½ï¿½Ø½ï¿½ï¿½ï¿½ï¿½ï¿½ 5 ï¿½ï¿½Ø½ï¿½ï¿½ï¿½ï¿½ï¿½
 };
 
 struct LoadPatientTrainDataResult
 {
-	std::list<PatientTrainData> patienttraindatas;
+    std::list<PatientTrainData> patienttraindatas;
 };
 
 struct TTSSampleData
 {
-	std::string text;
-	std::string filepath;
+    std::string text;
+    std::string filepath;
 };
 
 struct EvaluationRecordData
 {
-	int id;
-	int evalid;
-	std::wstring item;
-	std::wstring result;
+    int id;
+    int evalid;
+    std::wstring item;
+    std::wstring result;
 };
 
 struct EvaluationData
 {
-	int id;
-	int doctorid;
-	int patientid;
-	std::wstring date;
-	std::wstring name;
-	std::wstring score;
-	int	type;	// 1 fma 2 mas 3 ÔË¶¯
+    int id;
+    int doctorid;
+    int patientid;
+    std::wstring date;
+    std::wstring name;
+    std::wstring score;
+    int type; // 1 fma 2 mas 3 ï¿½Ë¶ï¿½
 
-	std::list<EvaluationRecordData> datas;
+    std::list<EvaluationRecordData> datas;
 };
 
 struct LoadEvaluationParam
 {
-	int doctorid;
-	int type;
+    int doctorid;
+    int type;
 };
 
 struct LoadEvaluationResult
 {
-	int nextid;
-	std::list<EvaluationData> datas;
+    int nextid;
+    std::list<EvaluationData> datas;
 };
 
 struct EvaluationYDGN
 {
-	double zb1;
-	double zb2;
-	double zb;
-	double jb1;
-	double jb2;
-	double jb;
-	double cs;
-	double wl;
+    double zb1;
+    double zb2;
+    double zb;
+    double jb1;
+    double jb2;
+    double jb;
+    double cs;
+    double wl;
 
-	double score;
+    double score;
 };
 
 class RFMySQLThread : public CThreadBase
 {
 public:
-	RFMYSQL m_db;
+    RFMYSQL m_db;
 
 public:
-	RFMySQLThread(void);
-	~RFMySQLThread(void);
+    RFMySQLThread(void);
+    ~RFMySQLThread(void);
 
 
 public:
-	// ´´½¨Êý¾Ý¿âÏß³ÌÊµÀý
-	static RFMySQLThread* Create();
-	// »ØÊÕÊý¾Ý¿âÏß³Ì×ÊÔ´
-	static void Release(RFMySQLThread *&pThread);
-	// ½¨Á¢Êý¾Ý¿âÁ¬½Ó
-	static int Connect(EventArg *pArg);
-	// Êý¾Ý¿âÖØÁ¬
-	static int ReConnect(EventArg *pArg);
-	// Êý¾Ý¿âÓÃ»§µÇÂ¼
-	static int Login(EventArg *pArg);
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ß³ï¿½Êµï¿½ï¿½
+    static RFMySQLThread *Create();
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ß³ï¿½ï¿½ï¿½Ô´
+    static void Release(RFMySQLThread *&pThread);
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½ï¿½ï¿½
+    static int Connect(EventArg *pArg);
+    // ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½ï¿½ï¿½
+    static int ReConnect(EventArg *pArg);
+    // ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½Ã»ï¿½ï¿½ï¿½Â¼
+    static int Login(EventArg *pArg);
 
-	static int Load(EventArg* pArg);
-	static int Save(EventArg* pArg);
-	static int Add(EventArg* pArg);
-	static int AddMultiPatients(EventArg* pArg);
-	static int Delete(EventArg* pArg);
-	static int NextPatientID(EventArg* pArg);
+    static int Load(EventArg *pArg);
+    static int Save(EventArg *pArg);
+    static int Add(EventArg *pArg);
+    static int AddMultiPatients(EventArg *pArg);
+    static int Delete(EventArg *pArg);
+    static int NextPatientID(EventArg *pArg);
 
-	static int ModifyPWD(EventArg* pArg);
-	static int SaveDoctor(EventArg* pArg);
+    static int ModifyPWD(EventArg *pArg);
+    static int SaveDoctor(EventArg *pArg);
 
-	static int SearchPatient(EventArg* pArg);
-	static int FilterPatient(EventArg* pArg);
-	static int ExportPatient(EventArg* pArg);
+    static int SearchPatient(EventArg *pArg);
+    static int FilterPatient(EventArg *pArg);
+    static int ExportPatient(EventArg *pArg);
 
-	static int AddPatientTrainDetails(EventArg* pArg);
-	static int LoadPatientTrainInfo(EventArg* pArg);
-	static int LoadPatientTrainDetails(EventArg* pArg);
-	static int LoadPassiveTrainInfo(EventArg* pArg);
-	// ½«±»¶¯Ä£Ê½ÖÐÂ¼ÖÆµÄÊý¾ÝÌí¼Óµ½Êý¾Ý¿âÖÐ
-	static int AddPassiveTrainInfo(EventArg* pArg);
-	static int DeletePassiveTrainInfo(EventArg *pArg);
-	static int LoadPatientTrainData(EventArg* pArg);
+    static int AddPatientTrainDetails(EventArg *pArg);
+    static int LoadPatientTrainInfo(EventArg *pArg);
+    static int LoadPatientTrainDetails(EventArg *pArg);
+    static int LoadPassiveTrainInfo(EventArg *pArg);
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä£Ê½ï¿½ï¿½Â¼ï¿½Æµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Óµï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½
+    static int AddPassiveTrainInfo(EventArg *pArg);
+    static int DeletePassiveTrainInfo(EventArg *pArg);
+    static int LoadPatientTrainData(EventArg *pArg);
 
-	static void LoadEvaluationRecords(int id, std::list<EvaluationRecordData>& datas);
-	static int LoadEvaluationDatas(EventArg* pArg);
-	static int AddEvaluationData(EventArg* pArg);
+    static void LoadEvaluationRecords(int id, std::list<EvaluationRecordData> &datas);
+    static int LoadEvaluationDatas(EventArg *pArg);
+    static int AddEvaluationData(EventArg *pArg);
 
-	static int TTSSample(EventArg* pArg);
+    static int TTSSample(EventArg *pArg);
 
-	PatientFilterParam m_patientFilter;
+    PatientFilterParam m_patientFilter;
 };

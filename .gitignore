@@ -2,3 +2,4 @@ build
 *.wav
 *.sql
 *.cfg
+.vscode/
