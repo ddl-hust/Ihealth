@@ -23,7 +23,7 @@ public:
 	bool OnSelectNow(void *pParam);
 	bool OnReMofidyPwd(void *pParam);
 	bool OnCancelClose(void *pParam);
-	// ±»¶¯ÔË¶¯Â¼ÖÆÍê³Éºó£¬µã»÷È·¶¨ºóµÄÏìÓ¦º¯Êý
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ë¶ï¿½Â¼ï¿½ï¿½ï¿½ï¿½Éºó£¬µï¿½ï¿½È·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½
 	bool OnOKClose(void *pParam);
 
 	bool OnEyeModeCancelClose(void *pParam);
@@ -36,7 +36,7 @@ public:
 	bool OnEyeModeJian(void *pParam);
 	bool OnEyeModeJia(void *pParam);
 
-	// ±»¶¯ÔË¶¯¿ªÊ¼Â¼ÖÆµÄÏìÓ¦º¯Êý
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ë¶ï¿½ï¿½ï¿½Ê¼Â¼ï¿½Æµï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½
 	bool OnRecordPasvTrain(void *pParam);
 	bool OnBiaoding(void *pParam);
 

@@ -9,16 +9,16 @@
 
 #define WM_EMG_DATA_SAMPLE_MSG 2050
 
-#define RF_TRAIN_TYPE_ZD _T("Ö÷¶¯ÑµÁ·")
-#define RF_TRAIN_TYPE_BD _T("±»¶¯ÑµÁ·")
-#define RF_TRAIN_TYPE_YD _T("ÑÛ¶¯ÑµÁ·")
+#define RF_TRAIN_TYPE_ZD _T("ï¿½ï¿½ï¿½ï¿½Ñµï¿½ï¿½")
+#define RF_TRAIN_TYPE_BD _T("ï¿½ï¿½ï¿½ï¿½Ñµï¿½ï¿½")
+#define RF_TRAIN_TYPE_YD _T("ï¿½Û¶ï¿½Ñµï¿½ï¿½")
 #define RF_TRAIN_TYPE_EMG _T("EMG")
 
-#define RF_GAME_NAME_PLANE_CHUJI _T("·É»ú´óÕ½³õ¼¶")
-#define RF_GAME_NAME_PLANE_ZHONGJI _T("·É»ú´óÕ½ÖÐ¼¶")
-#define RF_GAME_NAME_PLANE_GAOJI _T("·É»ú´óÕ½¸ß¼¶")
-#define RF_GAME_NAME_CLEAN_WINDOW _T("²Á´°»§")
-#define RF_GAME_NAME_FRY_EGG _T("¼å¼¦µ°")
+#define RF_GAME_NAME_PLANE_CHUJI _T("ï¿½É»ï¿½ï¿½ï¿½Õ½ï¿½ï¿½ï¿½ï¿½")
+#define RF_GAME_NAME_PLANE_ZHONGJI _T("ï¿½É»ï¿½ï¿½ï¿½Õ½ï¿½Ð¼ï¿½")
+#define RF_GAME_NAME_PLANE_GAOJI _T("ï¿½É»ï¿½ï¿½ï¿½Õ½ï¿½ß¼ï¿½")
+#define RF_GAME_NAME_CLEAN_WINDOW _T("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½")
+#define RF_GAME_NAME_FRY_EGG _T("ï¿½å¼¦ï¿½ï¿½")
 
 #define RF_DESIGN_WINDOW_WIDTH 1200
 #define RF_DESIGN_WINDOW_HEIGHT 675
@@ -29,378 +29,377 @@
 class RFMainWindow : public CWindowWnd, public INotifyUI, public IMessageFilterUI, public IDialogBuilderCallback
 {
 public:
-	RFMainWindow();
-	~RFMainWindow();
-	LPCTSTR GetWindowClassName() const;
-	UINT GetClassStyle() const;
+    RFMainWindow();
+    ~RFMainWindow();
+    LPCTSTR GetWindowClassName() const;
+    UINT GetClassStyle() const;
 
-	void OnFinalMessage(HWND /*hWnd*/);
-	CControlUI* CreateControl(LPCTSTR pstrClass);
+    void OnFinalMessage(HWND /*hWnd*/);
+    CControlUI *CreateControl(LPCTSTR pstrClass);
 
-	// ³õÊ¼»¯º¯Êý£¬Ö÷Òª½øÐÐUIºÍÊý¾Ý¿âµÄ³õÊ¼»¯
-	void Init();
-	void Closing();
-	void OnPrepare();
-	void Notify(TNotifyUI& msg);
+    // ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½UIï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½Ä³ï¿½Ê¼ï¿½ï¿½
+    void Init();
+    void Closing();
+    void OnPrepare();
+    void Notify(TNotifyUI &msg);
 
-	void BindSelectPatientPageEvent();
-	void BindManagerPatientPageEvent();
+    void BindSelectPatientPageEvent();
+    void BindManagerPatientPageEvent();
 
-	LRESULT OnCommunicate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
-	// µã»÷Êó±ê×ó¼üµÄÏìÓ¦º¯Êý£¬ÔÚÕâÀï´¦ÀíÁËÑ¡Ôñ»¼ÕßµÄ¹¦ÄÜ
-	LRESULT OnAppClick(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
-	LRESULT OnDuiCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
-	LRESULT OnClose(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
-	LRESULT OnDestroy(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
-	LRESULT OnNcActivate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
-	LRESULT OnNcCalcSize(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
-	LRESULT OnNcPaint(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
-	LRESULT OnNcHitTest(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
-	LRESULT OnSize(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
-	LRESULT OnGetMinMaxInfo(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
-	LRESULT OnSysCommand(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
-	LRESULT OnKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
-	LRESULT OnMenuClick(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
-	LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);	
-	LRESULT MessageHandler(UINT uMsg, WPARAM wParam, LPARAM lParam, bool& bHandled);
-	LRESULT OnEmgSampleData(UINT uMsg, WPARAM wParam, LPARAM lParam);
-	LRESULT OnTorqueError(UINT uMsg, WPARAM wParam, LPARAM lParam);
-	LRESULT OnPullForceError(UINT uMsg, WPARAM wParam, LPARAM lParam);
+    LRESULT OnCommunicate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï´¦ï¿½ï¿½ï¿½ï¿½Ñ¡ï¿½ï¿½ï¿½ßµÄ¹ï¿½ï¿½ï¿½
+    LRESULT OnAppClick(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
+    LRESULT OnDuiCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
+    LRESULT OnClose(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
+    LRESULT OnDestroy(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
+    LRESULT OnNcActivate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
+    LRESULT OnNcCalcSize(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
+    LRESULT OnNcPaint(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
+    LRESULT OnNcHitTest(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
+    LRESULT OnSize(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
+    LRESULT OnGetMinMaxInfo(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
+    LRESULT OnSysCommand(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
+    LRESULT OnKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
+    LRESULT OnMenuClick(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
+    LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
+    LRESULT MessageHandler(UINT uMsg, WPARAM wParam, LPARAM lParam, bool &bHandled);
+    LRESULT OnEmgSampleData(UINT uMsg, WPARAM wParam, LPARAM lParam);
+    LRESULT OnTorqueError(UINT uMsg, WPARAM wParam, LPARAM lParam);
+    LRESULT OnPullForceError(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 public:
-	bool		OnLogin(void *pParam);
+    bool OnLogin(void *pParam);
 
-	static int	OnLoginOK(EventArg *pArg);
-	static int	OnConnectOK(EventArg *pArg);
-	static int	OnConnectFail(EventArg *pArg);
+    static int OnLoginOK(EventArg *pArg);
+    static int OnConnectOK(EventArg *pArg);
+    static int OnConnectFail(EventArg *pArg);
 
-	bool		OnGame4NanduSetingMenu(void *pParam);
+    bool OnGame4NanduSetingMenu(void *pParam);
 
-	bool		OnPersonerCenterMenu(void *pParam);
-	bool		OnEntry(void *pParam);
-	bool		OnSelectPatient(void *pParam);
-	bool		OnManagerPatient(void *pParam);
-	bool		OnPatientTrain(void *pParam);
-	bool		OnPatientTrainFromActiveTrain(void *pParam);
-	bool		OnPatientTrainFromPassiveTrain(void *pParam);
-	bool		OnPatientTrainMessage(void *pParam);
-	bool		OnPatientTrainDetail(void *pParam);
-	bool		OnPassessment(void *pParam);
-	bool		OnAbout(void *pParam);
-	bool		OnEvaluation1(void *pParam);
-	bool		OnEvaluation2(void *pParam);
-	bool		OnEvaluation3(void *pParam);
+    bool OnPersonerCenterMenu(void *pParam);
+    bool OnEntry(void *pParam);
+    bool OnSelectPatient(void *pParam);
+    bool OnManagerPatient(void *pParam);
+    bool OnPatientTrain(void *pParam);
+    bool OnPatientTrainFromActiveTrain(void *pParam);
+    bool OnPatientTrainFromPassiveTrain(void *pParam);
+    bool OnPatientTrainMessage(void *pParam);
+    bool OnPatientTrainDetail(void *pParam);
+    bool OnPassessment(void *pParam);
+    bool OnAbout(void *pParam);
+    bool OnEvaluation1(void *pParam);
+    bool OnEvaluation2(void *pParam);
+    bool OnEvaluation3(void *pParam);
 
-	bool		OnPatientTrainFromEyeMode(void *pParam);
+    bool OnPatientTrainFromEyeMode(void *pParam);
 
-	bool		OnChangePersonInfoPage(void *pParam);
-	bool		OnChangePasswordPage(void *pParam);
-
-
-	bool		OnPrevPage(void *pParam);
-	bool		OnPage1(void *pParam);
-	bool		OnPage2(void *pParam);
-	bool		OnPage3(void *pParam);
-	bool		OnPage4(void *pParam);
-	bool		OnNextPage(void *pParam);
-	bool		OnReturnMainPage(void *pParam);
-	// ´ÓÏµÍ³ÉèÖÃ·µ»ØµÄÏìÓ¦º¯Êý
-	bool		OnSystemSetReturn(void *pParam);
-	bool		OnSearch(void *pParam);
-	
-	bool		OnEVLastPage(void* pParam);
-	bool		OnEVPage1(void *pParam);
-	bool		OnEVPage2(void *pParam);
-	bool		OnEVPage3(void *pParam);
-	bool		OnEVPage4(void *pParam);
-	bool		OnEVNextPage(void *pParam);
-	bool		OnReturnEvaluationPage(void* pParam);
-	bool		OnReturnEvaluationHistoryPage(void *pParam);
-	bool		OnEVAdd(void *pParam);
-	bool		OnEVAddPrev(void *pParam);
-	bool		OnEVAddSubmit(void *pParam);
-	bool		OnEVAddNext(void *pParam);
-	void		ShowEVDetail(std::wstring evid);
-	bool		OnEVDLastPage(void* pParam);
-	bool		OnEVDPage1(void *pParam);
-	bool		OnEVDPage2(void *pParam);
-	bool		OnEVDPage3(void *pParam);
-	bool		OnEVDPage4(void *pParam);
-	bool		OnEVDNextPage(void *pParam);
-	bool		OnEVStart(void *pParam);
-	bool		OnEVStop(void *pParam);
-	bool		OnEVBegin1(void *pParam);
-	bool		OnEVBegin2(void *pParam);
-
-	bool		OnManagerPrevPage(void *pParam);
-	bool		OnManagerPage1(void *pParam);
-	bool		OnManagerPage2(void *pParam);
-	bool		OnManagerPage3(void *pParam);
-	bool		OnManagerPage4(void *pParam);
-	bool		OnManagerNextPage(void *pParam);
-	bool		OnManagerSearch(void *pParam);
-	bool		OnManagerPatientAdd(void *pParam);
-
-	bool		OnPatientTrainInfoPrevPage(void *pParam);
-	bool		OnPatientTrainInfoPage1(void *pParam);
-	bool		OnPatientTrainInfoPage2(void *pParam);
-	bool		OnPatientTrainInfoPage3(void *pParam);
-	bool		OnPatientTrainInfoPage4(void *pParam);
-	bool		OnPatientTrainInfoNextPage(void *pParam);
-	bool		OnPatientTrainSearch(void *pParam);
-
-	bool		OnPatientTrainDetailSearch(void *pParam);
-	bool		OnPatientTrainDetailPrevPage(void *pParam);
-	bool		OnPatientTrainDetailPage1(void *pParam);
-	bool		OnPatientTrainDetailPage2(void *pParam);
-	bool		OnPatientTrainDetailPage3(void *pParam);
-	bool		OnPatientTrainDetailPage4(void *pParam);
-	bool		OnPatientTrainDetailNextPage(void *pParam);
-
-	bool		OnDetailPageDelete(void *pParam);
-	bool		OnDetailPageEdit(void *pParam);
-	bool		OnSavePatient(void *pParam);
-	bool		OnSavePersonInfo(void *pParam);
-	bool		OnAddSavePatient(void *pParam);
-	bool		OnModifyPwdInfo(void *pParam);
-	bool		OnFilter(void *pParam);
-	bool		OnExportFilterPatient(void *pParam);
-	bool		OnImportPatient(void *pParam);
-	bool		OnExportFilterPatientDetail(void *pParam);
-	bool		OnTrainInfoExport(void *pParam);
-	bool		OnTrainDetailExport(void *pParam);
-
-	bool		OnActiveTrain(void *pParam);
-	bool		OnActiveTrainFromGame(void* pParam);
-	bool		OnPassiveTrain(void *pParam);
-	bool		OnPassiveTrainPlay(void *pParam);
-	bool		OnPassiveTrainPlayNext(void *pParam);
-	bool		OnPassiveTrainPlayPrev(void *pParam);
-	bool		OnPassiveTrainRecover(void *pParam);
-	bool		OnPassiveTrainPlayByOrder(void *pParam);
-	bool		OnPassiveTrainPlayByAuto(void *pParam);
-	bool		OnPassiveTrainVolumeSet(void *pParam);
-	bool		OnAddAction(void *pParam);
-	bool		OnBDAddActionToPlayList(void *pParam);
-	bool        OnBDDeleteAction(void *pParam);
-
-	bool		OnZDGGJDChart(void *pParam);
-	bool		OnZDWLChart(void *pParam);
-	bool		OnBDZGJChart(void *pParam);
-	bool		OnBDJGJChart(void *pParam);
-	bool		OnEMGChart(void *pParam);
-	bool		OnEMGYDJDChart(void *pParam);	
-	bool		OnTrainDataExport(void *pParam);
-
-	bool		OnEyeModeSetting(void *pParam);
-	bool		OnEyeModeTrainPage(void *pParam);
-	bool		OnEyeModeStartStop(void *pParam);
-	bool		OnEyeModeRecovery(void *pParam);
-	bool		OnEMGModeTrainPage(void *pParam);
-	
-	bool		OnEMGModeStart(void *pParam);
-	bool		OnEMGModeRecovery(void *pParam);
-	// ½øÈë´ò·É»úÓÎÏ·Ò³Ãæ
-	bool		OnActiveGamePlaneBattle(void *pParam);
-	// ½øÈë²Á²£Á§ÓÎÏ·Ò³Ãæ
-	bool		OnActiveGameCleanWindow(void *pParam);
-	// ½øÈë¶ÑÄ¾Í·ÓÎÏ·Ò³Ãæ
-	bool		OnActiveGameFryEgg(void *pParam);
-	bool		OnGame4(void *pParam);
-	bool		OnGame3(void *pParam);
-	bool		OnGame2(void *pParam);
-	bool		OnGame4Start(void *pParam);
-	bool		OnGame4Recovery(void *pParam);
-	bool		OnMusicItemDelete(void *pParam);
-	bool        OnGripStrengthClicked(void *pParam);
-
-	static int	OnSearchOK(EventArg *pArg);
-	static int  OnFilterOK(EventArg* pArg);
-
-	void		ShowLoginPage();
-	void		ShowLoginSuccessPage();
-	void		ShowMainPage();
-	void		ShowSelectPatientPage();
-	void		ShowManagerPatientPage();
-	void		ShowTrainPage();
-	void		ShowActiveTrainPage();
-	// ½«Ò³Ãæ×ªµ½±»¶¯ÑµÁ·µÄÖ÷Ò³Ãæ£¬ÔÚÕâ¸ö¹ý³ÌÖÐÐèÒªË¢ÐÂµ±Ç°Õ¹Ê¾µÄ¶¯×÷ÁÐ±í¡£
-	void		ShowPassiveTrainPage();
-	void		ShowPatientDetail(int page, int index);
-	void		ShowPatientEdit(int page, int index);
-	void		ShowPatientEdit(int patientid);
-	void		ShowPatientAdd(std::wstring patientid);
-	void		ShowAboutPage();
-	void		ShowPersonorPage();
-	// ½«Ò³Ãæ×ªµ½ÏµÍ³ÉèÖÃÒ³Ãæ
-	void		ShowSetSystemPage();
-	void		ShowPatientTrainInformation();
-	void		ShowPatientTrainDetail(std::wstring patientid);
-	void		ShowEyeModeTrainPage();
-	void		ShowEmgModeTrainPage();
-	void		ShowTrainDataChartPage(int id);
-	// Õ¹Ê¾ÓÎÏ·Ò³Ãæ£¬×¢Òâ£¬ËùÓÐµÄÓÎÏ·¶¼ÊÇÔÚÕâ¸öÒ³Ãæ½øÐÐµÄ¡£
-	void		ShowActiveGameWebkit();
-	void		ShowEvaluationPage();
-	void		ShowEvaluationHistoryPage();
-	void		ShowEvaluationAddPage();
-	void		ShowEvaluationYDGNAddPage();
-	void		ShowEvaluationDetailPage();
-	void		ShowEvaluationYDGNDetailPage();
-	
-	
-	void		DeletePatient(int patientid);
-
-	void		UpdatePageNumber(int page);
-	void		UpdatePatientPage(std::list<PatientInfo>& patients);
-
-	void		UpdateManagePageNumber(int page);
-	void		UpdateManagePatientPage(std::list<PatientInfo>& patients);
-	void		UpdatePersonInfo();
-	LoginInfo	GetPersonInfo();
-
-	void		UpdateEvaluationScore(std::wstring score);
-	void		UpdateEvaluationNumber(int page);
-	void		UpdateEvaluationPage(std::list<EvaluationData> datas);
-
-	void		UpdateEvaluationDetailScore(std::wstring score);
-	void		UpdateEvaluationDetailNumber(int page);
-	void		UpdateEvaluationDetailPage(std::list<EvaluationRecordData> datas);
-
-	void		SaveEVAnserToDB();
-	bool		UpdateEVAnswerToData();
-	void		UpdateEVAnswerToUI();
-	void		UpdateEVIndex();
-	void		UpdateEVQuestion();
-	void		UpdateEVAnswer();
-
-	void		UpdateTrainInfoPageNumber(int page);
-	void		UpdateTrainInfoPage(std::list<PatientTrainInfo> trains);
-
-	void		UpdateTrainDetailPage(const PatientTrainInfo& train);
-	void		UpdateTrainDetailPageNumber(int page);
-	void		UpdateTrainDetailPage( std::list<PatientTrainDetails>& details);
-
-	void		UpdateZDChart(const PatientTrainDetails& trainDetails);
-	void		UpdateZDGJJDWaveData(std::list<LineWaveData>& trainDatas);
-	void		UpdateZDGJJDWaveXNum(double fStart);
-	void		UpdateZDWLWaveData(std::list<LineWaveData>& trainDatas);
-	void		UpdateZDWLWaveXNum(double fStart);
-
-	void		UpdateBDChart(const PatientTrainDetails& trainDetails);
-	void		UpdateJGJWaveData(std::list<LineWaveData>& trainDatas);
-	void		UpdateJGJWaveXNum(double fStart);
-	void		UpdateZGJWaveData(std::list<LineWaveData>& trainDatas);
-	void		UpdateZGJWaveXNum(double fStart);
-
-	void		UpdateYDChart(const PatientTrainDetails& trainDetails);
-	void		UpdateYDGJJDWaveData(std::list<LineWaveData>& trainDatas);
-	void		UpdateYDGJJDWaveXNum(double fStart);
-
-	void		UpdateEMGChart(const PatientTrainDetails& trainDetails);
-	void		UpdateEMGWaveData(std::list<LineWaveData>& trainDatas);
-	void		UpdateEMGWaveXNum(double fStart);
-	void		UpdateEMGGJYDWaveData(std::list<LineWaveData>& trainDatas);
-	void		UpdateEMGGJYDWaveXNum(double fStart);
-	void		SaveEMGTrainData();
-
-	void		SetPassiveTrainProgress(int time, int total, bool playing);
-	void		AddPassiveTrainItem(CListUI* pList, const PassiveTrainInfo& train);
-	void		UpdateMusicList(CListUI* pList);
-	
-	void		StartEyeModeGameDetect();
-	void		StopEyeModeGameDetect();
-	void		SaveEyeModeDetectData();
-
-	void		StartActiveGameDetect();
-	void		StopActiveGameDetect();
-	void		SaveActiveGameDetectData();
-	void		StartGameRecord();
-	void		StopGameRecord();
-
-	void		StartEVDetect();
-	void		StopEVDetect();
-	void		SaveEVDataToDB();
+    bool OnChangePersonInfoPage(void *pParam);
+    bool OnChangePasswordPage(void *pParam);
 
 
-	CPaintManagerUI m_pm;
-	static RFMySQLThread*	DBThread;
-	static CUIThread*		UIThread;
-	static RFMainWindow*	MainWindow;
+    bool OnPrevPage(void *pParam);
+    bool OnPage1(void *pParam);
+    bool OnPage2(void *pParam);
+    bool OnPage3(void *pParam);
+    bool OnPage4(void *pParam);
+    bool OnNextPage(void *pParam);
+    bool OnReturnMainPage(void *pParam);
+    // ï¿½ï¿½ÏµÍ³ï¿½ï¿½ï¿½Ã·ï¿½ï¿½Øµï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½
+    bool OnSystemSetReturn(void *pParam);
+    bool OnSearch(void *pParam);
 
-	CLabelUI*				m_welcom;
-	CVerticalLayoutUI*		m_login_page;
-	CContainerUI*			m_login_input_page;
-	CContainerUI*			m_login_success_page;
-	CVerticalLayoutUI*		m_main_page;
-	CHorizontalLayoutUI*	m_patient_select_page;
-	CHorizontalLayoutUI*	m_patient_manager_page;
-	CHorizontalLayoutUI*	m_patient_detail_page;
-	CHorizontalLayoutUI*	m_patient_edit_page;
-	CHorizontalLayoutUI*	m_patient_add_page;
-	CHorizontalLayoutUI*	m_about_page;
-	CHorizontalLayoutUI*	m_personor_info_edit_page;
-	CHorizontalLayoutUI*	m_systemset_info_edit_page;
-	CHorizontalLayoutUI*	m_train_main_page;
-	CHorizontalLayoutUI*	m_active_train_page;
-	CHorizontalLayoutUI*	m_patient_train_info;
-	CHorizontalLayoutUI*	m_patient_train_detail;
-	CHorizontalLayoutUI*	m_passive_train_page;
-	CHorizontalLayoutUI*	m_eyemode_page;
-	CHorizontalLayoutUI*	m_emgmode_page;
-	CHorizontalLayoutUI*	m_traindetail_chart;
-	CHorizontalLayoutUI*	m_active_train_game4_page;
-	CHorizontalLayoutUI*	m_evaluation_page;
-	CHorizontalLayoutUI*	m_evaluation_history_page;
-	CHorizontalLayoutUI*	m_evaluation_add_page;
-	CHorizontalLayoutUI*	m_evaluation_detail_page;
-	CHorizontalLayoutUI*	m_evaluation_ydgn_add_page;
-	CHorizontalLayoutUI*	m_evaluation_ydgn_detail_page;
+    bool OnEVLastPage(void *pParam);
+    bool OnEVPage1(void *pParam);
+    bool OnEVPage2(void *pParam);
+    bool OnEVPage3(void *pParam);
+    bool OnEVPage4(void *pParam);
+    bool OnEVNextPage(void *pParam);
+    bool OnReturnEvaluationPage(void *pParam);
+    bool OnReturnEvaluationHistoryPage(void *pParam);
+    bool OnEVAdd(void *pParam);
+    bool OnEVAddPrev(void *pParam);
+    bool OnEVAddSubmit(void *pParam);
+    bool OnEVAddNext(void *pParam);
+    void ShowEVDetail(std::wstring evid);
+    bool OnEVDLastPage(void *pParam);
+    bool OnEVDPage1(void *pParam);
+    bool OnEVDPage2(void *pParam);
+    bool OnEVDPage3(void *pParam);
+    bool OnEVDPage4(void *pParam);
+    bool OnEVDNextPage(void *pParam);
+    bool OnEVStart(void *pParam);
+    bool OnEVStop(void *pParam);
+    bool OnEVBegin1(void *pParam);
+    bool OnEVBegin2(void *pParam);
 
-	CHorizontalLayoutUI*	m_manager_patient_header;
-	CHorizontalLayoutUI*	m_manager_patient_filterheader;
+    bool OnManagerPrevPage(void *pParam);
+    bool OnManagerPage1(void *pParam);
+    bool OnManagerPage2(void *pParam);
+    bool OnManagerPage3(void *pParam);
+    bool OnManagerPage4(void *pParam);
+    bool OnManagerNextPage(void *pParam);
+    bool OnManagerSearch(void *pParam);
+    bool OnManagerPatientAdd(void *pParam);
 
-	CButtonUI*				m_welcom_menu;
-	CButtonUI*				m_main_tip;
-	bool					m_mysql_connected;
+    bool OnPatientTrainInfoPrevPage(void *pParam);
+    bool OnPatientTrainInfoPage1(void *pParam);
+    bool OnPatientTrainInfoPage2(void *pParam);
+    bool OnPatientTrainInfoPage3(void *pParam);
+    bool OnPatientTrainInfoPage4(void *pParam);
+    bool OnPatientTrainInfoNextPage(void *pParam);
+    bool OnPatientTrainSearch(void *pParam);
 
-	LoginInfo				m_login_info;
-	PatientInfo				m_current_patient;
-	std::wstring			m_current_patient_id_detail;
+    bool OnPatientTrainDetailSearch(void *pParam);
+    bool OnPatientTrainDetailPrevPage(void *pParam);
+    bool OnPatientTrainDetailPage1(void *pParam);
+    bool OnPatientTrainDetailPage2(void *pParam);
+    bool OnPatientTrainDetailPage3(void *pParam);
+    bool OnPatientTrainDetailPage4(void *pParam);
+    bool OnPatientTrainDetailNextPage(void *pParam);
 
-	RFPassiveTrainAction			m_passive_train_action;
-	std::map<int, MEDIA>			m_id_media;
-	std::map<int, MEDIA>			m_id_passivetrainitem;
-	std::map<int, MEDIA>			m_delete_id_passivetrainitem;
-	std::list<MEDIA>				m_current_passivetraininfos;
+    bool OnDetailPageDelete(void *pParam);
+    bool OnDetailPageEdit(void *pParam);
+    bool OnSavePatient(void *pParam);
+    bool OnSavePersonInfo(void *pParam);
+    bool OnAddSavePatient(void *pParam);
+    bool OnModifyPwdInfo(void *pParam);
+    bool OnFilter(void *pParam);
+    bool OnExportFilterPatient(void *pParam);
+    bool OnImportPatient(void *pParam);
+    bool OnExportFilterPatientDetail(void *pParam);
+    bool OnTrainInfoExport(void *pParam);
+    bool OnTrainDetailExport(void *pParam);
 
-	std::wstring					m_current_chart;
+    bool OnActiveTrain(void *pParam);
+    bool OnActiveTrainFromGame(void *pParam);
+    bool OnPassiveTrain(void *pParam);
+    bool OnPassiveTrainPlay(void *pParam);
+    bool OnPassiveTrainPlayNext(void *pParam);
+    bool OnPassiveTrainPlayPrev(void *pParam);
+    bool OnPassiveTrainRecover(void *pParam);
+    bool OnPassiveTrainPlayByOrder(void *pParam);
+    bool OnPassiveTrainPlayByAuto(void *pParam);
+    bool OnPassiveTrainVolumeSet(void *pParam);
+    bool OnAddAction(void *pParam);
+    bool OnBDAddActionToPlayList(void *pParam);
+    bool OnBDDeleteAction(void *pParam);
 
-	UINT_PTR						m_emgmode_timer;
+    bool OnZDGGJDChart(void *pParam);
+    bool OnZDWLChart(void *pParam);
+    bool OnBDZGJChart(void *pParam);
+    bool OnBDJGJChart(void *pParam);
+    bool OnEMGChart(void *pParam);
+    bool OnEMGYDJDChart(void *pParam);
+    bool OnTrainDataExport(void *pParam);
 
-	time_t							m_emg_createtime;
-	DWORD							m_emgmode_tracetime;
-	std::vector<double>				m_emgmode_data[4];
-	std::vector<double>				m_emgmode_ydjd[2];
+    bool OnEyeModeSetting(void *pParam);
+    bool OnEyeModeTrainPage(void *pParam);
+    bool OnEyeModeStartStop(void *pParam);
+    bool OnEyeModeRecovery(void *pParam);
+    bool OnEMGModeTrainPage(void *pParam);
 
-	RFRobotEventControl				m_robotEvent;
-	Robot							m_robot;
+    bool OnEMGModeStart(void *pParam);
+    bool OnEMGModeRecovery(void *pParam);
+    // ï¿½ï¿½ï¿½ï¿½ï¿½É»ï¿½ï¿½ï¿½Ï·Ò³ï¿½ï¿½
+    bool OnActiveGamePlaneBattle(void *pParam);
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï·Ò³ï¿½ï¿½
+    bool OnActiveGameCleanWindow(void *pParam);
+    // ï¿½ï¿½ï¿½ï¿½ï¿½Ä¾Í·ï¿½ï¿½Ï·Ò³ï¿½ï¿½
+    bool OnActiveGameFryEgg(void *pParam);
+    bool OnGame4(void *pParam);
+    bool OnGame3(void *pParam);
+    bool OnGame2(void *pParam);
+    bool OnGame4Start(void *pParam);
+    bool OnGame4Recovery(void *pParam);
+    bool OnMusicItemDelete(void *pParam);
+    bool OnGripStrengthClicked(void *pParam);
 
-	RFMAS							m_mas;
-	RFFMA							m_fma;
-	int								m_evalution_type;
-	EvaluationYDGN					m_evydgn;
-	// ÎÕÁ¦´«¸ÐÆ÷ÊÇ·ñÊ¹ÄÜ
-	bool m_grip_strength_enable = true;
+    static int OnSearchOK(EventArg *pArg);
+    static int OnFilterOK(EventArg *pArg);
+
+    void ShowLoginPage();
+    void ShowLoginSuccessPage();
+    void ShowMainPage();
+    void ShowSelectPatientPage();
+    void ShowManagerPatientPage();
+    void ShowTrainPage();
+    void ShowActiveTrainPage();
+    // ï¿½ï¿½Ò³ï¿½ï¿½×ªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò³ï¿½æ£¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÒªË¢ï¿½Âµï¿½Ç°Õ¹Ê¾ï¿½Ä¶ï¿½ï¿½ï¿½ï¿½Ð±ï¿½ï¿½ï¿½
+    void ShowPassiveTrainPage();
+    void ShowPatientDetail(int page, int index);
+    void ShowPatientEdit(int page, int index);
+    void ShowPatientEdit(int patientid);
+    void ShowPatientAdd(std::wstring patientid);
+    void ShowAboutPage();
+    void ShowPersonorPage();
+    // ï¿½ï¿½Ò³ï¿½ï¿½×ªï¿½ï¿½ÏµÍ³ï¿½ï¿½ï¿½ï¿½Ò³ï¿½ï¿½
+    void ShowSetSystemPage();
+    void ShowPatientTrainInformation();
+    void ShowPatientTrainDetail(std::wstring patientid);
+    void ShowEyeModeTrainPage();
+    void ShowEmgModeTrainPage();
+    void ShowTrainDataChartPage(int id);
+    // Õ¹Ê¾ï¿½ï¿½Ï·Ò³ï¿½æ£¬×¢ï¿½â£¬ï¿½ï¿½ï¿½Ðµï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò³ï¿½ï¿½ï¿½ï¿½ÐµÄ¡ï¿½
+    void ShowActiveGameWebkit();
+    void ShowEvaluationPage();
+    void ShowEvaluationHistoryPage();
+    void ShowEvaluationAddPage();
+    void ShowEvaluationYDGNAddPage();
+    void ShowEvaluationDetailPage();
+    void ShowEvaluationYDGNDetailPage();
+
+
+    void DeletePatient(int patientid);
+
+    void UpdatePageNumber(int page);
+    void UpdatePatientPage(std::list<PatientInfo> &patients);
+
+    void UpdateManagePageNumber(int page);
+    void UpdateManagePatientPage(std::list<PatientInfo> &patients);
+    void UpdatePersonInfo();
+    LoginInfo GetPersonInfo();
+
+    void UpdateEvaluationScore(std::wstring score);
+    void UpdateEvaluationNumber(int page);
+    void UpdateEvaluationPage(std::list<EvaluationData> datas);
+
+    void UpdateEvaluationDetailScore(std::wstring score);
+    void UpdateEvaluationDetailNumber(int page);
+    void UpdateEvaluationDetailPage(std::list<EvaluationRecordData> datas);
+
+    void SaveEVAnserToDB();
+    bool UpdateEVAnswerToData();
+    void UpdateEVAnswerToUI();
+    void UpdateEVIndex();
+    void UpdateEVQuestion();
+    void UpdateEVAnswer();
+
+    void UpdateTrainInfoPageNumber(int page);
+    void UpdateTrainInfoPage(std::list<PatientTrainInfo> trains);
+
+    void UpdateTrainDetailPage(const PatientTrainInfo &train);
+    void UpdateTrainDetailPageNumber(int page);
+    void UpdateTrainDetailPage(std::list<PatientTrainDetails> &details);
+
+    void UpdateZDChart(const PatientTrainDetails &trainDetails);
+    void UpdateZDGJJDWaveData(std::list<LineWaveData> &trainDatas);
+    void UpdateZDGJJDWaveXNum(double fStart);
+    void UpdateZDWLWaveData(std::list<LineWaveData> &trainDatas);
+    void UpdateZDWLWaveXNum(double fStart);
+
+    void UpdateBDChart(const PatientTrainDetails &trainDetails);
+    void UpdateJGJWaveData(std::list<LineWaveData> &trainDatas);
+    void UpdateJGJWaveXNum(double fStart);
+    void UpdateZGJWaveData(std::list<LineWaveData> &trainDatas);
+    void UpdateZGJWaveXNum(double fStart);
+
+    void UpdateYDChart(const PatientTrainDetails &trainDetails);
+    void UpdateYDGJJDWaveData(std::list<LineWaveData> &trainDatas);
+    void UpdateYDGJJDWaveXNum(double fStart);
+
+    void UpdateEMGChart(const PatientTrainDetails &trainDetails);
+    void UpdateEMGWaveData(std::list<LineWaveData> &trainDatas);
+    void UpdateEMGWaveXNum(double fStart);
+    void UpdateEMGGJYDWaveData(std::list<LineWaveData> &trainDatas);
+    void UpdateEMGGJYDWaveXNum(double fStart);
+    void SaveEMGTrainData();
+
+    void SetPassiveTrainProgress(int time, int total, bool playing);
+    void AddPassiveTrainItem(CListUI *pList, const PassiveTrainInfo &train);
+    void UpdateMusicList(CListUI *pList);
+
+    void StartEyeModeGameDetect();
+    void StopEyeModeGameDetect();
+    void SaveEyeModeDetectData();
+
+    void StartActiveGameDetect();
+    void StopActiveGameDetect();
+    void SaveActiveGameDetectData();
+    void StartGameRecord();
+    void StopGameRecord();
+
+    void StartEVDetect();
+    void StopEVDetect();
+    void SaveEVDataToDB();
+
+
+    CPaintManagerUI m_pm;
+    static RFMySQLThread *DBThread;
+    static CUIThread *UIThread;
+    static RFMainWindow *MainWindow;
+
+    CLabelUI *m_welcom;
+    CVerticalLayoutUI *m_login_page;
+    CContainerUI *m_login_input_page;
+    CContainerUI *m_login_success_page;
+    CVerticalLayoutUI *m_main_page;
+    CHorizontalLayoutUI *m_patient_select_page;
+    CHorizontalLayoutUI *m_patient_manager_page;
+    CHorizontalLayoutUI *m_patient_detail_page;
+    CHorizontalLayoutUI *m_patient_edit_page;
+    CHorizontalLayoutUI *m_patient_add_page;
+    CHorizontalLayoutUI *m_about_page;
+    CHorizontalLayoutUI *m_personor_info_edit_page;
+    CHorizontalLayoutUI *m_systemset_info_edit_page;
+    CHorizontalLayoutUI *m_train_main_page;
+    CHorizontalLayoutUI *m_active_train_page;
+    CHorizontalLayoutUI *m_patient_train_info;
+    CHorizontalLayoutUI *m_patient_train_detail;
+    CHorizontalLayoutUI *m_passive_train_page;
+    CHorizontalLayoutUI *m_eyemode_page;
+    CHorizontalLayoutUI *m_emgmode_page;
+    CHorizontalLayoutUI *m_traindetail_chart;
+    CHorizontalLayoutUI *m_active_train_game4_page;
+    CHorizontalLayoutUI *m_evaluation_page;
+    CHorizontalLayoutUI *m_evaluation_history_page;
+    CHorizontalLayoutUI *m_evaluation_add_page;
+    CHorizontalLayoutUI *m_evaluation_detail_page;
+    CHorizontalLayoutUI *m_evaluation_ydgn_add_page;
+    CHorizontalLayoutUI *m_evaluation_ydgn_detail_page;
+
+    CHorizontalLayoutUI *m_manager_patient_header;
+    CHorizontalLayoutUI *m_manager_patient_filterheader;
+
+    CButtonUI *m_welcom_menu;
+    CButtonUI *m_main_tip;
+    bool m_mysql_connected;
+
+    LoginInfo m_login_info;
+    PatientInfo m_current_patient;
+    std::wstring m_current_patient_id_detail;
+
+    RFPassiveTrainAction m_passive_train_action;
+    std::map<int, MEDIA> m_id_media;
+    std::map<int, MEDIA> m_id_passivetrainitem;
+    std::map<int, MEDIA> m_delete_id_passivetrainitem;
+    std::list<MEDIA> m_current_passivetraininfos;
+
+    std::wstring m_current_chart;
+
+    UINT_PTR m_emgmode_timer;
+
+    time_t m_emg_createtime;
+    DWORD m_emgmode_tracetime;
+    std::vector<double> m_emgmode_data[4];
+    std::vector<double> m_emgmode_ydjd[2];
+
+    RFRobotEventControl m_robotEvent;
+    Robot m_robot;
+
+    RFMAS m_mas;
+    RFFMA m_fma;
+    int m_evalution_type;
+    EvaluationYDGN m_evydgn;
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½Ê¹ï¿½ï¿½
+    bool m_grip_strength_enable = true;
 };
 
 
-int				GetFilesFromDialog(HWND wnd, std::vector<std::wstring>& files, const wchar_t *filter, int flags);
-std::wstring	GetSaveFilePath(HWND hWnd);
-LPCTSTR			FileSizeToString(DWORD dwSize);
-DWORD			GetFileSize(LPCTSTR fileName);
-std::wstring	RFToTimeString(time_t in_t);
-std::wstring	RFToDateString(time_t in_t);
-std::wstring	RFToTimeLenth(time_t start, time_t end);
-std::wstring	RFToDateTimeString(time_t in_t);
-
+int GetFilesFromDialog(HWND wnd, std::vector<std::wstring> &files, const wchar_t *filter, int flags);
+std::wstring GetSaveFilePath(HWND hWnd);
+LPCTSTR FileSizeToString(DWORD dwSize);
+DWORD GetFileSize(LPCTSTR fileName);
+std::wstring RFToTimeString(time_t in_t);
+std::wstring RFToDateString(time_t in_t);
+std::wstring RFToTimeLenth(time_t start, time_t end);
+std::wstring RFToDateTimeString(time_t in_t);

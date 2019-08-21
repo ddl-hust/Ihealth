@@ -4,25 +4,25 @@
 class RFPassiveTrain
 {
 public:
-	static RFPassiveTrain* get();
-	static void release();
-	static RFPassiveTrain* m_sigleton;
+    static RFPassiveTrain *get();
+    static void release();
+    static RFPassiveTrain *m_sigleton;
 
 public:
-	RFPassiveTrain(void);
-	~RFPassiveTrain(void);
+    RFPassiveTrain(void);
+    ~RFPassiveTrain(void);
 
-	// ´ÓÊý¾Ý¿âÖÐ¼ÓÔØ±»¶¯ÔË¶¯µÄ¶¯×÷Êý¾Ý
-	int LoadPassiveTrainInfo();
-	// ½«±»¶¯ÔË¶¯ÖÐÂ¼ÖÆµÄÊý¾ÝÌí¼Óµ½Êý¾Ý¿âÖÐ
-	void AddPassiveTrainInfo(PassiveTrainInfo train);
-	
-	std::map<std::wstring, int> m_robot_indexs;
-	std::list<PassiveTrainInfo> m_passivetraininfos;
+    // ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½Ð¼ï¿½ï¿½Ø±ï¿½ï¿½ï¿½ï¿½Ë¶ï¿½ï¿½Ä¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    int LoadPassiveTrainInfo();
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¶ï¿½ï¿½ï¿½Â¼ï¿½Æµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Óµï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½
+    void AddPassiveTrainInfo(PassiveTrainInfo train);
 
-	static int OnLoadPassiveTrainInfoOK(EventArg* pArg);
-	// °Ñ±»¶¯Â¼ÖÆµÄÊý¾ÝÌí¼Óµ½Êý¾Ý¿âÖÐÖ®ºó£¬ÐèÒª½«µ±Ç°¶¯×÷¼¯Ë¢ÐÂ
-	// ²¢Ìø×ªµ½±»¶¯ÔË¶¯Ö÷Ò³Ãæ
-	static int OnAddPassiveTrainInfoOK(EventArg* pArg);
-	static int OnDeletePassiveTrainInfoOK(EventArg *pArg);
+    std::map<std::wstring, int> m_robot_indexs;
+    std::list<PassiveTrainInfo> m_passivetraininfos;
+
+    static int OnLoadPassiveTrainInfoOK(EventArg *pArg);
+    // ï¿½Ñ±ï¿½ï¿½ï¿½Â¼ï¿½Æµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Óµï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½Ö®ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¢ï¿½ï¿½
+    // ï¿½ï¿½ï¿½ï¿½×ªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¶ï¿½ï¿½ï¿½Ò³ï¿½ï¿½
+    static int OnAddPassiveTrainInfoOK(EventArg *pArg);
+    static int OnDeletePassiveTrainInfoOK(EventArg *pArg);
 };

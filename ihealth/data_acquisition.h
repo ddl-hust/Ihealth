@@ -2,61 +2,61 @@
 #include <NIDAQmx.h>
 #include <Eigen/core>
 
-class DataAcquisition {
+class DataAcquisition
+{
 public:
-	static DataAcquisition &GetInstance();
-	DataAcquisition(const DataAcquisition &) = delete;
-	DataAcquisition(DataAcquisition &&) = delete;
-	DataAcquisition &operator=(const DataAcquisition &) = delete;
-	DataAcquisition &operator=(DataAcquisition &&) = delete;
+    static DataAcquisition &GetInstance();
+    DataAcquisition(const DataAcquisition &) = delete;
+    DataAcquisition(DataAcquisition &&) = delete;
+    DataAcquisition &operator=(const DataAcquisition &) = delete;
+    DataAcquisition &operator=(DataAcquisition &&) = delete;
 
-	void AcquisiteTorqueData();
-	void AcquisiteTorqueData(double torquedata[2]);
-	void AcquisitePullSensorData();
-	void AcquisiteSixDemensionData(double output_buf[6]);
-	//ÕâÀï³¢ÊÔÏÂ°Ñ¼çÖâµÄÊý¾Ý²É¼¯·ÅÔÚÒ»Æð£¬¸Ð¾õÕâÑùÐÔÄÜ¿ÉÒÔÌáÉý
-	void AcquisiteTensionData(double tension_output[2]);
-	void AcquisiteGripData(double grip[1]);
-	double ShoulderTorque();
-	double ElbowTorque();
-	double ShoulderForwardPull();
-	double ShoulderBackwardPull();
-	double ElbowForwardPull();
-	double ElbowBackwardPull();
+    void AcquisiteTorqueData();
+    void AcquisiteTorqueData(double torquedata[2]);
+    void AcquisitePullSensorData();
+    void AcquisiteSixDemensionData(double output_buf[6]);
+    //ï¿½ï¿½ï¿½ï³¢ï¿½ï¿½ï¿½Â°Ñ¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý²É¼ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ð£¬¸Ð¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ü¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    void AcquisiteTensionData(double tension_output[2]);
+    void AcquisiteGripData(double grip[1]);
+    double ShoulderTorque();
+    double ElbowTorque();
+    double ShoulderForwardPull();
+    double ShoulderBackwardPull();
+    double ElbowForwardPull();
+    double ElbowBackwardPull();
 
-	bool StartTask();
-	bool StopTask();
-	bool StartTorqueTask();
-	bool StopTorqueTask();
-	bool StartSixDemTask();
-	bool StopSixDemTask();
+    bool StartTask();
+    bool StopTask();
+    bool StartTorqueTask();
+    bool StopTorqueTask();
+    bool StartSixDemTask();
+    bool StopSixDemTask();
 
 public:
-	double torque_data[20];
+    double torque_data[20];
 
 private:
-	DataAcquisition();
+    DataAcquisition();
 
 private:
-	TaskHandle s_task_handle;
-	TaskHandle p_task_handle;
-	TaskHandle t_task_handle;
+    TaskHandle s_task_handle;
+    TaskHandle p_task_handle;
+    TaskHandle t_task_handle;
 
-	double shoulder_raw_torque_ = 0.0;
-	double elbow_raw_torque_ = 0.0;
+    double shoulder_raw_torque_ = 0.0;
+    double elbow_raw_torque_ = 0.0;
 
-	double shoulder_raw_forward_pull_ = 0.0;
-	double shoulder_raw_backward_pull_ = 0.0;
-	double elbow_raw_forward_pull_ = 0.0;
-	double elbow_raw_backward_pull_ = 0.0;
+    double shoulder_raw_forward_pull_ = 0.0;
+    double shoulder_raw_backward_pull_ = 0.0;
+    double elbow_raw_forward_pull_ = 0.0;
+    double elbow_raw_backward_pull_ = 0.0;
 
-	static const char *kTorqueChannel;
-	static const char *kPullSensorChannel;
-	static const char *kSixDimensionForceChannel;
-	static const char *kGripChannel;
-	static const char *kPressureForceChannel;
-	static const double kRawToReal;
+    static const char *kTorqueChannel;
+    static const char *kPullSensorChannel;
+    static const char *kSixDimensionForceChannel;
+    static const char *kGripChannel;
+    static const char *kPressureForceChannel;
+    static const double kRawToReal;
 
-	static Eigen::Matrix<double, 6, 6>  kTransformMatrix;
-
+    static Eigen::Matrix<double, 6, 6> kTransformMatrix;
 };

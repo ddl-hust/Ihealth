@@ -1,42 +1,41 @@
 #pragma once
 #include "MusicPlayer.h"
 
-#define RF_TIMER_ELAPSE 200U	// 10HZ
-#define RF_TIMER_ID	888
-
+#define RF_TIMER_ELAPSE 200U // 10HZ
+#define RF_TIMER_ID 888
 
 
 class RFPassiveTrainAction
 {
 public:
-	RFPassiveTrainAction(void);
-	~RFPassiveTrainAction(void);
+    RFPassiveTrainAction(void);
+    ~RFPassiveTrainAction(void);
 
-	//void OnTimer(HWND hWnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime);
-	void StartPlay(std::list<MEDIA>& medias, bool orderplay);
-	void StopPlay();
+    // void OnTimer(HWND hWnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime);
+    void StartPlay(std::list<MEDIA> &medias, bool orderplay);
+    void StopPlay();
 
-	void PlayNext(bool orderplay);
-	void PlayPrev(bool orderplay);
+    void PlayNext(bool orderplay);
+    void PlayPrev(bool orderplay);
 
-	void SetPlayOrder(bool orderplay);
+    void SetPlayOrder(bool orderplay);
 
-	// Ëæ»úÔËÐÐ±»¶¯¶¯×÷
-	MEDIA PopRandomMedia();
-	// °´ÕÕÁÐ±íË³ÐòÒÀ´ÎÔËÐÐ±»¶¯¶¯×÷
-	MEDIA PopOrderMedia();
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    MEDIA PopRandomMedia();
+    // ï¿½ï¿½ï¿½ï¿½ï¿½Ð±ï¿½Ë³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    MEDIA PopOrderMedia();
 
-	void SaveMovingData();
-	time_t			m_movement_createtime;
+    void SaveMovingData();
+    time_t m_movement_createtime;
 
-	std::list<MEDIA> m_medias_old;
+    std::list<MEDIA> m_medias_old;
 
-	std::list<MEDIA>	m_medias;
-	bool				m_orderplay;
-	MEDIA				m_curmedia;
-	int					m_timeplay;
+    std::list<MEDIA> m_medias;
+    bool m_orderplay;
+    MEDIA m_curmedia;
+    int m_timeplay;
 
-	bool				m_isPlaying;
+    bool m_isPlaying;
 
-	UINT_PTR	m_currenttimer;
+    UINT_PTR m_currenttimer;
 };

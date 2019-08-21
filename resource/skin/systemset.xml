@@ -45,7 +45,7 @@
                 <Edit name="sfe_rom_edit" align="left" height="35" width="100" textcolor="#ffff471a"  font="3" />
                  <Label text="灵敏度" alian="left" height="35" width="230" textcolor="#FF253C6E" font="3" />
                 <Control width="20" />
-                <Edit name="control_sensitivity" align="left" height="35" width="100" textcolor="#ffff471a" font="3" />
+                <Edit name="control_arm_sensitivity" align="left" height="35" width="100" textcolor="#ffff471a" font="3" />
                 <Control />
             </HorizontalLayout>
           

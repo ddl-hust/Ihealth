@@ -13,12 +13,12 @@
 #define ShoulderTorqueLimit 100.0
 #define ElbowTorqueLimit 100.0
 
-#define PullLimit 6.0 
+#define PullLimit 6.0 /*Êµ¼ÊµçÑ¹ÐèÒª³ýÒÔ2*/
 
 double rawTorqueData[5] = {0};
 double raw_pull_data[20] = {0};
 
-const char *TCH = "Dev2/ai4:5";
+const char *TCH = "Dev2/ai4:5"; //Á¦¾Ø²É¼¯Í¨µÀ
 const char *pull_sensor_channel = "Dev2/ai0:3";
 
 double boundaryDetection::shoulder_torque = 0.0;
@@ -52,7 +52,7 @@ boundaryDetection::boundaryDetection()
     m_emergency_stop_status = true;
     vel_i = 0;
     m_stop = false;
-    //ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½ï¿½Åºï¿½×´Ì¬ï¿½ï¿½
+    //´´½¨Ò»¸öÄäÃûµÄ»¥³â¶ÔÏó£¬ÇÒÎªÓÐÐÅºÅ×´Ì¬£¬
     hMutex = CreateMutex(NULL, FALSE, NULL);
     hAngleMutex = CreateMutex(NULL, FALSE, NULL);
     hVelMutex = CreateMutex(NULL, FALSE, NULL);
@@ -65,7 +65,7 @@ unsigned int __stdcall BydetectThreadFun(PVOID pParam)
     oldTickCount = GetTickCount();
     while (TRUE) {
         if (Bydetect->m_stop) break;
-        //ï¿½ï¿½Ê± BOYDET_TIME s
+        //ÑÓÊ± BOYDET_TIME s
         while (TRUE) {
             newTickCount = GetTickCount();
             if (newTickCount - oldTickCount >= BOYDET_TIME * 1000) {
@@ -107,11 +107,11 @@ void boundaryDetection::getSensorData()
     returnCode = APS_read_d_input(0, DI_Group, &DI_Data);
     for (int i = 0; i < ControlCard::InputChannels; i++) di_ch[i] = ((DI_Data >> i) & 1);
 
-    Travel_Switch[0] = di_ch[16]; // ORGï¿½Åºï¿½-ï¿½â²¿ï¿½ï¿½ï¿½
-    Travel_Switch[1] = di_ch[17]; // MELï¿½Åºï¿½-ï¿½â²¿ï¿½ï¿½ï¿½
+    Travel_Switch[0] = di_ch[16]; // ORGÐÅºÅ-Öâ²¿µç»ú
+    Travel_Switch[1] = di_ch[17]; // MELÐÅºÅ-Öâ²¿µç»ú
 
-    Travel_Switch[2] = di_ch[18]; // ORGï¿½Åºï¿½-ï¿½ç²¿ï¿½ï¿½ï¿½
-    Travel_Switch[3] = di_ch[19]; // MELï¿½Åºï¿½-ï¿½ç²¿ï¿½ï¿½ï¿½
+    Travel_Switch[2] = di_ch[18]; // ORGÐÅºÅ-¼ç²¿µç»ú
+    Travel_Switch[3] = di_ch[19]; // MELÐÅºÅ-¼ç²¿µç»ú
 
     m_emergency_stop_status = di_ch[20];
 }
@@ -216,12 +216,12 @@ void boundaryDetection::getJointVel()
         vel_i = 0;
     }
     WaitForSingleObject(hAngleMutex, INFINITE);
-    m_Pos_S[vel_i] = angle[0]; //ï¿½ç²¿ï¿½Ç¶ï¿½Öµ
-    m_Pos_A[vel_i] = angle[1]; //ï¿½â²¿ï¿½Ç¶ï¿½Öµ
+    m_Pos_S[vel_i] = angle[0]; //¼ç²¿½Ç¶ÈÖµ
+    m_Pos_A[vel_i] = angle[1]; //Öâ²¿½Ç¶ÈÖµ
     ReleaseMutex(hAngleMutex);
-    //ï¿½ï¿½Î»ï¿½ï¿½ï¿½ï¿½ï¿½Ù¶Èµï¿½ï¿½ã·¨
+    //ÓÐÎ»ÖÃÇóËÙ¶ÈµÄËã·¨
 
-    //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ãµï¿½ï¿½Ù¶È£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½BOYDET_TIMEï¿½ï¿½ï¿½Úµï¿½Î»ï¿½Æ³ï¿½ï¿½ï¿½Ê±ï¿½ï¿½
+    //ÕâÀïÇóµÃµÄËÙ¶È£¬ÊÇÁ½¸öBOYDET_TIMEÖÜÆÚµÄÎ»ÒÆ³ýÒÔÊ±¼ä
     switch (vel_i) {
     case 0:
         (m_Pos_A[1] == 0) ? vel[1] = 0 : vel[1] = (m_Pos_A[0] - m_Pos_A[1]) / (BOYDET_TIME * 2);
@@ -248,19 +248,16 @@ double *boundaryDetection::getVel()
 
 void boundaryDetection::check()
 {
-    //ï¿½ï¿½Í£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾
-    if (!m_emergency_stop_status) {
-        int ret = ::MessageBox(m_hWnd,
-                               _T("ï¿½ï¿½âµ½ï¿½ï¿½Í£ï¿½ï¿½ï¿½Ø±ï¿½ï¿½ï¿½ï¿½Â£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½, ")
-                               _T("ï¿½ï¿½ï¿½È·ï¿½ï¿½ï¿½Ø±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½"),
-                               _T("Ó²ï¿½ï¿½ï¿½ï¿½Í£"), MB_OK | MB_ICONEXCLAMATION);
-        if (ret == IDOK) {
-            ControlCard::GetInstance().Close();
-            ::PostMessage(m_hWnd, WM_QUIT, NULL, NULL);
-        }
-    }
+    //¼±Í£¿ª¹ØÌáÊ¾
+    // if (!m_emergency_stop_status) {
+    //	int ret = ::MessageBox(m_hWnd, _T("¼ì²âµ½¼±Í£¿ª¹Ø±»°´ÏÂ£¬Çë¼ì²é»úÆ÷ÊÇ·ñÕý³£ÔËÐÐ, µã»÷È·¶¨¹Ø±ÕÈí¼þ¡£"), _T("Ó²¼þ¼±Í£"), MB_OK | MB_ICONEXCLAMATION);
+    //	if (ret == IDOK) {
+    //		ControlCard::GetInstance().Close();
+    //		::PostMessage(m_hWnd, WM_QUIT, NULL, NULL);
+    //	}
+    //}
 
-    //// ï¿½ï¿½ï¿½Ø±ï¿½ï¿½ï¿½
+    //// Á¦¾Ø±£»¤
     // DataAcquisition::GetInstance().AcquisiteTorqueData();
     // shoulder_torque = DataAcquisition::GetInstance().ShoulderTorque();
     // elbow_torque = DataAcquisition::GetInstance().ElbowTorque();
@@ -270,17 +267,17 @@ void boundaryDetection::check()
     ////freopen("CONOUT$", "w", stdout);
     ////printf("%lf    %lf    \n", abs_shoulder_torque, abs_elbow_torque);
     // if (abs_shoulder_torque > ShoulderTorqueLimit || abs_elbow_torque > ElbowTorqueLimit) {
-    //	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Òªï¿½È°Ñ¶ï¿½ï¿½ï¿½ï¿½ï¿½Í£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç¾ï¿½ï¿½ï¿½post messageï¿½Ä·ï¿½Ê½È¥ï¿½ï¿½Í£ï¿½ï¿½Ö±ï¿½Óµï¿½ï¿½ï¿½ï¿½ï¿½Í£ï¿½Ä½Ó¿Ú¡ï¿½
+    //	//ÔÚÕâÀïÒªÏÈ°Ñ¶¯×÷ÔÝÍ£ÏÂÀ´£¬ÎÒÃÇ¾ÍÓÃpost messageµÄ·½Ê½È¥ÔÝÍ££¬Ö±½Óµ÷ÓÃÔÝÍ£µÄ½Ó¿Ú¡£
     //	::PostMessage(m_hWnd, TorqueError, NULL, NULL);
-    //	// È»ï¿½ï¿½ï¿½ï¿½Ê¾Ò»ï¿½ï¿½MessageBoxÈ¥ï¿½ï¿½Ê¾ï¿½ï¿½Î»
+    //	// È»ºóÏÔÊ¾Ò»¸öMessageBoxÈ¥ÌáÊ¾¸´Î»
     //	hHook = SetWindowsHookEx(WH_CBT, (HOOKPROC)CBTHookProc, NULL, GetCurrentThreadId());
-    //	int ret = ::MessageBox(m_hWnd, _T("ï¿½Ø½ï¿½ï¿½ï¿½ï¿½Ø³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É·ï¿½Î§ï¿½ï¿½ï¿½ï¿½Ò½ï¿½ï¿½ï¿½ï¿½é»¼ï¿½ï¿½ï¿½Ç·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î¡ï¿½"), _T("ï¿½ï¿½ï¿½Ø±ï¿½ï¿½ï¿½"), MB_OK | MB_ICONEXCLAMATION);
+    //	int ret = ::MessageBox(m_hWnd, _T("¹Ø½ÚÁ¦¾Ø³¬³öÐí¿É·¶Î§£¬ÇëÒ½Éú¼ì²é»¼ÕßÊÇ·ñ·¢Éú¾·ÂÎ¡£"), _T("Á¦¾Ø±£»¤"), MB_OK | MB_ICONEXCLAMATION);
     //	if (ret == IDOK) {
     //		ControlCard::GetInstance().ResetPosition();
     //	}
     //}
 
-    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    // À­Á¦±£»¤
     DataAcquisition::GetInstance().AcquisitePullSensorData();
     double abs_shoulder_forward_pull = fabs(DataAcquisition::GetInstance().ShoulderForwardPull());
     double abs_shoulder_backward_pull = fabs(DataAcquisition::GetInstance().ShoulderBackwardPull());
@@ -288,9 +285,9 @@ void boundaryDetection::check()
     double abs_elbow_backward_pull = fabs(DataAcquisition::GetInstance().ElbowBackwardPull());
     if (abs_shoulder_forward_pull > PullLimit || abs_shoulder_backward_pull > PullLimit || abs_elbow_forward_pull > PullLimit
         || abs_elbow_backward_pull > PullLimit) {
-        // Í¬ï¿½ï¿½ï¿½ï¿½Òªï¿½È°Ñ¶ï¿½ï¿½ï¿½ï¿½ï¿½Í£ï¿½ï¿½ï¿½ï¿½
+        // Í¬ÑùÐèÒªÏÈ°Ñ¶¯×÷ÔÝÍ£ÏÂÀ´
         ::PostMessage(m_hWnd, PullForceError, NULL, NULL);
-        wstring msg(_T("ï¿½ï¿½Ë¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½É·ï¿½Î§ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ì³£,F1="));
+        wstring msg(_T("¸ÖË¿ÉþÀ­Á¦³¬³öÐí¿É·¶Î§£¬Çë¼ì²éÒì³£,F1="));
         msg += to_wstring(abs_shoulder_forward_pull);
         msg += (_T(", F2="));
         msg += to_wstring(abs_shoulder_backward_pull);
@@ -298,10 +295,10 @@ void boundaryDetection::check()
         msg += to_wstring(abs_elbow_forward_pull);
         msg += (_T(", F4="));
         msg += to_wstring(abs_elbow_backward_pull);
-        msg += (_T("ï¿½ï¿½"));
-        // È»ï¿½ï¿½ï¿½ï¿½Ê¾Ò»ï¿½ï¿½MessageBoxÈ¥ï¿½ï¿½Ê¾ï¿½ï¿½Î»
+        msg += (_T("¡£"));
+        // È»ºóÏÔÊ¾Ò»¸öMessageBoxÈ¥ÌáÊ¾¸´Î»
         hHook = SetWindowsHookEx(WH_CBT, (HOOKPROC)CBTHookProc, NULL, GetCurrentThreadId());
-        int ret = ::MessageBox(m_hWnd, msg.c_str(), _T("ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½"), MB_OK | MB_ICONEXCLAMATION);
+        int ret = ::MessageBox(m_hWnd, msg.c_str(), _T("À­Á¦±£»¤"), MB_OK | MB_ICONEXCLAMATION);
         if (ret == IDOK) {
             // ControlCard::GetInstance().ResetPosition();
             m_pRobot->ActiveStopMove();
@@ -310,7 +307,7 @@ void boundaryDetection::check()
     //	AllocConsole();
     //	freopen("CONOUT$", "w", stdout);
     //	printf("shoulder:%lf    %lf \n elbow:%lf     %lf\n", abs_shoulder_forward_pull,
-    // abs_shoulder_backward_pull,abs_elbow_forward_pull,abs_elbow_backward_pull);
+    //abs_shoulder_backward_pull,abs_elbow_forward_pull,abs_elbow_backward_pull);
 }
 
 

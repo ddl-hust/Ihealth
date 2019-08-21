@@ -249,7 +249,7 @@ int RFPatientsManager::OnAddOK(EventArg* pArg)
 		// if (RFMainWindow::MainWindow && RFMainWindow::MainWindow->m_patient_add_page->IsVisible() == true) {
 
 		//	CLabelUI* pLabel = static_cast<CLabelUI*>(RFMainWindow::MainWindow->m_pm.FindControl(_T("manager_patient_welcom")));
-		//	pLabel->SetText((_T("»¶Ó­Äú£¬") + RFMainWindow::MainWindow->m_login_info.login_user + _T("!¡Å")).c_str());
+		//	pLabel->SetText((_T("ï¿½ï¿½Ó­ï¿½ï¿½ï¿½ï¿½") + RFMainWindow::MainWindow->m_login_info.login_user + _T("!ï¿½ï¿½")).c_str());
 
 		//	RFMainWindow::MainWindow->UpdateManagePatientPage(RFPatientsManager::get()->getPage(RFPatientsManager::get()->m_current_page));
 		//	RFMainWindow::MainWindow->UpdateManagePageNumber(RFPatientsManager::get()->m_current_page);
@@ -294,7 +294,7 @@ int RFPatientsManager::OnStepOK(EventArg *pArg)
 	if (RFMainWindow::MainWindow && RFMainWindow::MainWindow->m_patient_add_page->IsVisible() == true) {
 
 		CLabelUI* pLabel = static_cast<CLabelUI*>(RFMainWindow::MainWindow->m_pm.FindControl(_T("manager_patient_welcom")));
-		pLabel->SetText((_T("»¶Ó­Äú£¬") + RFMainWindow::MainWindow->m_login_info.login_user + _T("!¡Å")).c_str());
+		pLabel->SetText((_T("ï¿½ï¿½Ó­ï¿½ï¿½ï¿½ï¿½") + RFMainWindow::MainWindow->m_login_info.login_user + _T("!ï¿½ï¿½")).c_str());
 
 		RFMainWindow::MainWindow->UpdateManagePatientPage(RFPatientsManager::get()->getPage(RFPatientsManager::get()->m_current_page));
 		RFMainWindow::MainWindow->UpdateManagePageNumber(RFPatientsManager::get()->m_current_page);
@@ -318,7 +318,7 @@ int RFPatientsManager::OnModifyOK(EventArg *pArg)
 	RFMainWindow* mainWidow = RFMainWindow::MainWindow;
 	if (mainWidow) {
 		CLabelUI* pLabel = static_cast<CLabelUI*>(mainWidow->m_pm.FindControl(_T("manager_patient_welcom")));
-		pLabel->SetText((_T("»¶Ó­Äú£¬") + mainWidow->m_login_info.login_user + _T("!¡Å")).c_str());
+		pLabel->SetText((_T("ï¿½ï¿½Ó­ï¿½ï¿½ï¿½ï¿½") + mainWidow->m_login_info.login_user + _T("!ï¿½ï¿½")).c_str());
 
 		mainWidow->UpdateManagePatientPage(RFPatientsManager::get()->getPage(RFPatientsManager::get()->m_current_page));
 		mainWidow->UpdateManagePageNumber(RFPatientsManager::get()->m_current_page);
@@ -344,7 +344,7 @@ int RFPatientsManager::OnModifyDoctorOK(EventArg* pArg)
 		mainWidow->m_login_info = *pResult;
 		
 		CLabelUI* pLabel = static_cast<CLabelUI*>(mainWidow->m_pm.FindControl(_T("welcom_menu")));
-		pLabel->SetText((_T("»¶Ó­Äú£¬") + mainWidow->m_login_info.login_user + _T("!¡Å")).c_str());
+		pLabel->SetText((_T("ï¿½ï¿½Ó­ï¿½ï¿½ï¿½ï¿½") + mainWidow->m_login_info.login_user + _T("!ï¿½ï¿½")).c_str());
 
 		mainWidow->ShowMainPage();
 	}
@@ -441,31 +441,31 @@ void RFPatientsManager::importPatient(std::wstring path)
 	m_excel.LoadSheet(strSheetName);
 
 	CString title = m_excel.GetCellString(1, 1);
-	if (title != _T("ÉÏÖ«Íâ¹Ç÷À¿µ¸´»úÆ÷ÈËÑµÁ·ÏµÍ³")) {
+	if (title != _T("ï¿½ï¿½Ö«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñµï¿½ï¿½ÏµÍ³")) {
 		m_excel.CloseExcelFile(FALSE);
 		return;
 	}
 
 	std::wstring tableheader = m_excel.GetCellString(2,2);
-	if (tableheader != _T("Ò½Ôº±àºÅ")) {
+	if (tableheader != _T("Ò½Ôºï¿½ï¿½ï¿½")) {
 		m_excel.CloseExcelFile(FALSE);
 		return;
 	}
 
 	tableheader = m_excel.GetCellString(2,3);
-	if (tableheader != _T("Ò½Éú±àºÅ")) {
+	if (tableheader != _T("Ò½ï¿½ï¿½ï¿½ï¿½ï¿½")) {
 		m_excel.CloseExcelFile(FALSE);
 		return;
 	}
 
 	tableheader = m_excel.GetCellString(2,4);
-	if (tableheader != _T("ÐÕÃû")) {
+	if (tableheader != _T("ï¿½ï¿½ï¿½ï¿½")) {
 		m_excel.CloseExcelFile(FALSE);
 		return;
 	}
 
 	tableheader = m_excel.GetCellString(2,5);
-	if (tableheader != _T("ÐÔ±ð")) {
+	if (tableheader != _T("ï¿½Ô±ï¿½")) {
 		m_excel.CloseExcelFile(FALSE);
 		return;
 	}

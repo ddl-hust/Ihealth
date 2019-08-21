@@ -1,7 +1,7 @@
 
 #pragma once
 
-//ÎÄ¼þ×î´ó4M
+//ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½4M
 static const int g_nMaxSize = 1024*1024*4;
 
 class CSimpleLog

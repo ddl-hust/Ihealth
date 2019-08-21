@@ -49,11 +49,10 @@ unsigned int __stdcall RecordOrMoveThread(PVOID pParam) {
 		//延时 TIMER_SLEEP s
 		while (TRUE) {
 			end = GetTickCount();
-			if (end - start >= TIMER_SLEEP * 1000) {
+			if (end - start >= TIMER_SLEEP*1000) {
 				start = end;
 				break;
-			}
-			else {
+			} else {
 				SwitchToThread();
 			}
 		}
@@ -72,7 +71,7 @@ unsigned int __stdcall RecordOrMoveThread(PVOID pParam) {
 			passive->MoveStep();
 			passive->SampleStep();
 		}
-
+		
 		loop_counter_in_thread++;
 	}
 	if (passive->is_teach) {
@@ -80,14 +79,15 @@ unsigned int __stdcall RecordOrMoveThread(PVOID pParam) {
 		passive->CruveSmoothing();
 	}
 
-	passive->InterpolationTraceExport();
-	passive->PracticalTraceExport();
+	//passive->InterpolationTraceExport();
+	//passive->PracticalTraceExport();
 
 	passive->is_busy_ = false;
 	return 0;
 }
 
-void PassiveControl::ClearMovementSet(){
+void PassiveControl::ClearMovementSet()
+{
 	movement_set_.clear();
 }
 
@@ -250,7 +250,6 @@ void PassiveControl::MoveStep() {
 			hermite_pos_interval_[j],
 			hermite_vel_interval_[j],
 			time);
-		std::cout << "********************** pos *******:" <<pos<< std::endl;
 		sample_data_.Interpolation_Data[j].push_back(pos);
 		//APS_absolute_move(Axis[j], pos / ControlCard::Unit_Convert, 15 / ControlCard::Unit_Convert);
 		APS_ptp_v(Axis[j], option, pos / ControlCard::Unit_Convert, 15 / ControlCard::Unit_Convert, NULL);
@@ -318,9 +317,8 @@ void PassiveControl::TeachPosData() {
 
 void PassiveControl::InterpolationTraceExport() {
 	ofstream dataFile2;
-	dataFile2.open("interpolation_trace_data2.txt", ofstream::app);
+	dataFile2.open("interpolation_trace_data.txt", ofstream::app);
 	dataFile2 << "shoulder" << "   " << "elbow" << endl;
-	dataFile2 << "test for input" << std::endl;
 	for (int i = 0; i < sample_data_.Interpolation_Data[0].size(); ++i) {
 		dataFile2 << sample_data_.Interpolation_Data[0][i] << "        " << sample_data_.Interpolation_Data[1][i] << endl;
 	}

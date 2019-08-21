@@ -108,8 +108,9 @@ struct PatientInfo
     std::wstring recoverdetail;
     std::wstring remarks;
     int flag;
-    double SAA_ROM; // ï¿½ç²¿ï¿½ï¿½ï¿½ï¿½Õ¹ï¿½ï¿½ï¿½ï¿½ï¿½Ë¶ï¿½ï¿½ï¿½Î§ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ç²¿ï¿½Ç¶È£ï¿½
-    double SFE_ROM; // ï¿½ç²¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¶ï¿½ï¿½ï¿½Î§ï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½Ó¦ï¿½â²¿ï¿½Ç¶È£ï¿½
+    double SAA_ROM; // ¼ç²¿µÄÍâÕ¹ÄÚÊÕÔË¶¯·¶Î§µÄ×î´óÖµ£¨¶ÔÓ¦¼ç²¿½Ç¶È£©
+    double SFE_ROM; // ¼ç²¿µÄÇüÉìÔË¶¯·¶Î§×î´óÖµ£¨¶ÔÓ¦Öâ²¿½Ç¶È£©
+    // double Arm_Sensitivity; // the parm to adjust arm force->velocity
 };
 
 struct LoadPatientResult
@@ -155,10 +156,10 @@ struct LoadPatientTrainInfoResult
 #define RF_EMG_TRAIN_MODE 2
 #define RF_EYE_TRAIN_MODE 3
 
-#define RF_TRAINTYPE_STRING_ZD _T("ï¿½ï¿½ï¿½ï¿½Ñµï¿½ï¿½")
-#define RF_TRAINTYPE_STRING_BD _T("ï¿½ï¿½ï¿½ï¿½Ñµï¿½ï¿½")
-#define RF_TRAINTYPE_STRING_YD _T("ï¿½Û¶ï¿½Ñµï¿½ï¿½")
-#define RF_TRAINTYPE_STRING_EMG _T("EMGÑµï¿½ï¿½")
+#define RF_TRAINTYPE_STRING_ZD _T("Ö÷¶¯ÑµÁ·")
+#define RF_TRAINTYPE_STRING_BD _T("±»¶¯ÑµÁ·")
+#define RF_TRAINTYPE_STRING_YD _T("ÑÛ¶¯ÑµÁ·")
+#define RF_TRAINTYPE_STRING_EMG _T("EMGÑµÁ·")
 
 struct PatientTrainDetails
 {
@@ -172,7 +173,7 @@ struct PatientTrainDetails
     std::wstring createtime;
     int flag;
 
-    std::wstring traintype; // 0ï¿½ï¿½ï¿½ï¿½Ñµï¿½ï¿½ 1 ï¿½ï¿½ï¿½ï¿½Ñµï¿½ï¿½ 2 EMGÄ£Ê½ 3 ï¿½Û¶ï¿½Ä£Ê½
+    std::wstring traintype; // 0Ö÷¶¯ÑµÁ· 1 ±»¶¯ÑµÁ· 2 EMGÄ£Ê½ 3 ÑÛ¶¯Ä£Ê½
     std::wstring game;
     std::wstring nandu;
     std::wstring defen;
@@ -182,14 +183,14 @@ struct PatientTrainDetails
     std::wstring lasttreattime;
     std::wstring recoverdetail;
 
-    std::vector<double> target_pos[2]; // ï¿½ï¿½ï¿½ï¿½Ñµï¿½ï¿½ ï¿½Ë¶ï¿½ï¿½Ç¶ï¿½ 0 ï¿½ï¿½Ø½ï¿½ 1 Î»ï¿½ï¿½Ø½ï¿½
-    std::vector<double> target_vel[2]; //			ï¿½Ë¶ï¿½ï¿½Ù¶ï¿½ Í¬ï¿½ï¿½
+    std::vector<double> target_pos[2]; // ±»¶¯ÑµÁ· ÔË¶¯½Ç¶È 0 ¼ç¹Ø½Ú 1 Î»Öâ¹Ø½Ú
+    std::vector<double> target_vel[2]; //			ÔË¶¯ËÙ¶È Í¬ÉÏ
 
-    std::vector<double> emg_signal[4]; // EMGÑµï¿½ï¿½
+    std::vector<double> emg_signal[4]; // EMGÑµÁ·
     std::vector<double> emg_angle[2];
 
-    std::vector<double> target_angle; // ï¿½ï¿½ï¿½ï¿½Ñµï¿½ï¿½ ï¿½Ë¶ï¿½ï¿½Ç¶ï¿½
-    std::vector<double> target_wl; //			ï¿½ï¿½ï¿½ï¿½
+    std::vector<double> target_angle; // Ö÷¶¯ÑµÁ· ÔË¶¯½Ç¶È
+    std::vector<double> target_wl; //			ÎÕÁ¦
 };
 
 struct LoadPatientTrainDetailsParam
@@ -204,8 +205,8 @@ struct LoadPatientTrainDetailsResult
     std::list<PatientTrainDetails> patienttraindetails;
 };
 
-// ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½Ðµï¿½passivetrainï¿½ï¿½ï¿½ï¿½ï¿½Ú¼ï¿½Â¼
-// ï¿½ï¿½ï¿½ï¿½Ä£Ê½ï¿½ï¿½Ò»ï¿½ï¿½Â¼ï¿½Æµï¿½ï¿½Ë¶ï¿½ï¿½ï¿½ï¿½ï¿½
+// ¶ÔÓ¦ÓÚÊý¾Ý¿âÖÐµÄpassivetrain£¬ÓÃÓÚ¼ÇÂ¼
+// ±»¶¯Ä£Ê½ÖÐÒ»ÌõÂ¼ÖÆµÄÔË¶¯Êý¾Ý
 struct PassiveTrainInfo
 {
     std::wstring id;
@@ -214,8 +215,8 @@ struct PassiveTrainInfo
     std::wstring timelen;
     // std::wstring movements;
 
-    std::vector<double> target_pos[2]; // ï¿½Ë¶ï¿½ï¿½Ç¶ï¿½ 0 ï¿½ï¿½Ø½ï¿½ 1 Î»ï¿½ï¿½Ø½ï¿½
-    std::vector<double> target_vel[2]; // ï¿½Ë¶ï¿½ï¿½Ù¶ï¿½ Í¬ï¿½ï¿½
+    std::vector<double> target_pos[2]; // ÔË¶¯½Ç¶È 0 ¼ç¹Ø½Ú 1 Î»Öâ¹Ø½Ú
+    std::vector<double> target_vel[2]; // ÔË¶¯ËÙ¶È Í¬ÉÏ
 };
 
 struct LoadPassiveTrainInfoResult
@@ -234,7 +235,7 @@ struct PatientTrainData
     int traindetailid;
     int timetrace;
     int tracevalue;
-    int traintype; // 1 ï¿½Ø½ï¿½ï¿½Ë¶ï¿½ï¿½Ç¶ï¿½ 2 ï¿½ï¿½ï¿½ï¿½ 3 EMGï¿½Åºï¿½ 4 ï¿½ï¿½Ø½ï¿½ï¿½ï¿½ï¿½ï¿½ 5 ï¿½ï¿½Ø½ï¿½ï¿½ï¿½ï¿½ï¿½
+    int traintype; // 1 ¹Ø½ÚÔË¶¯½Ç¶È 2 ÎÕÁ¦ 3 EMGÐÅºÅ 4 ¼ç¹Ø½ÚÁ¦¾Ø 5 Öâ¹Ø½ÚÁ¦¾Ø
 };
 
 struct LoadPatientTrainDataResult
@@ -264,7 +265,7 @@ struct EvaluationData
     std::wstring date;
     std::wstring name;
     std::wstring score;
-    int type; // 1 fma 2 mas 3 ï¿½Ë¶ï¿½
+    int type; // 1 fma 2 mas 3 ÔË¶¯
 
     std::list<EvaluationRecordData> datas;
 };
@@ -306,15 +307,15 @@ public:
 
 
 public:
-    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ß³ï¿½Êµï¿½ï¿½
+    // ´´½¨Êý¾Ý¿âÏß³ÌÊµÀý
     static RFMySQLThread *Create();
-    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ß³ï¿½ï¿½ï¿½Ô´
+    // »ØÊÕÊý¾Ý¿âÏß³Ì×ÊÔ´
     static void Release(RFMySQLThread *&pThread);
-    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½ï¿½ï¿½
+    // ½¨Á¢Êý¾Ý¿âÁ¬½Ó
     static int Connect(EventArg *pArg);
-    // ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½ï¿½ï¿½
+    // Êý¾Ý¿âÖØÁ¬
     static int ReConnect(EventArg *pArg);
-    // ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½Ã»ï¿½ï¿½ï¿½Â¼
+    // Êý¾Ý¿âÓÃ»§µÇÂ¼
     static int Login(EventArg *pArg);
 
     static int Load(EventArg *pArg);
@@ -335,7 +336,7 @@ public:
     static int LoadPatientTrainInfo(EventArg *pArg);
     static int LoadPatientTrainDetails(EventArg *pArg);
     static int LoadPassiveTrainInfo(EventArg *pArg);
-    // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä£Ê½ï¿½ï¿½Â¼ï¿½Æµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Óµï¿½ï¿½ï¿½ï¿½Ý¿ï¿½ï¿½ï¿½
+    // ½«±»¶¯Ä£Ê½ÖÐÂ¼ÖÆµÄÊý¾ÝÌí¼Óµ½Êý¾Ý¿âÖÐ
     static int AddPassiveTrainInfo(EventArg *pArg);
     static int DeletePassiveTrainInfo(EventArg *pArg);
     static int LoadPatientTrainData(EventArg *pArg);
