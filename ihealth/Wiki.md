@@ -10,3 +10,4 @@
 1. 配置cmake build 提示缺少XXX.dll 
 2. param 文件没有导入 导致 XXX错误
 3. 没导入ihealth.sql 导致在界面里面添加患者，信息不能保存
+3. 如何在cmake 里面就输出dll [To-Do] 现在我可以手动复制粘贴到/bin

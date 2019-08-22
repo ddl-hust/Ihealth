@@ -197,15 +197,15 @@ void RFPatientsTrainData::exportTrainData(std::wstring savepath)
 
 			std::wstring train_type = _T("");
 			if (begin->traintype == 1) {
-				train_type = _T("�ؽ��˶��Ƕ�");
+				train_type = _T("temp");
 			} else if (begin->traintype == 2) {
-				train_type = _T("����");
+				train_type = _T("temp");
 			} else if (begin->traintype == 3) {
-				train_type = _T("EMG�ź�");
+				train_type = _T("temp");
 			} else if (begin->traintype == 4) {
-				train_type = _T("��ؽ�����");
+				train_type = _T("temp");
 			} else if (begin->traintype == 5) {
-				train_type = _T("��ؽ�����");
+				train_type = _T("temp");
 			}
 			RFPatientsManager::get()->m_excel.SetCellString(row, 2, train_type);
 			RFPatientsManager::get()->m_excel.SetCellInt(row, 4, begin->timetrace);

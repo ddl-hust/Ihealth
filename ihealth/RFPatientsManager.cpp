@@ -441,25 +441,25 @@ void RFPatientsManager::importPatient(std::wstring path)
 	m_excel.LoadSheet(strSheetName);
 
 	CString title = m_excel.GetCellString(1, 1);
-	if (title != _T("��֫���������������ѵ��ϵͳ")) {
+	if (title != _T(" temp")) {
 		m_excel.CloseExcelFile(FALSE);
 		return;
 	}
 
-	std::wstring tableheader = m_excel.GetCellString(2,2);
-	if (tableheader != _T("ҽԺ���")) {
+	CString tableheader = m_excel.GetCellString(2,2);
+	if (tableheader != _T("temp")) {
 		m_excel.CloseExcelFile(FALSE);
 		return;
 	}
 
 	tableheader = m_excel.GetCellString(2,3);
-	if (tableheader != _T("ҽ�����")) {
+	if (tableheader != _T("temp")) {
 		m_excel.CloseExcelFile(FALSE);
 		return;
 	}
 
 	tableheader = m_excel.GetCellString(2,4);
-	if (tableheader != _T("����")) {
+	if (tableheader != _T("temp")) {
 		m_excel.CloseExcelFile(FALSE);
 		return;
 	}

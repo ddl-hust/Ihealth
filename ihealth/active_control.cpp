@@ -269,7 +269,7 @@ void ActiveControl::Step()
     // Sleep(100);
     // AllocConsole();
     // freopen("CONOUT$", "w", stdout);
-    // printf("fx:%lf    fy:%lf    fz:%lf \n Mx:%lf    My:%lf    Mz:%lf \n", sub_bias[0], sub_bias[1], sub_bias[2], sub_bias[3], sub_bias[4], sub_bias[5]);
+    // ("fx:%lf    fy:%lf    fz:%lf \n Mx:%lf    My:%lf    Mz:%lf \n", sub_bias[0], sub_bias[1], sub_bias[2], sub_bias[3], sub_bias[4], sub_bias[5]);
 
     // Raw2Trans(sub_bias, distData);
     // Trans2Filter(distData, filtedData);
