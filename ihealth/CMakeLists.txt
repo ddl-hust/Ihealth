@@ -3,11 +3,13 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # set the filepath to find third libaray
 set(OpenCV_DIR D:/OpenCV3_4/x86)
-set(Boost_DIR D:/Ihealth/Ihealth/ihealth/Boost_1_67_0/vc14/x86)
-set(Boost_Root D:/Ihealth/Ihealth/ihealth/Boost_1_67_0)
-set(Boost_INCLUDE_DIRS ./ihealth/Boost_1_67_0)
+
+set(Boost_DIR D:/Ihealth/Ihealth/ihealth/Boost_1_67_0)
+set(Boost_ROOT_DIR /d/Ihealth/Ihealth/ihealth/Boost_1_67_0)
+set(Boost_INCLUDE_DIR ./ihealth/Boost_1_67_0/source/boost_1_67_0)
 
 set(EIGEN_INCLUDE_DIR D:/Ihealth/Ihealth/ihealth/eigen/eigen3_3_4 )
+
 set(TBB_ROOT_DIR /d/Ihealth/Ihealth/ihealth/TBB)
 set(TBB_INCLUDE_DIR /d/Ihealth/Ihealth/ihealth/TBB/include)
 set(TBB_LIBRARY /d/Ihealth/Ihealth/ihealth/TBB)
@@ -40,32 +42,32 @@ set( ZPLAY_ROOT_DIR       /d/Ihealth/Ihealth/ihealth/zplay)
 set(ZPLAY_INCLUDE_DIR /d/Ihealth/Ihealth/ihealth/zplay/include)
 set(ZPLAY_LIBRARY  /d/Ihealth/Ihealth/ihealth/zplay/lib/libzplay.lib)
 
-find_package(OpenCV REQUIRED)
+# find_package(OpenCV REQUIRED)
 # find_package (Boost REQUIRED)
-find_package(EIGEN)
-find_package(TBB)
-find_package(NI)
-find_package(PUPILTRACKER)
-find_package(APS)
-find_package(MYSQL)
-find_package(MSC)
-find_package(WKE)
-find_package(ZPLAY)
+# find_package(EIGEN)
+# find_package(TBB)
+# find_package(NI)
+# find_package(PUPILTRACKER)
+# find_package(APS)
+# find_package(MYSQL)
+# find_package(MSC)
+# find_package(WKE)
+# find_package(ZPLAY)
 include_directories(
 ${CMAKE_CURRENT_SOURCE_DIR} 
 ${CMAKE_CURRENT_SOURCE_DIR}/ATI/ATIDAQ 
-${PUPILTRACKER_INCLUDE_DIRS} 
-${APS_INCLUDE_DIRS} 
-${MYSQL_INCLUDE_DIRS} 
-${APS_INCLUDE_DIRS} 
-${MSC_INCLUDE_DIRS} 
-${WKE_INCLUDE_DIRS} 
-${OpenCV_INCLUDE_DIRS} 
-${Boost_INCLUDE_DIRS}
-${EIGEN_INCLUDE_DIRS} 
-${NI_INCLUDE_DIRS}
-${ZPLAY_INCLUDE_DIRS}
-${TBB_INCLUDE_DIRS})
+${PUPILTRACKER_INCLUDE_DIR} 
+${APS_INCLUDE_DIR} 
+${MYSQL_INCLUDE_DIR} 
+${APS_INCLUDE_DIR} 
+${MSC_INCLUDE_DIR} 
+${WKE_INCLUDE_DIR} 
+${OpenCV_INCLUDE_DIR} 
+${Boost_INCLUDE_DIR}
+${EIGEN_INCLUDE_DIR} 
+${NI_INCLUDE_DIR}
+${ZPLAY_INCLUDE_DIR}
+${TBB_INCLUDE_DIR})
 
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} Root_src)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/ATI/ATIDAQ ATI_src)
