@@ -29,6 +29,7 @@ public:
     void SetSAAMax(double saa);
     void SetSFEMax(double sfe);
     void SetArmSensitivity(double arm_senitivity);
+    void SetShoulderSensitivity(double shoulder_senitivity);
     //将力矩由主动关节换算到所有关节
     void ActiveTorqueToAllTorque(double torque[2], double alltorque[5]);
 
@@ -71,8 +72,8 @@ private:
 
     double shoulder_angle_max_;
     double elbow_angle_max_;
-	double elbow_Sensitivity_;
-	double shoulder_Sensitivity_;
+	double elbow_Sensitivity_=0;
+	double shoulder_Sensitivity_=0;
     static double six_dimforce[6];
     double joint_angle[2];
 };

@@ -380,13 +380,13 @@ void ActiveControl::PressureStep()
     MomentCalculation(force_vector, vel);
     AllocConsole();
     freopen("CONOUT$", "w", stdout);
-    std::cout<< " the sensitivity : " <<elbow_Sensitivity_<<endl;
+    std::cout<< " the elbow sensitivity : " <<elbow_Sensitivity_<<" shoulder sensitivity :"<<shoulder_Sensitivity_<<std::endl;
     if (joint_angle[0] < 10) {
         Ud_Shoul = -3 * six_dimforce[0];
     }
     else {
         // if (Ud_Shoul > 0) {
-        Ud_Shoul = 4 * vel;
+        Ud_Shoul = shoulder_Sensitivity_ * vel;
         //}
         // else {
         //	Ud_Shoul = 3 * vel;
@@ -755,6 +755,7 @@ void ActiveControl::SetDamping(float FC) { Force_Fc = FC; }
 void ActiveControl::SetSAAMax(double saa) { shoulder_angle_max_ = saa; }
 void ActiveControl::SetSFEMax(double sfe) { elbow_angle_max_ = sfe; }
 void ActiveControl::SetArmSensitivity(double arm_senitivity) { elbow_Sensitivity_ = arm_senitivity; }
+void ActiveControl::SetShoulderSensitivity(double shoulder_senitivity){shoulder_Sensitivity_=shoulder_senitivity;}
 void ActiveControl::MomentExport()
 {
     ofstream dataFile1;

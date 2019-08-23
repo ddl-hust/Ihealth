@@ -2526,7 +2526,8 @@ bool RFMainWindow::OnActiveTrain(void *pParam)
     // 根据SAA_ROM和SFE_ROM决定游戏运动的范围 and sensitivity for every patient
     RFMainWindow::MainWindow->m_robot.activeCtrl->SetSAAMax(RFMainWindow::MainWindow->m_current_patient.SAA_ROM);
     RFMainWindow::MainWindow->m_robot.activeCtrl->SetSFEMax(RFMainWindow::MainWindow->m_current_patient.SFE_ROM);
-    RFMainWindow::MainWindow->m_robot.activeCtrl->SetArmSensitivity(RFMainWindow::MainWindow->m_current_patient.Arm_Sensitivity); // To-Do
+    RFMainWindow::MainWindow->m_robot.activeCtrl->SetArmSensitivity(RFMainWindow::MainWindow->m_current_patient.Arm_Sensitivity);
+    RFMainWindow::MainWindow->m_robot.activeCtrl->SetShoulderSensitivity(RFMainWindow::MainWindow->m_current_patient.Shoulder_Sensitivity);
     AllocConsole();
     freopen("CONOUT$", "w", stdout);
     std::cout << "********already change the sensitivity***********" <<std::endl;
@@ -3429,9 +3430,17 @@ bool RFMainWindow::OnSystemSetReturn(void *pParam)
     CEditUI *arm_sensitivity = static_cast<CEditUI *>(m_pm.FindControl(_T("control_arm_sensitivity")));
     text = arm_sensitivity->GetText();
     double arm_sensitivity_value = _wtof(text);
+    // get control_shoulder_sensitivity
+    CEditUI *shoulder_sensitivity = static_cast<CEditUI *>(m_pm.FindControl(_T("control_shoulder_sensitivity")));
+    text = shoulder_sensitivity->GetText();
+    double shoulder_sensitivity_value = _wtof(text);
     // check the range of sensitivity
     if (arm_sensitivity_value > 10 || arm_sensitivity_value < -10) {
         MessageBox(NULL, _T("the arm sensitivity should be in range [-10,10]"), _T("Set sensitivity error!"), MB_OK);
+        return 0;
+    }
+    if (shoulder_sensitivity_value > 10 || shoulder_sensitivity_value < -10) {
+        MessageBox(NULL, _T("the shoulder sensitivity should be in range [-10,10]"), _T("Set sensitivity error!"), MB_OK);
         return 0;
     }
 
@@ -3451,6 +3460,8 @@ bool RFMainWindow::OnSystemSetReturn(void *pParam)
     RFMainWindow::MainWindow->m_current_patient.SAA_ROM = saa;
     RFMainWindow::MainWindow->m_current_patient.SFE_ROM = sfe;
     RFMainWindow::MainWindow->m_current_patient.Arm_Sensitivity = arm_sensitivity_value;
+    RFMainWindow::MainWindow->m_current_patient.Shoulder_Sensitivity = shoulder_sensitivity_value;
+
 
 
     return OnReturnMainPage(pParam);

@@ -111,6 +111,7 @@ struct PatientInfo
     double SAA_ROM; // �粿����չ�����˶���Χ�����ֵ����Ӧ�粿�Ƕȣ�
     double SFE_ROM; // �粿�������˶���Χ���ֵ����Ӧ�ⲿ�Ƕȣ�
     double Arm_Sensitivity; // the parm to adjust arm force->velocity
+    double Shoulder_Sensitivity; 
 };
 
 struct LoadPatientResult
