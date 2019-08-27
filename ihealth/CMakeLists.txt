@@ -16,7 +16,7 @@ set(TBB_INCLUDE_DIR D:/Ihealth/Ihealth/ihealth/TBB/include)
 set(TBB_LIBRARY D:/Ihealth/Ihealth/ihealth/TBB/lib/ia32/vc14/tbb.lib)
 
 set(NI_ROOT_DIR D:/Ihealth/Ihealth/ihealth/NI)
-set(NI_INCLUDE_DIR "D:/Ihealth/Ihealth/ihealth/NI/include")
+set(NI_INCLUDE_DIR D:/Ihealth/Ihealth/ihealth/NI/include)
 set(NI_LIBRARY D:/Ihealth/Ihealth/ihealth/NI/lib/NIDAQmx.lib)
 
 set(PUPILTRACKER_ROOT_DIR D:/Ihealth/Ihealth/ihealth/pupiltracker)
@@ -42,6 +42,10 @@ set(WKE_LIBRARY   D:/Ihealth/Ihealth/ihealth/wke/wke.lib)
 set( ZPLAY_ROOT_DIR        D:/Ihealth/Ihealth/ihealth/zplay)
 set(ZPLAY_INCLUDE_DIR  D:/Ihealth/Ihealth/ihealth/zplay/include)
 set(ZPLAY_LIBRARY   D:/Ihealth/Ihealth/ihealth/zplay/lib/libzplay.lib)
+
+# set(SPDLOG_DIR   D:/Ihealth/Ihealth/ihealth/spdlog/cmake)
+# # list(APPEND CMAKE_MODULE_PATH "${SPDLOG_DIR}/cmake")
+# find_package(SPDLOG REQUIRED)
 
 find_package(OpenCV REQUIRED)
 find_package (Boost REQUIRED)

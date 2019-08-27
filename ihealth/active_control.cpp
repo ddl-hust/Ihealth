@@ -11,6 +11,10 @@
 #include "data_acquisition.h"
 #include "pupiltracker/utils.h"
 
+// spdlog debug
+#include<spdlog/spdlog.h>
+#include<spdlog/sinks/basic_file_sink.h>
+// #include "LoggerMacros.h"
 using namespace Eigen;
 using namespace std;
 
@@ -380,7 +384,17 @@ void ActiveControl::PressureStep()
     MomentCalculation(force_vector, vel);
     AllocConsole();
     freopen("CONOUT$", "w", stdout);
-    std::cout<< " the elbow sensitivity : " <<elbow_Sensitivity_<<" shoulder sensitivity :"<<shoulder_Sensitivity_<<std::endl;
+    // spdlog::set_level(spdlog::level::err);
+    // spdlog::info("Welcome to spdlog!");
+    // spdlog::error("Some error message with arg: {}", 1);
+    // spdlog::warn("Easy padding in numbers like {:08d}", 12);
+    // spdlog::critical("Support for int: {0:d};  hex: {0:x};  oct: {0:o}; bin: {0:b}", 42);
+    // spdlog::info("Support for floats {:03.2f}", 1.23456);
+    // spdlog::info("Positional args are {1} {0}..", "too", "supported");
+    // spdlog::info("{:<30}", "left aligned");
+    // ROBOTICS_INFO("the elbow sensitivity: {}, shoulder sensitivity :{}", elbow_Sensitivity_, shoulder_Sensitivity_);
+    spdlog::info("{} the elbow sensitivity :{} ,the shoulder sensitity :{} ",__LINE__,elbow_Sensitivity_,shoulder_Sensitivity_);
+    // std::cout << " the elbow sensitivity : " << elbow_Sensitivity_ << " shoulder sensitivity :" << shoulder_Sensitivity_ << std::endl;
     if (joint_angle[0] < 10) {
         Ud_Shoul = -3 * six_dimforce[0];
     }
@@ -755,7 +769,7 @@ void ActiveControl::SetDamping(float FC) { Force_Fc = FC; }
 void ActiveControl::SetSAAMax(double saa) { shoulder_angle_max_ = saa; }
 void ActiveControl::SetSFEMax(double sfe) { elbow_angle_max_ = sfe; }
 void ActiveControl::SetArmSensitivity(double arm_senitivity) { elbow_Sensitivity_ = arm_senitivity; }
-void ActiveControl::SetShoulderSensitivity(double shoulder_senitivity){shoulder_Sensitivity_=shoulder_senitivity;}
+void ActiveControl::SetShoulderSensitivity(double shoulder_senitivity) { shoulder_Sensitivity_ = shoulder_senitivity; }
 void ActiveControl::MomentExport()
 {
     ofstream dataFile1;

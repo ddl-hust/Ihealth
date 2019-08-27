@@ -1,0 +1,6 @@
+[submodule "ihealth/spdlog"]
+	path = ihealth/spdlog
+	url = git@github.com:gabime/spdlog.git
+[submodule "ihealth\\fmt"]
+	path = ihealth\\fmt
+	url = git@github.com:fmtlib/fmt.git
