@@ -16,7 +16,7 @@ long MetadataManager::GenerateHashCode()
 
 void MetadataManager::AddMetadata(ClassInfo *pClassInfo)
 {
-	if (sm_HashCodeToMetadatas.count(pClassInfo->GetHashCode()) > 0)
+	if (sm_HashCodeToMetadatas.count(pClassInfo->GetHashCode()) > 0) //check if the meta calss is already in map
 		return;
 
 

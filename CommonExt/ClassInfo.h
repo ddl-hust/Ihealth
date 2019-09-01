@@ -16,7 +16,7 @@ namespace Ext
 		{
 		public:
 
-			typedef void* (*FunForCreate)();
+			typedef void* (*FunForCreate)(); //function pointer
 
 		public:
 			ClassInfo();

@@ -184,11 +184,11 @@ void getSensorData(bool Travel_Switch[4])
     returnCode = APS_read_d_input(0, DI_Group, &DI_Data);
     for (int i = 0; i < ControlCard::InputChannels; i++) di_ch[i] = ((DI_Data >> i) & 1);
 
-    Travel_Switch[0] = di_ch[16]; // 0�ŵ��ORG�ź�-�ⲿ���
-    Travel_Switch[1] = di_ch[17]; // 0�ŵ��MEL�ź�-�ⲿ���
+    Travel_Switch[0] = di_ch[16]; 
+    Travel_Switch[1] = di_ch[17]; 
 
-    Travel_Switch[2] = di_ch[18]; // 1�ŵ��ORG�ź�-�粿���
-    Travel_Switch[3] = di_ch[19]; // 1�ŵ��MEL�ź�-�粿���
+    Travel_Switch[2] = di_ch[18]; 
+    Travel_Switch[3] = di_ch[19]; 
 }
 
 bool Robot::IsPassiveRecording() { return pasvMode->in_record_status_; }

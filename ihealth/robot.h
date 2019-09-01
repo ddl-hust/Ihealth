@@ -13,61 +13,58 @@ public:
     Robot();
     ~Robot();
     /************************************************************************/
-    /*                           ����ģʽ�ӿ�                                */
+    /*                         passive mode                               */
     /************************************************************************/
-    //��ʼ�����˶���index-��ʾ����������
+    /**
+     * brief begin passive motion
+     * parm @ index :the index of motion
+     */
     void PassiveStartMove(int index);
-    //ֹͣ�����˶�
     void PassiveStopMove();
-    //��ʼ¼�ƶ���
     void PassiveBeginRecord();
-    //����ʾ��
     void PassiveStopRecord();
-    // ���������һ�α����˶�
+    /**
+     * brief return the latest passive motion
+     * parm @ move :store the latest motion
+     */
     void PassiveGetCurrentMove(PassiveData &move);
-    // ���������һ��¼��
+    /**
+     * brief return the latest passive motion record(teach motion)
+     * parm @ teach :store the latest motion record
+     */
     void PassiveGetCurrentRecord(PassiveData &teach);
-    // ��������˶���������
-    void PassiveClearMovementSet();
-    // �������¼�����ݱ����ڱ����˶�����������
-    void PassiveStoreCurrentRecord();
-    // ����ָ���ı�������
+    void PassiveClearMovementSet(); // clear all passive motion set
+    void PassiveStoreCurrentRecord(); // store current teach motion to motion set
+    /**
+     * brief store the specfic motion to motion set
+     * parm @ move :the motion you want to store 
+     */
     void PassiveStoreMovement(const PassiveData &move);
-    // ���ر����˶��Ƿ������˶���¼��
-    bool PassiveIsBusy();
-    // ���ر����˶��Ƿ�����¼��
-    bool IsPassiveRecording();
+    bool PassiveIsBusy(); // check is passive motion is running
+    bool IsPassiveRecording(); //check is passive record is running
 
     /************************************************************************/
-    /*                           ����ģʽ�ӿ�                                */
+    /*                           active mode                                */
     /************************************************************************/
-    //��ʼ�����˶�
     void ActiveStartMove();
-    //���������˶�
     void ActiveStopMove();
-    //��������-���ݽӿ�
     double GetGripStrength();
     bool IsFire();
     void GetPlanePos(short w, short h, double XY[2]);
-    // ��������Ϸ���棬��ȡ������XY
     void CalculateRagPos(double XY[2]);
     void SetDamping(float FC = 0.1);
 
     /************************************************************************/
-    /*                           sEMGģʽ�ӿ�                                */
+    /*                           emg mode                                 */
     /************************************************************************/
     bool EMGIsMove();
-    //��ʼEMG�˶�
     void EMGStartMove();
-    //ֹͣEMG�˶�
     void EMGStopMove();
-    //��ȡEMG�ź�-���ݽӿڣ�index-�źű�ţ��ֱ�Ϊ0��1��2��3
     double EMGGetSignal(int index = 0);
 
     /************************************************************************/
-    /*                           �۶�ģʽ�ӿ�                                */
+    /*                           eye mode                                */
     /************************************************************************/
-    //���عؽڽǶ�-���ݽӿ�,0-�粿�ؽڽǶȣ�1-�ⲿ�ؽڽǶ�(ͬ��������ģʽ�ӿ�)
     void enterEyeMode(); // call it while enter eye mode.
     void exitEyeMode(); // call it while enter eye mode.
     void getLeftRGB24(unsigned char *data, int _width, int _height); // get image data of left eye
@@ -76,16 +73,13 @@ public:
     void stopEyeMove(); // call it while clicking the stop
     void setEyeVel(double factor); // set velocity
     void eyeCalibrate(); // call it before startEyeControl.
-
-    //��λ
     void resetPos();
     void stopResetPos();
-
     void setWindow(HWND hWnd);
 
 public:
-    PassiveControl *pasvMode; //��������ģʽ
-    boundaryDetection *bDetect; //�߽���
+    PassiveControl *pasvMode; 
+    boundaryDetection *bDetect;
     ActiveControl *activeCtrl;
     emgcontrl *EMGContrl;
     EyeMode *eyeModeCtl;

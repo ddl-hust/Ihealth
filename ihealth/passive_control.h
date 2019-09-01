@@ -13,20 +13,15 @@ struct PassiveData
 {
     std::vector<double> target_positions[2]; //存储位置的数组
     std::vector<double> target_velocitys[2]; //存储速度的数组
-    std::vector<double> Interpolation_Data[2]; //存储插值后的位置数组
-    double round_time; //运动时间（单位为s）
+    std::vector<double> interpolation_positions[2]; //存储插值后的位置数组
+    double runing_time; //运动时间（单位为s）
 };
 
-
-// 控制被动运动的类，控制被动运动的录制，以及根据录制好的被动
-// 运动进行运动
 class PassiveControl
 {
 public:
     PassiveControl();
     ~PassiveControl();
-
-    // 进行被动运动，index表示被动运动的索引
     void BeginMove(int index);
     // 进行一步被动运动，一个完整的被动运动分为多个steps
     // 每延时一段时间就运行一个step

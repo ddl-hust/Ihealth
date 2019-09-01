@@ -28,7 +28,7 @@ public:
     // void TorqueStep();
     // export torque sensor to txt file
     // void TorqueExport();
-    // boundaryDetection detect; // ??? why need this  my this is left for torque solution
+    boundaryDetection detect; // ??? why need this  my this is left for torque solution
 
 
 public:
