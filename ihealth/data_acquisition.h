@@ -11,8 +11,8 @@ public:
     DataAcquisition &operator=(const DataAcquisition &) = delete;
     DataAcquisition &operator=(DataAcquisition &&) = delete;
 
-    void AcquisiteTorqueData();
-    void AcquisiteTorqueData(double torquedata[2]);
+    void AcquisiteTorqueData(); 
+    void AcquisiteTorqueData(double torquedata[2]); //store torque data in @parm torquedata
     void AcquisitePullSensorData();
     void AcquisiteSixDemensionData(double output_buf[6]);
     //���ﳢ���°Ѽ�������ݲɼ�����һ�𣬸о��������ܿ�������

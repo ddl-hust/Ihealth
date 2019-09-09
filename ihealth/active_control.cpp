@@ -36,7 +36,7 @@ static const int kPlaneMaxY = 601;
 static const int kRagMaxX = 710;
 static const int kRagMaxY = 596;
 
-double ActiveControl::six_dimforce[6]{0}; //init static member
+double ActiveControl::six_dimforce[6]{0};
 
 extern Vector3d AxisDirection[5]{
     Vector3d(0, 0, 0), Vector3d(0, 0, 0), Vector3d(0, 0, 0), Vector3d(0, 0, 0), Vector3d(0, 0, 0),
@@ -163,6 +163,21 @@ unsigned int __stdcall ActiveMoveThread(PVOID pParam) // what is that meaning  w
     }
     DataAcquisition::GetInstance().StopSixDemTask();
     DataAcquisition::GetInstance().StartSixDemTask();
+    // all the output sensor data
+    ofstream joint_value("..\\..\\resource\\ExportData\\ joint.txt", ios::app | ios::out);
+    ofstream torque_value("..\\..\\resource\\ExportData\\ torque.txt", ios::app | ios::out);
+    ofstream sixdim_force_value("..\\..\\resource\\ExportData\\ sixdim_force.txt", ios::app | ios::out);
+    ofstream pressure_force_value("..\\..\\resource\\ExportData\\ pressure_force.txt", ios::app | ios::out);
+    double angle[2]{0};
+    double torque[2]{0};
+    double elbow_pressure[2]{0};
+    double six_dim_force[6]{0};
+
+    spdlog::info("ready to write joint data to txt");
+    joint_value << " shoulder  "
+                << "  elbow  " << endl;
+
+
     while (true) {
         if (active->is_exit_thread_) {
             break;
@@ -175,15 +190,35 @@ unsigned int __stdcall ActiveMoveThread(PVOID pParam) // what is that meaning  w
                 break;
             }
             else {
-                SwitchToThread(); //so switch to which thread???
+                SwitchToThread(); // so switch to which thread???
             }
         }
         // Ih the active cointrol thread we open sixdimforce ,pressure thread to get sixdimforce and pressure data
         active->Step();
         spdlog::info("{} {} {} ready to into pressure thread", __LINE__, __FILE__, __FUNCTION__);
         active->PressureStep();
+        // To-Do
+        /**
+         * export joint value ,torque ,pressure ,and so on
+         * I think for doctor do experienment maybe they need all sensor data
+         * So in case ,we can export all sensor data
+         */
+        // std::vector<std::vector<double>> joint_data;
+        ControlCard::GetInstance().GetEncoderData(angle);
+        DataAcquisition::GetInstance().AcquisiteTorqueData(torque);
+        DataAcquisition::GetInstance().AcquisiteTensionData(elbow_pressure);
+        DataAcquisition::GetInstance().AcquisiteSixDemensionData(six_dim_force);
+        joint_value << angle[0] << "          " << angle[1] << std::endl;
+        torque_value << torque[0] << "          " <<torque[1] << std::endl;
+        sixdim_force_value << six_dim_force[0] << "          " << six_dim_force[1] << "          " << six_dim_force[2] << "          " << six_dim_force[3]
+                           << "          " << six_dim_force[4] << "          " << six_dim_force[5] << std::endl;
+        pressure_force_value << elbow_pressure[0] << "          " << elbow_pressure[1] << std::endl;
     }
     spdlog::info("The end of active thread");
+    joint_value.close();
+    torque_value.close();
+    sixdim_force_value.close();
+    pressure_force_value.close();
     return 0;
 }
 void ActiveControl::MoveInNewThread()
@@ -706,6 +741,34 @@ void ActiveControl::SetSAAMax(double saa) { shoulder_angle_max_ = saa; }
 void ActiveControl::SetSFEMax(double sfe) { elbow_angle_max_ = sfe; }
 void ActiveControl::SetArmSensitivity(double arm_senitivity) { elbow_Sensitivity_ = arm_senitivity; }
 void ActiveControl::SetShoulderSensitivity(double shoulder_senitivity) { shoulder_Sensitivity_ = shoulder_senitivity; }
+
+
+// To-Do 下一步改善数据导出功能
+/*
+unsigned int __stdcall ExportJointThread(PVOID pParam)
+{
+    int id = (int)pParam;
+    std::string filepath = "..\\..\\resource\\ExportData\\";
+    std::string filename = std::to_string(id) + "joint_data";
+    std::string prefix = ".txt";
+    std::string fullpath = filepath + filename + prefix;
+    ofstream joint_value(fullpath, ios::app | ios::out);
+    joint_value << "shoulder "
+                << " elbow " << endl;
+    double joint[2];
+    while (true) {
+        if (is_exit_thread_) break;
+        ControlCard::GetInstance().GetEncoderData(joint);
+        joint_value << joint[0] << "   " << joint[1] << endl;
+    }
+    joint_value.close();
+}
+void ActiveControl::StartExportJointdata(int id)
+{
+    is_exit_thread_ = false;
+    (HANDLE) _beginthreadex(NULL, 0, ExportJointThread, void *id, 0, NULL);
+}
+*/
 
 // void ActiveControl::TorqueExport()
 // {

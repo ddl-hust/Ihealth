@@ -25,6 +25,7 @@ public:
     void SetArmSensitivity(double arm_senitivity);
     void SetShoulderSensitivity(double shoulder_senitivity);
     void ActiveTorqueToAllTorque(double torque[2], double alltorque[5]);
+    // void StartExportJointdata(int id); //export encoder data to txt file
     // void TorqueStep();
     // export torque sensor to txt file
     // void TorqueExport();

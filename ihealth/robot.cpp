@@ -192,3 +192,5 @@ void getSensorData(bool Travel_Switch[4])
 }
 
 bool Robot::IsPassiveRecording() { return pasvMode->in_record_status_; }
+
+// void Robot::ExportJointData(int id){activeCtrl->StartExportJointdata(id);}

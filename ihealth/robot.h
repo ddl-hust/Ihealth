@@ -5,6 +5,8 @@
 #include "active_control.h"
 #include "emgcontrl.h"
 #include "EyeMode.h"
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/basic_file_sink.h>
 
 
 class Robot
@@ -53,6 +55,7 @@ public:
     void GetPlanePos(short w, short h, double XY[2]);
     void CalculateRagPos(double XY[2]);
     void SetDamping(float FC = 0.1);
+    // void ExportJointData(int id);
 
     /************************************************************************/
     /*                           emg mode                                 */

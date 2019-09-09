@@ -470,7 +470,7 @@ void RFMainWindow::BindManagerPatientPageEvent()
     game4_nandu_select->OnNotify += MakeDelegate(this, &RFMainWindow::OnGame4NanduSetingMenu);
 
     CButtonUI *game4_start = static_cast<CButtonUI *>(m_pm.FindControl(_T("game4_start")));
-    game4_start->OnNotify += MakeDelegate(this, &RFMainWindow::OnGame4Start);
+    game4_start->OnNotify += MakeDelegate(this, &RFMainWindow::OnGame4Start);  //fuck name can you believe this is the begin of game what is the fucking "4"'s function???
 
     CButtonUI *game4_recovery = static_cast<CButtonUI *>(m_pm.FindControl(_T("game4_recovery")));
     game4_recovery->OnNotify += MakeDelegate(this, &RFMainWindow::OnGame4Recovery);
@@ -3167,12 +3167,21 @@ bool RFMainWindow::OnGame4Start(void *pParam)
     TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
     if (pMsg->sType != _T("click")) return true;
 
-    CCheckBoxUI *pCheckBox = static_cast<CCheckBoxUI *>(pMsg->pSender);
+    CCheckBoxUI *pCheckBox = static_cast<CCheckBoxUI *>(pMsg->pSender); //what is sender function
     std::wstring voice_path;
+    int paitent_id=m_current_patient.id;
+    spdlog::info( "current patient id : {}",m_current_patient.id);
+    /**
+     * To-Do
+     * pass the ID of current patient to record sensor data (encoder ,torque and so on )
+     * 
+     * */
+     
 
     if (!pCheckBox->GetCheck()) {
-        m_robot.ActiveStartMove();
-
+        m_robot.ActiveStartMove(); //so in this how can we conencted the current patient with it ???
+        // m_robot.ExportJointData(paitent_id);
+        //HANDLE data_handle = (HANDLE)_beginthreadex(NULL, 0, ExportJointData(paitent_id), this, 0, NULL);
         // 主动开始时播放游戏背景音，播放完后自动循环
         // 首先判断游戏的type，根据不同的游戏type播放不一样的背景音乐
         std::wstring bg_name;
