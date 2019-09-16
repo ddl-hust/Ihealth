@@ -11,7 +11,7 @@ public:
     ActiveControl();
     ~ActiveControl();
     void LoadParamFromFile();
-    void StartMove();
+    void StartMove(int id);
     void StopMove();
     void Step(); // get six_dim_force data
     void PressureStep(); // get pressure data
@@ -41,7 +41,7 @@ public:
     double cycle_time_in_second_;
 
 private:
-    void MoveInNewThread();
+    void MoveInNewThread(int id);
     // unsigned int __stdcall ActiveMoveThread(PVOID pParam);
     void ExitMoveThread();
     void ActMove(); // send instruction to two active motor call APS's API

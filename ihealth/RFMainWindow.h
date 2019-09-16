@@ -36,8 +36,6 @@ public:
 
     void OnFinalMessage(HWND /*hWnd*/);
     CControlUI *CreateControl(LPCTSTR pstrClass);
-
-    // ��ʼ����������Ҫ����UI�����ݿ�ĳ�ʼ��
     void Init();
     void Closing();
     void OnPrepare();
@@ -47,7 +45,6 @@ public:
     void BindManagerPatientPageEvent();
 
     LRESULT OnCommunicate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
-    // �������������Ӧ�����������ﴦ����ѡ���ߵĹ���
     LRESULT OnAppClick(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
     LRESULT OnDuiCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
     LRESULT OnClose(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
@@ -59,7 +56,7 @@ public:
     LRESULT OnSize(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
     LRESULT OnGetMinMaxInfo(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
     LRESULT OnSysCommand(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
-    LRESULT OnKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
+    LRESULT OnKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);   // press Esc exit system
     LRESULT OnMenuClick(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
     LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
     LRESULT MessageHandler(UINT uMsg, WPARAM wParam, LPARAM lParam, bool &bHandled);

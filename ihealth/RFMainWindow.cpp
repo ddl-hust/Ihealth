@@ -33,6 +33,7 @@ static time_t s_eyemode_start = 0;
 static time_t s_eyemode_stop = 0;
 static std::vector<double> s_eyemode_data[2];
 
+//静态成员线程指针初始化
 CUIThread *RFMainWindow::UIThread = NULL;
 RFMySQLThread *RFMainWindow::DBThread = NULL;
 RFMainWindow *RFMainWindow::MainWindow = NULL;
@@ -95,7 +96,7 @@ void RFMainWindow::Init()
 
     DBThread = RFMySQLThread::Create();
 
-    RFPatientsTrainDetails::get();
+    RFPatientsTrainDetails::get(); //单例模式
     RFPatientsTrainInfo::get();
     RFPatientsManager::get();
     // RFPassiveTrain::get()->LoadPassiveTrainInfo();
@@ -105,7 +106,7 @@ void RFMainWindow::Init()
     ShowLoginPage();
 }
 
-void RFMainWindow::OnPrepare() {}
+void RFMainWindow::OnPrepare() {} 
 
 void RFMainWindow::Closing() {}
 
@@ -118,7 +119,7 @@ void RFMainWindow::Notify(TNotifyUI &msg)
         CScrollBarUI *pScrollBar = static_cast<CScrollBarUI *>(msg.pSender);
         if (pScrollBar) {
             std::wstring scrollname = pScrollBar->GetName();
-            if (scrollname == _T("zd_gjjd_scroll")) {
+            if (scrollname == _T("zd_gjjd_scroll")) {  //what the fucking name zd_gjjd_scroll !!!
                 CWaveUI *pWave = static_cast<CWaveUI *>(m_pm.FindControl(_T("zd_gjjd_wave")));
                 pWave->Invalidate();
 
@@ -533,8 +534,8 @@ void RFMainWindow::BindManagerPatientPageEvent()
     CButtonUI *evd_next_page = static_cast<CButtonUI *>(m_pm.FindControl(_T("evd_next_page")));
     evd_next_page->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVDNextPage);
 
-    CButtonUI *evaluation_start = static_cast<CButtonUI *>(m_pm.FindControl(_T("evaluation_start")));
-    evaluation_start->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVStart);
+    // CButtonUI *evaluation_start = static_cast<CButtonUI *>(m_pm.FindControl(_T("evaluation_start")));
+    // evaluation_start->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVStart);
 
     CButtonUI *evaluation_end = static_cast<CButtonUI *>(m_pm.FindControl(_T("evaluation_end")));
     evaluation_end->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVStop);
@@ -569,14 +570,17 @@ LRESULT RFMainWindow::OnAppClick(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &
     pt.x = GET_X_LPARAM(lParam);
     pt.y = GET_Y_LPARAM(lParam);
 
-    // 通过比对点击的控件的名字来判断是不是选择患者的页面
+    //通过判断鼠标点击位置来确定患者选择，以及给当前患者初始化相应属性
     CControlUI *pControl = static_cast<CControlUI *>(m_pm.FindControl(pt));
-    if (pControl && _tcsncmp(pControl->GetName(), _T("cell"), 4) == 0) {
+    //通过label控件来确定当前病人信息
+    if (pControl && _tcsncmp(pControl->GetName(), _T("cell"), 4) == 0) 
+    {  
         std::string name = TGUTF16ToUTF8((std::wstring)pControl->GetName());
-        int row = atoi(name.substr(4, 1).c_str());
+        int row = atoi(name.substr(4, 1).c_str()); //cell 命名规则 eg. cell23 2行3列(2,3)
         wchar_t cell_name[32] = _T("");
         wsprintf(cell_name, _T("cell%d2"), row);
-
+        // AllocConsole();
+        // freopen("CONOUT$", "w", stdout);
         CLabelUI *pName = static_cast<CLabelUI *>(m_pm.FindControl(cell_name));
         if (pName) {
             m_current_patient.name = pName->GetText();
@@ -588,8 +592,7 @@ LRESULT RFMainWindow::OnAppClick(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &
         if (pID) {
             m_current_patient.id = _wtoi(((std::wstring)pID->GetText()).c_str());
         }
-
-        // 查询SAA_ROM和SFE_ROM
+        //through mysql get the stored elbow and shoulder joint limits
         char sql[1024] = "";
         sprintf(sql, "select saa_rom,sfe_rom from patient where id=%d and flag=0", m_current_patient.id);
         RFMYSQLStmt stmt;
@@ -605,7 +608,7 @@ LRESULT RFMainWindow::OnAppClick(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &
 
         bHandled = TRUE;
     }
-
+    //通过父控件来确定当前病人信息
     if (pControl && pControl->m_pParent && _tcsncmp(pControl->m_pParent->GetName(), _T("row"), 3) == 0) {
         std::string name = TGUTF16ToUTF8((std::wstring)pControl->m_pParent->GetName());
         int row = atoi(name.substr(3, 2).c_str()) - 1;
@@ -628,8 +631,9 @@ LRESULT RFMainWindow::OnAppClick(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &
 
         bHandled = TRUE;
     }
-
-    if (pControl && _tcscmp(pControl->GetName(), _T("manager_patient_detail")) == 0) {
+    //管理患者界面
+    if (pControl && _tcscmp(pControl->GetName(), _T("manager_patient_detail")) == 0)
+    {
         bHandled = TRUE;
 
 
@@ -677,6 +681,7 @@ LRESULT RFMainWindow::OnAppClick(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &
             }
         }
     }
+    //训练信息界面
     else if (pControl && _tcsncmp(pControl->GetName(), _T("patient_information_detail"), _tcslen(_T("patient_information_detail"))) == 0) {
         std::wstring name = pControl->GetName();
 
@@ -685,11 +690,13 @@ LRESULT RFMainWindow::OnAppClick(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &
 
         ShowPatientTrainDetail((std::wstring)pLabel->GetText());
     }
+    //训练信息图表
     else if (pControl && _tcsncmp(pControl->GetName(), _T("train_detail_detail"), _tcslen(_T("train_detail_detail"))) == 0) {
         int id = pControl->GetTag();
 
         ShowTrainDataChartPage(id);
     }
+    //评估信息
     else if (pControl && _tcsncmp(pControl->GetName(), _T("eval_detail"), _tcslen(_T("eval_detail"))) == 0) {
         std::wstring name = pControl->GetName();
         std::wstring cellname = _T("eval_cell") + name.substr(name.size() - 1, 1) + _T("1");
@@ -1141,34 +1148,34 @@ LRESULT RFMainWindow::OnMenuClick(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL 
         ::PostQuitMessage(0L);
     }
 
-    if (*name == _T("nandu1")) {
-        CWkeWebkitUI *game4 = static_cast<CWkeWebkitUI *>(m_pm.FindControl(_T("game4")));
-        if (game4) {
-            // CDuiString respath = CPaintManagerUI::GetResourcePath() + _T("/Plane2/index.html");
-            // game4->SetFile((std::wstring)respath);
+    // if (*name == _T("nandu1")) {
+    //     CWkeWebkitUI *game4 = static_cast<CWkeWebkitUI *>(m_pm.FindControl(_T("game4")));
+    //     if (game4) {
+    //         // CDuiString respath = CPaintManagerUI::GetResourcePath() + _T("/Plane2/index.html");
+    //         // game4->SetFile((std::wstring)respath);
 
-            game4->RunJS(_T("Checkpoint1();"));
-        }
-        m_robot.SetDamping(0.1);
-    }
-    if (*name == _T("nandu2")) {
-        CWkeWebkitUI *game4 = static_cast<CWkeWebkitUI *>(m_pm.FindControl(_T("game4")));
-        if (game4) {
-            // CDuiString respath = CPaintManagerUI::GetResourcePath() + _T("/Plane1/index.html");
-            // game4->SetFile((std::wstring)respath);
-            game4->RunJS(_T("Checkpoint2();"));
-        }
-        m_robot.SetDamping(0.3);
-    }
-    if (*name == _T("nandu3")) {
-        CWkeWebkitUI *game4 = static_cast<CWkeWebkitUI *>(m_pm.FindControl(_T("game4")));
-        if (game4) {
-            // CDuiString respath = CPaintManagerUI::GetResourcePath() + _T("/Plane/index.html");
-            // game4->SetFile((std::wstring)respath);
-            game4->RunJS(_T("Checkpoint3();"));
-        }
-        m_robot.SetDamping(0.5);
-    }
+    //         game4->RunJS(_T("Checkpoint1();"));
+    //     }
+    //     m_robot.SetDamping(0.1);
+    // }
+    // if (*name == _T("nandu2")) {
+    //     CWkeWebkitUI *game4 = static_cast<CWkeWebkitUI *>(m_pm.FindControl(_T("game4")));
+    //     if (game4) {
+    //         // CDuiString respath = CPaintManagerUI::GetResourcePath() + _T("/Plane1/index.html");
+    //         // game4->SetFile((std::wstring)respath);
+    //         game4->RunJS(_T("Checkpoint2();"));
+    //     }
+    //     m_robot.SetDamping(0.3);
+    // }
+    // if (*name == _T("nandu3")) {
+    //     CWkeWebkitUI *game4 = static_cast<CWkeWebkitUI *>(m_pm.FindControl(_T("game4")));
+    //     if (game4) {
+    //         // CDuiString respath = CPaintManagerUI::GetResourcePath() + _T("/Plane/index.html");
+    //         // game4->SetFile((std::wstring)respath);
+    //         game4->RunJS(_T("Checkpoint3();"));
+    //     }
+    //     m_robot.SetDamping(0.5);
+    // }
     return 0;
 }
 
@@ -3179,7 +3186,7 @@ bool RFMainWindow::OnGame4Start(void *pParam)
      
 
     if (!pCheckBox->GetCheck()) {
-        m_robot.ActiveStartMove(); //so in this how can we conencted the current patient with it ???
+        m_robot.ActiveStartMove(paitent_id); //so in this how can we conencted the current patient with it ???
         // m_robot.ExportJointData(paitent_id);
         //HANDLE data_handle = (HANDLE)_beginthreadex(NULL, 0, ExportJointData(paitent_id), this, 0, NULL);
         // 主动开始时播放游戏背景音，播放完后自动循环
@@ -3865,17 +3872,18 @@ bool RFMainWindow::OnEVDNextPage(void *pParam)
     return true;
 }
 
-bool RFMainWindow::OnEVStart(void *pParam)
-{
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
+//评估用的，暂时用不上
+// bool RFMainWindow::OnEVStart(void *pParam)
+// {
+//     TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
+//     if (pMsg->sType != _T("click")) return false;
 
-    m_robot.ActiveStopMove();
-    m_robot.ActiveStartMove();
+//     m_robot.ActiveStopMove();
+//     m_robot.ActiveStartMove();
 
-    StartEVDetect();
-    return true;
-}
+//     StartEVDetect();
+//     return true;
+// }
 
 bool RFMainWindow::OnEVStop(void *pParam)
 {

@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <ctime>
 #include <fstream>
 #include <process.h>
 #include <windows.h>
@@ -45,6 +46,12 @@ extern Vector3d AxisPosition[5]{
     Vector3d(0, 0, 0), Vector3d(0, 0, 0), Vector3d(0, 0, 0), Vector3d(0, 0, 0), Vector3d(0, 0, 0),
 };
 
+//导出病人数据将主动运动与病人id关联起来
+struct ExportPaitentData
+{
+    int paitent_id;
+    ActiveControl* active_control; 
+};
 ActiveControl::ActiveControl()
 {
     move_thread_handle_ = 0;
@@ -117,7 +124,6 @@ void ActiveControl::LoadParamFromFile()
     shoulder_angle_max_ = cfg.get<double>("shoulder_angle_max");
     elbow_angle_max_ = cfg.get<double>("elbow_angle_max");
     elbow_Sensitivity_ = 3; // default sensitivity
-
     // AllocConsole();
     // freopen("CONOUT$", "w", stdout);
     // cout << rotate_matrix_ << endl;
@@ -133,8 +139,10 @@ ActiveControl::~ActiveControl()
 }
 
 unsigned int __stdcall ActiveMoveThread(PVOID pParam) // what is that meaning  whne actually call there is not parm
-{
-    ActiveControl *active = (ActiveControl *)pParam;
+{   
+    ExportPaitentData *export_data= (ExportPaitentData*)pParam;
+    ActiveControl *active = export_data->active_control;
+    int paitent_id=export_data->paitent_id;
     UINT start, end;
     start = GetTickCount();
     double torque_sum[6]{0.0};
@@ -164,10 +172,12 @@ unsigned int __stdcall ActiveMoveThread(PVOID pParam) // what is that meaning  w
     DataAcquisition::GetInstance().StopSixDemTask();
     DataAcquisition::GetInstance().StartSixDemTask();
     // all the output sensor data
-    ofstream joint_value("..\\..\\resource\\ExportData\\ joint.txt", ios::app | ios::out);
-    ofstream torque_value("..\\..\\resource\\ExportData\\ torque.txt", ios::app | ios::out);
-    ofstream sixdim_force_value("..\\..\\resource\\ExportData\\ sixdim_force.txt", ios::app | ios::out);
-    ofstream pressure_force_value("..\\..\\resource\\ExportData\\ pressure_force.txt", ios::app | ios::out);
+    std::string pathname="..\\..\\resource\\ExportData\\";
+    std::string paitent_info="patient_"+std::to_string(paitent_id)+"_";
+    ofstream joint_value(pathname+paitent_info+"joint.txt", ios::app | ios::out);
+    ofstream torque_value(pathname+paitent_info+"torque.txt", ios::app | ios::out);
+    ofstream sixdim_force_value(pathname+paitent_info+"sixdim_force.txt", ios::app | ios::out);
+    ofstream pressure_force_value(pathname+paitent_info+"pressure_force.txt", ios::app | ios::out);
     double angle[2]{0};
     double torque[2]{0};
     double elbow_pressure[2]{0};
@@ -180,7 +190,7 @@ unsigned int __stdcall ActiveMoveThread(PVOID pParam) // what is that meaning  w
 
     while (true) {
         if (active->is_exit_thread_) {
-            break;
+            break; 
         }
         // 每隔一定时间进行一次循环，这个循环时间应该是可调的。
         while (true) {
@@ -215,17 +225,26 @@ unsigned int __stdcall ActiveMoveThread(PVOID pParam) // what is that meaning  w
         pressure_force_value << elbow_pressure[0] << "          " << elbow_pressure[1] << std::endl;
     }
     spdlog::info("The end of active thread");
+    time_t now = time(0);
+   // 把 now 转换为字符串形式
+   char* dt = ctime(&now);
+    joint_value<<"end of one train current time is : "<<dt<<endl;
     joint_value.close();
     torque_value.close();
     sixdim_force_value.close();
     pressure_force_value.close();
     return 0;
 }
-void ActiveControl::MoveInNewThread()
-{
+void ActiveControl::MoveInNewThread(int id)
+{   
+    ExportPaitentData* export_data=new ExportPaitentData();
+    export_data->active_control=this;
+    export_data->paitent_id=id;
     is_exit_thread_ = false;
-    move_thread_handle_ = (HANDLE)_beginthreadex(NULL, 0, ActiveMoveThread, this, 0, NULL);
+    move_thread_handle_ = (HANDLE)_beginthreadex(NULL, 0, ActiveMoveThread, export_data, 0, NULL);
 }
+
+
 void ActiveControl::ExitMoveThread()
 {
     is_exit_thread_ = true;
@@ -236,12 +255,12 @@ void ActiveControl::ExitMoveThread()
     }
 }
 
-void ActiveControl::StartMove()
+void ActiveControl::StartMove(int id)
 { // set motor, cluth on and open a new thread
     ControlCard::GetInstance().SetMotor(ControlCard::MotorOn);
     ControlCard::GetInstance().SetClutch(ControlCard::ClutchOn);
     is_moving_ = true;
-    MoveInNewThread();
+    MoveInNewThread(id);
 }
 
 void ActiveControl::StopMove()

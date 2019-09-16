@@ -7,139 +7,120 @@
 #define DCICOMMONEXT_MODULE_EXPIMP __declspec(dllimport)
 #endif
 
-#pragma warning(disable:4996)
+#pragma warning(disable : 4996)
 #include <string>
 namespace Ext
 {
-	namespace CPP
-	{
-		class DCICOMMONEXT_MODULE_EXPIMP Panic
-		{
-		public:
-			size_t Id;
-			std::wstring Info;
-			void* Tag;
+namespace CPP
+{
+class DCICOMMONEXT_MODULE_EXPIMP Panic
+{
+public:
+    size_t Id;
+    std::wstring Info;
+    void *Tag;
 
-		public:
-			Panic()
-			{
-				this->Reset();
-			}
+public:
+    Panic() { this->Reset(); }
 
-			Panic(void *pTag)
-			{
-				this->Reset();
-				Tag = pTag;
-			}
+    Panic(void *pTag)
+    {
+        this->Reset();
+        Tag = pTag;
+    }
 
-			Panic(size_t id, const std::wstring &info)
-			{
-				this->Reset();
-				Id = id;
-				Info = info;
-			}
+    Panic(size_t id, const std::wstring &info)
+    {
+        this->Reset();
+        Id = id;
+        Info = info;
+    }
 
-			Panic(size_t id, const std::wstring &info, void *pTag)
-			{
-				Id = id;
-				Info = info;
-				Tag = pTag;
-			}
+    Panic(size_t id, const std::wstring &info, void *pTag)
+    {
+        Id = id;
+        Info = info;
+        Tag = pTag;
+    }
 
-			~Panic()
-			{
-				this->Reset();
-			}
+    ~Panic() { this->Reset(); }
 
-			Panic(const Panic &src)
-			{
-				*this = src;
-			}
+    Panic(const Panic &src) { *this = src; }
 
-			Panic& operator= (const Panic &src)
-			{
-				this->Id = src.Id;
-				this->Info = src.Info;
-				this->Tag = src.Tag;	
-				return *this;
-			}
+    Panic &operator=(const Panic &src)
+    {
+        this->Id = src.Id;
+        this->Info = src.Info;
+        this->Tag = src.Tag;
+        return *this;
+    }
 
-			void SetId(size_t id)
-			{
-				this->Id = id;
-			}
+    void SetId(size_t id) { this->Id = id; }
 
-			void SetInfo(const TCHAR *strMessageFormat, ...)
-			{
-				TCHAR szBuffer[1024] = _T("");
+    void SetInfo(const TCHAR *strMessageFormat, ...)
+    {
+        TCHAR szBuffer[1024] = _T("");
 
-				va_list argList;
-				va_start(argList, strMessageFormat);
-				_vsntprintf(szBuffer, 1024, strMessageFormat, argList);
-				va_end(argList);
+        va_list argList;
+        va_start(argList, strMessageFormat);
+        _vsntprintf(szBuffer, 1024, strMessageFormat, argList);
+        va_end(argList);
 
-				this->Info = szBuffer;
-			}
+        this->Info = szBuffer;
+    }
 
-			void Set(size_t id, const TCHAR *strMessageFormat, ...)
-			{
-				this->Id = id;
+    void Set(size_t id, const TCHAR *strMessageFormat, ...)
+    {
+        this->Id = id;
 
-				TCHAR szBuffer[1024] = _T("");
+        TCHAR szBuffer[1024] = _T("");
 
-				va_list argList;
-				va_start(argList, strMessageFormat);
-				_vsntprintf(szBuffer, 1024, strMessageFormat, argList);   
-				va_end(argList);
+        va_list argList;
+        va_start(argList, strMessageFormat);
+        _vsntprintf(szBuffer, 1024, strMessageFormat, argList);
+        va_end(argList);
 
-				this->Info = szBuffer;
-			}
+        this->Info = szBuffer;
+    }
 
-			void SetTag(void* data)
-			{
-				this->Tag = data;
-			}
+    void SetTag(void *data) { this->Tag = data; }
 
-			void Reset()
-			{
-				this->Id = 0;
-				this->Info = _T("");
-				this->Tag = NULL;
-			}
+    void Reset()
+    {
+        this->Id = 0;
+        this->Info = _T("");
+        this->Tag = NULL;
+    }
+	//// æŒ‡é’ˆç±»å‹è½¬æ¢ã€‚è°ƒç”¨ï¼šCAdoRow *pRow = panic.GetTag<CAdoRow*>();	// panic æ˜¯Panicç±»å‹çš„å®ä¾‹, Tagçš„å®é™…ç±»å‹ä¸ºCAdoRow*
+    template <typename T>
+    T GetTag()
+    {
+        T pointer = static_cast<T>(Tag);
+        return pointer;
+    }
+// æŒ‡é’ˆçš„æŒ‡é’ˆè½¬æ¢ä¸ºæŒ‡é’ˆç±»å‹ã€‚è°ƒç”¨ï¼šCAdoRow *pRow = panic.GetPPTag<CAdoRow*>();	// panic æ˜¯Panicç±»å‹çš„å®ä¾‹, Tagçš„å®é™…ç±»å‹ä¸ºCAdoRow**
+    template <typename T>
+    T GetPPTag()
+    {
+        void **pointer1 = (void **)Tag;
+        void *pointer2 = (void *)(*pointer1);
+        T attach = static_cast<T>(pointer2);
+        return attach;
+    }
 
-			// Ö¸ÕëÀàĞÍ×ª»»¡£µ÷ÓÃ£ºCAdoRow *pRow = panic.GetTag<CAdoRow*>();	// panic ÊÇPanicÀàĞÍµÄÊµÀı, TagµÄÊµ¼ÊÀàĞÍÎªCAdoRow*
-			template<typename T>
-			T GetTag()
-			{
-				T pointer = static_cast<T>(Tag);
-				return pointer;
-			}
+    template <typename T>
+    T GetTagAsValue()
+    {
+        T *pointer = static_cast<T *>(Tag);
+        T &value = *pointer;
+        return value;
+    }
 
-			// Ö¸ÕëµÄÖ¸Õë×ª»»ÎªÖ¸ÕëÀàĞÍ¡£µ÷ÓÃ£ºCAdoRow *pRow = panic.GetPPTag<CAdoRow*>();	// panic ÊÇPanicÀàĞÍµÄÊµÀı, TagµÄÊµ¼ÊÀàĞÍÎªCAdoRow**
-			template<typename T>
-			T GetPPTag()
-			{
-				void** pointer1 = (void**)Tag;
-				void*  pointer2 = (void*)(*pointer1);
-				T attach = static_cast<T>(pointer2);
-				return attach;
-			}
-
-			// ÖµÀàĞÍ×ª»»¡£µ÷ÓÃ£ºint data = panic.GetTagAsValue<int>();	// panic ÊÇPanicÀàĞÍµÄÊµÀı, TagµÄÊµ¼ÊÀàĞÍÎªint
-			template<typename T>
-			T GetTagAsValue()
-			{
-				T *pointer = static_cast<T*>(Tag);
-				T &value = *pointer;
-				return value;
-			}
-
-			bool OK(int okid = 0)
-			{
-				if (this->Id == okid)
-					return true;
-				return false;
-			}
-		};
-	} // End namespace CPP
+    bool OK(int okid = 0)
+    {
+        if (this->Id == okid) return true;
+        return false;
+    }
+};
+} // End namespace CPP
 } // End namespace Ext

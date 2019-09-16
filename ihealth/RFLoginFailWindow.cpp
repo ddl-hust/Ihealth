@@ -421,7 +421,7 @@ bool RFDialog::OnRecordPasvTrain(void *pParam)
     if (!pStart->GetCheck()) {
         //这个是开始录制
         m_tickcount = 0;
-        RFMainWindow::MainWindow->m_robot.PassiveBeginRecord();
+        // RFMainWindow::MainWindow->m_robot.PassiveBeginRecord();
         if (recordTimer) {
             ::KillTimer(NULL, recordTimer);
         }

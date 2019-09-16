@@ -23,7 +23,7 @@ public:
      */
     void PassiveStartMove(int index);
     void PassiveStopMove();
-    void PassiveBeginRecord();
+    // void PassiveBeginRecord();
     void PassiveStopRecord();
     /**
      * brief return the latest passive motion
@@ -49,6 +49,7 @@ public:
     /*                           active mode                                */
     /************************************************************************/
     void ActiveStartMove();
+    void ActiveStartMove(int id); //refactor for temp paitent data export solution
     void ActiveStopMove();
     double GetGripStrength();
     bool IsFire();

@@ -78,7 +78,7 @@ void Robot::PassiveStopMove()
 }
 void Robot::PassiveGetCurrentMove(PassiveData &teach) { pasvMode->GetCurrentMove(teach); }
 
-void Robot::PassiveBeginRecord() { pasvMode->BeginRecord(); }
+// void Robot::PassiveBeginRecord() { pasvMode->BeginRecord(); }
 
 void Robot::PassiveStopRecord() { pasvMode->StopRecord(); }
 
@@ -86,14 +86,13 @@ void Robot::PassiveGetCurrentRecord(PassiveData &teach) { pasvMode->GetCurrentRe
 
 void Robot::PassiveStoreCurrentRecord() { pasvMode->StoreCurrentRecord(); }
 
-void Robot::ActiveStartMove()
+void Robot::ActiveStartMove(int id)
 {
     if (!m_isActiveModeStart) {
-        activeCtrl->StartMove();
+        activeCtrl->StartMove(id);
         m_isActiveModeStart = true;
     }
 }
-
 void Robot::ActiveStopMove()
 {
     if (m_isActiveModeStart) {

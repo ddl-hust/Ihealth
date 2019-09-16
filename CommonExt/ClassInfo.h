@@ -12,7 +12,7 @@ namespace Ext
 	namespace CPP
 	{
 
-		class DCICOMMONEXT_MODULE_EXPIMP ClassInfo
+		class DCICOMMONEXT_MODULE_EXPIMP ClassInfo 
 		{
 		public:
 

@@ -23,7 +23,7 @@ namespace Ext
 
 		public:
 			static CString		Marshal(const Interface& value);
-			static Interface	Unmarshal(const CString& jsonValue);
+			static Interface	Unmarshal(const CString& jsonValue); 
 
 		protected:
 			CString		encode(const Interface& value);

@@ -24,7 +24,7 @@ namespace Ext
 		{
 			if (p != NULL)
 			{
-				delete[] p;
+				delete[] p;  //实际教学删除数组
 				p = NULL;
 			}
 		}
