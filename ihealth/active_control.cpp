@@ -173,19 +173,28 @@ unsigned int __stdcall ActiveMoveThread(PVOID pParam) // what is that meaning  w
     DataAcquisition::GetInstance().StartSixDemTask();
     // all the output sensor data
     std::string pathname="..\\..\\resource\\ExportData\\";
+    time_t t = time(0);
+    char ch[64];
+    strftime(ch, sizeof(ch), "%Y-%m-%d %H-%M-%S", localtime(&t)); //年-月-日 时-分-秒
     std::string paitent_info="patient_"+std::to_string(paitent_id)+"_";
-    ofstream joint_value(pathname+paitent_info+"joint.txt", ios::app | ios::out);
-    ofstream torque_value(pathname+paitent_info+"torque.txt", ios::app | ios::out);
-    ofstream sixdim_force_value(pathname+paitent_info+"sixdim_force.txt", ios::app | ios::out);
-    ofstream pressure_force_value(pathname+paitent_info+"pressure_force.txt", ios::app | ios::out);
+    ofstream joint_value(pathname+paitent_info+"joint_"+ch+".txt", ios::app | ios::out);
+    ofstream torque_value(pathname+paitent_info+"torque_"+ch+".txt", ios::app | ios::out);
+    ofstream sixdim_force_value(pathname+paitent_info+"sixdim_force_"+ch+".txt", ios::app | ios::out);
+    ofstream pressure_force_value(pathname+paitent_info+"pressure_force_"+ch+".txt", ios::app | ios::out);
+    ofstream sum_pressure_force_value(pathname+paitent_info+"sum_pressure_force_"+ch+".txt", ios::app | ios::out);
     double angle[2]{0};
     double torque[2]{0};
     double elbow_pressure[2]{0};
     double six_dim_force[6]{0};
 
     spdlog::info("ready to write joint data to txt");
-    joint_value << " shoulder  "
-                << "  elbow  " << endl;
+    joint_value << " shoulder/degree(-360-360)  "
+                << "  elbow/degree(-360-360)  " << endl;
+    torque_value << " shoulder(N.m)  "
+                << "  elbow(N.m)  " << endl;
+    sixdim_force_value<<" fx(N) "<<" fy(N) "<<" fz(N) "<<" tx(N.m) "<<" ty(N.m) "<<" tz(N.m) "<<endl;
+    sum_pressure_force_value<<"F>0表示肘曲"<<"F<0表示肘伸"<<endl;
+    
 
 
     while (true) {
@@ -222,17 +231,19 @@ unsigned int __stdcall ActiveMoveThread(PVOID pParam) // what is that meaning  w
         torque_value << torque[0] << "          " <<torque[1] << std::endl;
         sixdim_force_value << six_dim_force[0] << "          " << six_dim_force[1] << "          " << six_dim_force[2] << "          " << six_dim_force[3]
                            << "          " << six_dim_force[4] << "          " << six_dim_force[5] << std::endl;
-        pressure_force_value << elbow_pressure[0] << "          " << elbow_pressure[1] << std::endl;
+        // pressure_force_value << elbow_pressure[0] * 10<< "          " << elbow_pressure[1] * 10 << std::endl;
+        sum_pressure_force_value<< elbow_pressure[0] * 10- elbow_pressure[1] * 10<<endl;
     }
     spdlog::info("The end of active thread");
     time_t now = time(0);
    // 把 now 转换为字符串形式
    char* dt = ctime(&now);
-    joint_value<<"end of one train current time is : "<<dt<<endl;
+    // joint_value<<"end of one train current time is : "<<dt<<endl;
     joint_value.close();
     torque_value.close();
     sixdim_force_value.close();
     pressure_force_value.close();
+    sum_pressure_force_value.close();
     return 0;
 }
 void ActiveControl::MoveInNewThread(int id)
