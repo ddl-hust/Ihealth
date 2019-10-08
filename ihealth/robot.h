@@ -57,6 +57,8 @@ public:
     void CalculateRagPos(double XY[2]);
     void SetDamping(float FC = 0.1);
     // void ExportJointData(int id);
+    void SetPressureSensorOn(); //主动模式纯六维力-压力+六维力切换相关
+	void SetPressureSensorOff();
 
     /************************************************************************/
     /*                           emg mode                                 */

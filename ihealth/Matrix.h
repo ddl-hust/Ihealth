@@ -256,7 +256,7 @@ void MomentBalance(const MatrixBase<DerivedA>& shoulderforcevector, double motor
 
 	Matrix3d R32;
 	Matrix3d R21;
-	Matrix3d RF13;
+	extern Matrix3d RF13;
 	Matrix3d P1_3;
 	Matrix3d to_zero;
 	MatrixXd Tf1_3(6, 6);
@@ -276,7 +276,7 @@ void MomentBalance(const MatrixBase<DerivedA>& shoulderforcevector, double motor
 
 	//六维力相关的变量
 	MatrixXd sixdim_transfer(6, 6);
-	Matrix3d sixdim_rotation;
+	extern Matrix3d sixdim_rotation;
 	Matrix3d Sixdim_To_Coordinate3;
 	Vector3d sixdim_to_coordinate3 = Vector3d(sixdim_to_coordinate3_vertiacl, 0, -sixdim_to_coordinate3_level);
 

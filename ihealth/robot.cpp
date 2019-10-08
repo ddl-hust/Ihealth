@@ -115,6 +115,9 @@ void Robot::GetPlanePos(short w, short h, double XY[2]) { activeCtrl->CalculateP
 void Robot::CalculateRagPos(double XY[2]) { activeCtrl->CalculateRagXY(XY); }
 
 void Robot::SetDamping(float FC /* =0.1 */) { activeCtrl->SetDamping(FC); }
+void Robot::SetPressureSensorOn() { activeCtrl->m_pressure_sensor_enable = true; }
+
+void Robot::SetPressureSensorOff() { activeCtrl->m_pressure_sensor_enable = false; }
 
 
 void Robot::setEyeVel(double factor) { eyeModeCtl->setVel(factor); }
@@ -183,11 +186,11 @@ void getSensorData(bool Travel_Switch[4])
     returnCode = APS_read_d_input(0, DI_Group, &DI_Data);
     for (int i = 0; i < ControlCard::InputChannels; i++) di_ch[i] = ((DI_Data >> i) & 1);
 
-    Travel_Switch[0] = di_ch[16]; 
-    Travel_Switch[1] = di_ch[17]; 
+    Travel_Switch[0] = di_ch[16];
+    Travel_Switch[1] = di_ch[17];
 
-    Travel_Switch[2] = di_ch[18]; 
-    Travel_Switch[3] = di_ch[19]; 
+    Travel_Switch[2] = di_ch[18];
+    Travel_Switch[3] = di_ch[19];
 }
 
 bool Robot::IsPassiveRecording() { return pasvMode->in_record_status_; }

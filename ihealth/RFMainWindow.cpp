@@ -106,7 +106,7 @@ void RFMainWindow::Init()
     ShowLoginPage();
 }
 
-void RFMainWindow::OnPrepare() {} 
+void RFMainWindow::OnPrepare() {}
 
 void RFMainWindow::Closing() {}
 
@@ -119,7 +119,7 @@ void RFMainWindow::Notify(TNotifyUI &msg)
         CScrollBarUI *pScrollBar = static_cast<CScrollBarUI *>(msg.pSender);
         if (pScrollBar) {
             std::wstring scrollname = pScrollBar->GetName();
-            if (scrollname == _T("zd_gjjd_scroll")) {  //what the fucking name zd_gjjd_scroll !!!
+            if (scrollname == _T("zd_gjjd_scroll")) { // what the fucking name zd_gjjd_scroll !!!
                 CWaveUI *pWave = static_cast<CWaveUI *>(m_pm.FindControl(_T("zd_gjjd_wave")));
                 pWave->Invalidate();
 
@@ -471,7 +471,8 @@ void RFMainWindow::BindManagerPatientPageEvent()
     game4_nandu_select->OnNotify += MakeDelegate(this, &RFMainWindow::OnGame4NanduSetingMenu);
 
     CButtonUI *game4_start = static_cast<CButtonUI *>(m_pm.FindControl(_T("game4_start")));
-    game4_start->OnNotify += MakeDelegate(this, &RFMainWindow::OnGame4Start);  //fuck name can you believe this is the begin of game what is the fucking "4"'s function???
+    game4_start->OnNotify +=
+        MakeDelegate(this, &RFMainWindow::OnGame4Start); // fuck name can you believe this is the begin of game what is the fucking "4"'s function???
 
     CButtonUI *game4_recovery = static_cast<CButtonUI *>(m_pm.FindControl(_T("game4_recovery")));
     game4_recovery->OnNotify += MakeDelegate(this, &RFMainWindow::OnGame4Recovery);
@@ -549,6 +550,9 @@ void RFMainWindow::BindManagerPatientPageEvent()
     // 握力传感器开关的响应函数绑定
     CCheckBoxUI *grip_strength_enable = static_cast<CCheckBoxUI *>(m_pm.FindControl(_T("grip_strength_enable")));
     grip_strength_enable->OnNotify += MakeDelegate(this, &RFMainWindow::OnGripStrengthClicked);
+    // 压力传感器开关的响应函数绑定
+    CCheckBoxUI *pressure_sensor_enable = static_cast<CCheckBoxUI *>(m_pm.FindControl(_T("pressure_sensor_enable")));
+    pressure_sensor_enable->OnNotify += MakeDelegate(this, &RFMainWindow::OnPressureSwitchChicked);
 }
 
 LRESULT RFMainWindow::OnCommunicate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
@@ -573,10 +577,9 @@ LRESULT RFMainWindow::OnAppClick(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &
     //通过判断鼠标点击位置来确定患者选择，以及给当前患者初始化相应属性
     CControlUI *pControl = static_cast<CControlUI *>(m_pm.FindControl(pt));
     //通过label控件来确定当前病人信息
-    if (pControl && _tcsncmp(pControl->GetName(), _T("cell"), 4) == 0) 
-    {  
+    if (pControl && _tcsncmp(pControl->GetName(), _T("cell"), 4) == 0) {
         std::string name = TGUTF16ToUTF8((std::wstring)pControl->GetName());
-        int row = atoi(name.substr(4, 1).c_str()); //cell 命名规则 eg. cell23 2行3列(2,3)
+        int row = atoi(name.substr(4, 1).c_str()); // cell 命名规则 eg. cell23 2行3列(2,3)
         wchar_t cell_name[32] = _T("");
         wsprintf(cell_name, _T("cell%d2"), row);
         // AllocConsole();
@@ -592,7 +595,7 @@ LRESULT RFMainWindow::OnAppClick(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &
         if (pID) {
             m_current_patient.id = _wtoi(((std::wstring)pID->GetText()).c_str());
         }
-        //through mysql get the stored elbow and shoulder joint limits
+        // through mysql get the stored elbow and shoulder joint limits
         char sql[1024] = "";
         sprintf(sql, "select saa_rom,sfe_rom from patient where id=%d and flag=0", m_current_patient.id);
         RFMYSQLStmt stmt;
@@ -632,8 +635,7 @@ LRESULT RFMainWindow::OnAppClick(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &
         bHandled = TRUE;
     }
     //管理患者界面
-    if (pControl && _tcscmp(pControl->GetName(), _T("manager_patient_detail")) == 0)
-    {
+    if (pControl && _tcscmp(pControl->GetName(), _T("manager_patient_detail")) == 0) {
         bHandled = TRUE;
 
 
@@ -2537,7 +2539,7 @@ bool RFMainWindow::OnActiveTrain(void *pParam)
     RFMainWindow::MainWindow->m_robot.activeCtrl->SetShoulderSensitivity(RFMainWindow::MainWindow->m_current_patient.Shoulder_Sensitivity);
     AllocConsole();
     freopen("CONOUT$", "w", stdout);
-    std::cout << "********already change the sensitivity***********" <<std::endl;
+    std::cout << "********already change the sensitivity***********" << std::endl;
     ShowActiveTrainPage();
     return true;
 }
@@ -3174,21 +3176,21 @@ bool RFMainWindow::OnGame4Start(void *pParam)
     TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
     if (pMsg->sType != _T("click")) return true;
 
-    CCheckBoxUI *pCheckBox = static_cast<CCheckBoxUI *>(pMsg->pSender); //what is sender function
+    CCheckBoxUI *pCheckBox = static_cast<CCheckBoxUI *>(pMsg->pSender); // what is sender function
     std::wstring voice_path;
-    int paitent_id=m_current_patient.id;
-    spdlog::info( "current patient id : {}",m_current_patient.id);
+    int paitent_id = m_current_patient.id;
+    spdlog::info("current patient id : {}", m_current_patient.id);
     /**
      * To-Do
      * pass the ID of current patient to record sensor data (encoder ,torque and so on )
-     * 
+     *
      * */
-     
+
 
     if (!pCheckBox->GetCheck()) {
-        m_robot.ActiveStartMove(paitent_id); //so in this how can we conencted the current patient with it ???
+        m_robot.ActiveStartMove(paitent_id); // so in this how can we conencted the current patient with it ???
         // m_robot.ExportJointData(paitent_id);
-        //HANDLE data_handle = (HANDLE)_beginthreadex(NULL, 0, ExportJointData(paitent_id), this, 0, NULL);
+        // HANDLE data_handle = (HANDLE)_beginthreadex(NULL, 0, ExportJointData(paitent_id), this, 0, NULL);
         // 主动开始时播放游戏背景音，播放完后自动循环
         // 首先判断游戏的type，根据不同的游戏type播放不一样的背景音乐
         std::wstring bg_name;
@@ -3287,6 +3289,21 @@ bool RFMainWindow::OnGripStrengthClicked(void *pParam)
     else {
         // 点击这里之后，图标变成ON，这个时候握力传感器是启用的
         m_grip_strength_enable = true;
+    }
+    return true;
+}
+bool RFMainWindow::OnPressureSwitchChicked(void *pParam)
+{
+    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
+    if (pMsg->sType != _T("click")) return true;
+
+    CCheckBoxUI *pCheckBox = static_cast<CCheckBoxUI *>(pMsg->pSender);
+    if (!pCheckBox->GetCheck()) {
+        m_robot.SetPressureSensorOff();
+    }
+    else {
+        // 点击这里之后，图标变成ON，这个时候压力传感器是启用的
+        m_robot.SetPressureSensorOn();
     }
     return true;
 }
@@ -3477,7 +3494,6 @@ bool RFMainWindow::OnSystemSetReturn(void *pParam)
     RFMainWindow::MainWindow->m_current_patient.SFE_ROM = sfe;
     RFMainWindow::MainWindow->m_current_patient.Arm_Sensitivity = arm_sensitivity_value;
     RFMainWindow::MainWindow->m_current_patient.Shoulder_Sensitivity = shoulder_sensitivity_value;
-
 
 
     return OnReturnMainPage(pParam);

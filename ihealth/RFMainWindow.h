@@ -56,7 +56,7 @@ public:
     LRESULT OnSize(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
     LRESULT OnGetMinMaxInfo(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
     LRESULT OnSysCommand(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
-    LRESULT OnKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);   // press Esc exit system
+    LRESULT OnKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled); // press Esc exit system
     LRESULT OnMenuClick(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
     LRESULT HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam);
     LRESULT MessageHandler(UINT uMsg, WPARAM wParam, LPARAM lParam, bool &bHandled);
@@ -210,6 +210,7 @@ public:
     bool OnGame4Recovery(void *pParam);
     bool OnMusicItemDelete(void *pParam);
     bool OnGripStrengthClicked(void *pParam);
+    bool OnPressureSwitchChicked(void *pParam);
 
     static int OnSearchOK(EventArg *pArg);
     static int OnFilterOK(EventArg *pArg);
