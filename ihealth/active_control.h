@@ -15,6 +15,7 @@ public:
     void StopMove();
     void Step(); // get six_dim_force data
     void PressureStep(); // get pressure data
+    void SixDimForceStep(); //只使用六维力控制部分
     bool IsFire(); // get gripper sensor to decide wheather to start active game, now Depreciated
     void CalculatePlaneXY(short Axis_X, short Axis_Y, double XY[2]); //get end-efftor position
     void CalculateRagXY(double XY[2]); //获取游戏中抹布位置
@@ -35,6 +36,7 @@ public:
 public:
     bool is_exit_thread_;
     bool is_moving_;
+    bool m_pressure_sensor_enable;
     double six_dimension_offset_[6];
     double elbow_offset_[2];
     double torque_offset_[2];
@@ -47,11 +49,14 @@ private:
     void ActMove(); // send instruction to two active motor call APS's API
     void Trans2FilterForPressure(double TransData[2], double FiltedData[2]); // filter pressure
     // void Raw2Trans(double RAWData[6], double DistData[6]);  //change the raw six_dim_force through tranformation matrix to handle frame
-    // void Trans2Filter(double TransData[6], double FiltedData[6]); //filter the transformed six_dim_force
+    void Trans2Filter(double TransData[6], double FiltedData[6]); //filter the transformed six_dim_force
     // void FiltedVolt2Vel(double FiltedData[6]); //not figure what's the function ???
     void MomentCalculation(double ForceVector, double &vel); // ???
     //将传感器的数据处理成两个二维矢量，由于矢量只在两个方向上有作用，故需输出4个数据。这里要先知道传感器的安装位置
     // void SensorDataToForceVector(double shouldersensordata[4], double elbowsensordata[4], double ForceVector[4]);
+    /**************new********/
+    //只用六维力情况下的力矩计算
+    void SixDimForceMomentCalculation(double ForceVector[6], double vel[2]);
 
 
 private:
