@@ -416,12 +416,12 @@ bool RFDialog::OnRecordPasvTrain(void *pParam)
     TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
     if (pMsg->sType != _T("click")) return false;
 
-
+    
     CCheckBoxUI *pStart = static_cast<CCheckBoxUI *>(pMsg->pSender);
     if (!pStart->GetCheck()) {
         //这个是开始录制
         m_tickcount = 0;
-        // RFMainWindow::MainWindow->m_robot.PassiveBeginRecord();
+        RFMainWindow::MainWindow->m_robot.PassiveBeginRecord();
         if (recordTimer) {
             ::KillTimer(NULL, recordTimer);
         }

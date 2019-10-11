@@ -23,7 +23,7 @@ public:
      */
     void PassiveStartMove(int index);
     void PassiveStopMove();
-    // void PassiveBeginRecord();
+    void PassiveBeginRecord();
     void PassiveStopRecord();
     /**
      * brief return the latest passive motion

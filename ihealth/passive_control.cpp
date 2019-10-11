@@ -152,31 +152,30 @@ double PassiveControl::PHermite(double foretime[2], double forepos[2], double fo
     Houtput = a[0] * forepos[0] + a[1] * forepos[1] + b[0] * forevel[0] + b[1] * forevel[1];
     return Houtput;
 }
-// void PassiveControl::BeginRecord()
-// {
-//     if (is_busy_) {
-//         return;
-//     }
+void PassiveControl::BeginRecord()
+{
+    if (is_busy_) {
+        return;
+    }
+    active_control_->StartMove(999); //被动运动示教id 设置为定值999
+    in_record_status_ = true;
+    is_exit_thread_ = false;
+    is_teach = true;
 
-//     active_control_->StartMove();
-//     in_record_status_ = true;
-//     is_exit_thread_ = false;
-//     is_teach = true;
+    // 清空record_data_
+    for (int k = 0; k < 2; k++) {
+        if (!record_data_.target_positions[k].empty()) {
+            record_data_.target_positions[k].clear();
+        }
 
-//     // 清空record_data_
-//     for (int k = 0; k < 2; k++) {
-//         if (!record_data_.target_positions[k].empty()) {
-//             record_data_.target_positions[k].clear();
-//         }
+        if (!record_data_.target_velocitys[k].empty()) {
+            record_data_.target_velocitys->clear();
+        }
+    }
 
-//         if (!record_data_.target_velocitys[k].empty()) {
-//             record_data_.target_velocitys->clear();
-//         }
-//     }
-
-//     HANDLE handle;
-//     handle = (HANDLE)_beginthreadex(NULL, 0, RecordOrMoveThread, this, 0, NULL);
-// }
+    HANDLE handle;
+    handle = (HANDLE)_beginthreadex(NULL, 0, RecordOrMoveThread, this, 0, NULL);
+}
 
 void PassiveControl::StopRecord()
 {

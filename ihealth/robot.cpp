@@ -78,7 +78,7 @@ void Robot::PassiveStopMove()
 }
 void Robot::PassiveGetCurrentMove(PassiveData &teach) { pasvMode->GetCurrentMove(teach); }
 
-// void Robot::PassiveBeginRecord() { pasvMode->BeginRecord(); }
+void Robot::PassiveBeginRecord() { pasvMode->BeginRecord(); }
 
 void Robot::PassiveStopRecord() { pasvMode->StopRecord(); }
 
