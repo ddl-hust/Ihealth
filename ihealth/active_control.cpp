@@ -5,7 +5,7 @@
 #include <fstream>
 #include <process.h>
 #include <windows.h>
-
+#include<ctime>
 #include "Matrix.h"
 #include "Log.h"
 #include "data_acquisition.h"
@@ -53,7 +53,12 @@ extern Vector3d AxisPosition[5] {
 };
 Matrix3d RF13;
 Matrix3d sixdim_rotation;
-
+//导出病人数据将主动运动与病人id关联起来
+struct ExportPaitentData
+{
+    int paitent_id;
+    ActiveControl* active_control; 
+};
 ActiveControl::ActiveControl() {
 	move_thread_handle_ = 0;
 	elbow_Sensitivity_ = 4;
@@ -157,7 +162,9 @@ ActiveControl:: ~ActiveControl() {
 }
 
 unsigned int __stdcall ActiveMoveThreadWithPressure(PVOID pParam) {
-	ActiveControl *active = (ActiveControl*)pParam;
+	ExportPaitentData *export_data= (ExportPaitentData*)pParam;
+    ActiveControl *active = export_data->active_control;
+    int paitent_id=export_data->paitent_id;
 	UINT start, end;
 	start = GetTickCount();
 	// 求六维力传感器的偏置
@@ -207,6 +214,27 @@ unsigned int __stdcall ActiveMoveThreadWithPressure(PVOID pParam) {
 	DataAcquisition::GetInstance().StartSixDemTask();
 	//DataAcquisition::GetInstance().StopTorqueTask();
 	//DataAcquisition::GetInstance().StartTorqueTask();
+	std::string pathname="..\\..\\resource\\ExportData\\";
+    time_t t = time(0);
+    char ch[64];
+    strftime(ch, sizeof(ch), "%Y-%m-%d %H-%M-%S", localtime(&t)); //年-月-日 时-分-秒
+    std::string paitent_info="patient_"+std::to_string(paitent_id)+"_";
+	ofstream joint_value(pathname+paitent_info+"joint_"+ch+".txt", ios::app | ios::out);
+    ofstream torque_value(pathname+paitent_info+"torque_"+ch+".txt", ios::app | ios::out);
+    ofstream sixdim_force_value(pathname+paitent_info+"sixdim_force_"+ch+".txt", ios::app | ios::out);
+    ofstream sum_pressure_force_value(pathname+paitent_info+"sum_pressure_force_"+ch+".txt", ios::app | ios::out);
+	double angle[2]{0};
+    double torque[2]{0};
+    double elbow_pressure[2]{0};
+    double six_dim_force[6]{0};
+	joint_value << " shoulder  "
+                << "  elbow  " << endl;
+    joint_value << " shoulder/degree(-360-360)  "
+                << "  elbow/degree(-360-360)  " << endl;
+    torque_value << " shoulder(N.m)  "
+                << "  elbow(N.m)  " << endl;
+    sixdim_force_value<<" fx(N) "<<" fy(N) "<<" fz(N) "<<" tx(N.m) "<<" ty(N.m) "<<" tz(N.m) "<<endl;
+    sum_pressure_force_value<<"F>0表示肘曲"<<"F<0表示肘伸"<<endl;
 
 	while (true) {
 		if (active->is_exit_thread_) {
@@ -229,8 +257,22 @@ unsigned int __stdcall ActiveMoveThreadWithPressure(PVOID pParam) {
 		//active->TorqueStep();
 		//压力传感器线程
 		active->PressureStep();
+		ControlCard::GetInstance().GetEncoderData(angle);
+        DataAcquisition::GetInstance().AcquisiteTorqueData(torque);
+        DataAcquisition::GetInstance().AcquisiteTensionData(elbow_pressure);
+        DataAcquisition::GetInstance().AcquisiteSixDemensionData(six_dim_force);
+        joint_value << angle[0] << "          " << angle[1] << std::endl;
+        torque_value << torque[0] << "          " <<torque[1] << std::endl;
+        sixdim_force_value << six_dim_force[0] << "          " << six_dim_force[1] << "          " << six_dim_force[2] << "          " << six_dim_force[3]
+                           << "          " << six_dim_force[4] << "          " << six_dim_force[5] << std::endl;
+		sum_pressure_force_value<< elbow_pressure[0] * 10- elbow_pressure[1] * 10<<endl;
+		
+    
 	}
-
+	joint_value.close();
+    torque_value.close();
+    sixdim_force_value.close();
+    sum_pressure_force_value.close();
 	//active->MomentExport();
 	//active->TorqueExport();
 	//std::cout << "ActiveMoveThreadWithPressure Thread ended." << std::endl;
@@ -238,7 +280,9 @@ unsigned int __stdcall ActiveMoveThreadWithPressure(PVOID pParam) {
 }
 
 unsigned int __stdcall ActiveMoveThread(PVOID pParam) {
-	ActiveControl *active = (ActiveControl*)pParam;
+	ExportPaitentData *export_data= (ExportPaitentData*)pParam;
+    ActiveControl *active = export_data->active_control;
+    int paitent_id=export_data->paitent_id;
 	UINT start, end;
 	start = GetTickCount();
 	// 求六维力传感器的偏置
@@ -256,7 +300,24 @@ unsigned int __stdcall ActiveMoveThread(PVOID pParam) {
 
 	DataAcquisition::GetInstance().StopSixDemTask();
 	DataAcquisition::GetInstance().StartSixDemTask();
-
+	std::string pathname="..\\..\\resource\\ExportData\\";
+    time_t t = time(0);
+    char ch[64];
+    strftime(ch, sizeof(ch), "%Y-%m-%d %H-%M-%S", localtime(&t)); //年-月-日 时-分-秒
+    std::string paitent_info="patient_"+std::to_string(paitent_id)+"_";
+	ofstream joint_value(pathname+paitent_info+"joint_"+ch+"(只有六维力模式)"+".txt", ios::app | ios::out);
+    ofstream torque_value(pathname+paitent_info+"torque_"+ch+"(只有六维力模式)"+".txt", ios::app | ios::out);
+    ofstream sixdim_force_value(pathname+paitent_info+"sixdim_force_"+ch+"(只有六维力模式)"+".txt", ios::app | ios::out);
+	double angle[2]{0};
+    double torque[2]{0};
+    double six_dim_force[6]{0};
+	joint_value << " shoulder  "
+                << "  elbow  " << endl;
+    joint_value << " shoulder/degree(-360-360)  "
+                << "  elbow/degree(-360-360)  " << endl;
+    torque_value << " shoulder(N.m)  "
+                << "  elbow(N.m)  " << endl;
+    sixdim_force_value<<" fx(N) "<<" fy(N) "<<" fz(N) "<<" tx(N.m) "<<" ty(N.m) "<<" tz(N.m) "<<endl;
 	while (true) {
 		if (active->is_exit_thread_) {
 			break;
@@ -275,21 +336,33 @@ unsigned int __stdcall ActiveMoveThread(PVOID pParam) {
 		}
 		//六维力线程
 		active->SixDimForceStep();
+		ControlCard::GetInstance().GetEncoderData(angle);
+        DataAcquisition::GetInstance().AcquisiteTorqueData(torque);
+        DataAcquisition::GetInstance().AcquisiteSixDemensionData(six_dim_force);
+        joint_value << angle[0] << "          " << angle[1] << std::endl;
+        torque_value << torque[0] << "          " <<torque[1] << std::endl;
+        sixdim_force_value << six_dim_force[0] << "          " << six_dim_force[1] << "          " << six_dim_force[2] << "          " << six_dim_force[3]
+                           << "          " << six_dim_force[4] << "          " << six_dim_force[5] << std::endl;
 	}
-
+	joint_value.close();
+	torque_value.close();
+	sixdim_force_value.close();
 	//active->MomentExport();
 	//active->TorqueExport();
 	//std::cout << "ActiveMoveThread Thread ended." << std::endl;
 	return 0;
 }
 
-void ActiveControl::MoveInNewThread() {
+void ActiveControl::MoveInNewThread(int id) {
+	ExportPaitentData* export_data=new ExportPaitentData();
+    export_data->active_control=this;
+    export_data->paitent_id=id;
 	is_exit_thread_ = false;
 	if (m_pressure_sensor_enable == true) {
-		move_thread_handle_ = (HANDLE)_beginthreadex(NULL, 0, ActiveMoveThreadWithPressure, this, 0, NULL);
+		move_thread_handle_ = (HANDLE)_beginthreadex(NULL, 0, ActiveMoveThreadWithPressure, export_data, 0, NULL);
 	}
 	else {
-		move_thread_handle_ = (HANDLE)_beginthreadex(NULL, 0, ActiveMoveThread, this, 0, NULL);
+		move_thread_handle_ = (HANDLE)_beginthreadex(NULL, 0, ActiveMoveThread, export_data, 0, NULL);
 	}
 }
 void ActiveControl::ExitMoveThread() {
@@ -301,11 +374,11 @@ void ActiveControl::ExitMoveThread() {
 	}
 }
 
-void ActiveControl::StartMove() {
+void ActiveControl::StartMove(int id) {
 	ControlCard::GetInstance().SetMotor(ControlCard::MotorOn);
 	//ControlCard::GetInstance().SetClutch(ControlCard::ClutchOn);
 	is_moving_ = true;
-	MoveInNewThread();
+	MoveInNewThread(id);
 }
 
 void ActiveControl::StopMove() {

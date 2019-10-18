@@ -41,7 +41,7 @@ public:
 	/*                           主动模式接口                                */
 	/************************************************************************/
 	//开始主动运动
-	void ActiveStartMove();
+	void ActiveStartMove(int id);
 	//结束主动运动
 	void ActiveStopMove();
 	//返回握力-数据接口

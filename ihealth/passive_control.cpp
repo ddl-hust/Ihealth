@@ -175,7 +175,7 @@ void PassiveControl::BeginRecord() {
 		return;
 	}	
 
-	active_control_->StartMove();
+	active_control_->StartMove(999); //被动运动示教id 设置为定值999
 	in_record_status_ = true;
 	is_exit_thread_ = false;
 	is_teach = true;

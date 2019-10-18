@@ -101,9 +101,9 @@ void Robot::PassiveStoreCurrentRecord() {
 	pasvMode->StoreCurrentRecord();
 }
 
-void Robot::ActiveStartMove() {
+void Robot::ActiveStartMove(int id) {
 	if (!m_isActiveModeStart) {
-		activeCtrl->StartMove();
+		activeCtrl->StartMove(id);
 		m_isActiveModeStart = true;
 	}
 }
@@ -238,11 +238,11 @@ void getSensorData(bool Travel_Switch[4])
 	for (int i = 0; i < ControlCard::InputChannels; i++)
 		di_ch[i] = ((DI_Data >> i) & 1);
 
-	Travel_Switch[0] = di_ch[16];//0ºÅµç»úORGÐÅºÅ-Öâ²¿µç»ú
-	Travel_Switch[1] = di_ch[17];//0ºÅµç»úMELÐÅºÅ-Öâ²¿µç»ú
+	Travel_Switch[0] = di_ch[16];//0ï¿½Åµï¿½ï¿½ORGï¿½Åºï¿½-ï¿½â²¿ï¿½ï¿½ï¿½
+	Travel_Switch[1] = di_ch[17];//0ï¿½Åµï¿½ï¿½MELï¿½Åºï¿½-ï¿½â²¿ï¿½ï¿½ï¿½
 
-	Travel_Switch[2] = di_ch[18];//1ºÅµç»úORGÐÅºÅ-¼ç²¿µç»ú
-	Travel_Switch[3] = di_ch[19];//1ºÅµç»úMELÐÅºÅ-¼ç²¿µç»ú
+	Travel_Switch[2] = di_ch[18];//1ï¿½Åµï¿½ï¿½ORGï¿½Åºï¿½-ï¿½ç²¿ï¿½ï¿½ï¿½
+	Travel_Switch[3] = di_ch[19];//1ï¿½Åµï¿½ï¿½MELï¿½Åºï¿½-ï¿½ç²¿ï¿½ï¿½ï¿½
 }
 
 bool Robot::IsPassiveRecording() {

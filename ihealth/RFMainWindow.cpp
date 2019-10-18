@@ -3232,9 +3232,9 @@ bool RFMainWindow::OnGame4Start(void *pParam)
 
 	CCheckBoxUI *pCheckBox = static_cast<CCheckBoxUI*>(pMsg->pSender);
 	std::wstring voice_path;
-
+	 int paitent_id=m_current_patient.id;
 	if (!pCheckBox->GetCheck()) {
-		m_robot.ActiveStartMove();
+		m_robot.ActiveStartMove(paitent_id);
 
 		// 主动开始时播放游戏背景音，播放完后自动循环
 		// 首先判断游戏的type，根据不同的游戏type播放不一样的背景音乐
@@ -3282,7 +3282,6 @@ bool RFMainWindow::OnGame4Recovery(void *pParam)
 	m_robot.resetPos();
 	return true;
 }
-
 
 bool RFMainWindow::OnMusicItemDelete(void *pParam)
 {
@@ -3952,7 +3951,7 @@ bool RFMainWindow::OnEVStart(void *pParam)
 		return false;
 
 	m_robot.ActiveStopMove();
-	m_robot.ActiveStartMove();
+	m_robot.ActiveStartMove(0);
 
 	StartEVDetect();
 	return true;

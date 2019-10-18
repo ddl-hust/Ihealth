@@ -10,7 +10,7 @@ public:
     ActiveControl();
     ~ActiveControl();
 	void LoadParamFromFile();
-    void StartMove();
+    void StartMove(int id);
     void StopMove();
 	// 采集一次六维力的数据，计算出电机速度，然后指示电机以这个速度运动.这是一轮循环
 	void Step();
@@ -53,7 +53,7 @@ public:
 	double cycle_time_in_second_;
 
 private:
-	void MoveInNewThread();
+	void MoveInNewThread(int id);
 	void ExitMoveThread();
 	void ActMove();
 	//将原始值进行坐标变换
