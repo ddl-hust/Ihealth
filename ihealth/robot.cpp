@@ -27,7 +27,7 @@ Robot::Robot()
     ControlCard::GetInstance().Initial();
 
     EMGContrl = nullptr;
-    EMGContrl = new emgcontrl();
+    EMGContrl = new emgcontrl(); 
 
     eyeModeCtl = nullptr;
     eyeModeCtl = new EyeMode(bDetect);

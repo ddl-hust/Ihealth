@@ -640,7 +640,7 @@ void ActiveControl::PressureStep()
         ActMove();
     }
 
-    // Sleep(100);
+    // Sleep(100);  
 }
 
 // void ActiveControl::Raw2Trans(double RAWData[6], double DistData[6])

@@ -5,50 +5,49 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 set(OpenCV_DIR D:/OpenCV3_4/x86)
 set(OpenCV_INCLUDE_DIR  D:/OpenCV3_4/opencv-3.4.1/include)
 
-set(Boost_DIR D:/Ihealth/Ihealth/ihealth/Boost_1_67_0)
-set(Boost_ROOT_DIR D:/Ihealth/Ihealth/ihealth/Boost_1_67_0)
-set(Boost_INCLUDE_DIR D:/Ihealth/Ihealth/ihealth/Boost_1_67_0/source/boost_1_67_0)
+# set(Boost_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Boost_1_67_0)
+set(Boost_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Boost_1_67_0)
+set(Boost_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Boost_1_67_0/source/boost_1_67_0)
 
-set(EIGEN_INCLUDE_DIR D:/Ihealth/Ihealth/ihealth/eigen/eigen3_3_4 )
+set(EIGEN_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/eigen/eigen3_3_4 )
 
-set(TBB_ROOT_DIR D:/Ihealth/Ihealth/ihealth/TBB)
-set(TBB_INCLUDE_DIR D:/Ihealth/Ihealth/ihealth/TBB/include)
-set(TBB_LIBRARY D:/Ihealth/Ihealth/ihealth/TBB/lib/ia32/vc14/tbb.lib)
+set(TBB_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/TBB)
+# set(TBB_INCLUDE_DIR CMAKE_CURRENT_SOURCE_DIR/TBB/include)
+set(TBB_LIBRARY  ${CMAKE_CURRENT_SOURCE_DIR}/TBB/lib/ia32/vc14/tbb.lib)
 
-set(NI_ROOT_DIR D:/Ihealth/Ihealth/ihealth/NI)
-set(NI_INCLUDE_DIR D:/Ihealth/Ihealth/ihealth/NI/include)
-set(NI_LIBRARY D:/Ihealth/Ihealth/ihealth/NI/lib/NIDAQmx.lib)
+set(NI_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/NI)
+# set(NI_INCLUDE_DIR CMAKE_CURRENT_SOURCE_DIR/NI/include)
+set(NI_LIBRARY  ${CMAKE_CURRENT_SOURCE_DIR}/NI/lib/NIDAQmx.lib)
 
-set(PUPILTRACKER_ROOT_DIR D:/Ihealth/Ihealth/ihealth/pupiltracker)
-set(PUPILTRACKER_INCLUDE_DIR D:/Ihealth/Ihealth/ihealth/pupiltracker/include)
-set(PUPILTRACKER_LIBRARY D:/Ihealth/Ihealth/ihealth/pupiltracker/lib/pupiltracker.lib)
+set(PUPILTRACKER_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/pupiltracker)
+set(PUPILTRACKER_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/pupiltracker/include)
+set(PUPILTRACKER_LIBRARY  ${CMAKE_CURRENT_SOURCE_DIR}/pupiltracker/lib/pupiltracker.lib)
 
-set(APS_ROOT_DIR   D:/Ihealth/Ihealth/ihealth/APS)
-set(APS_INCLUDE_DIR D:/Ihealth/Ihealth/ihealth/APS/include)
-set(APS_LIBRARY  D:/Ihealth/Ihealth/ihealth/APS/lib/APS168.lib)
+set(APS_ROOT_DIR   ${CMAKE_CURRENT_SOURCE_DIR}/APS)
+set(APS_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/APS/include)
+set(APS_LIBRARY   ${CMAKE_CURRENT_SOURCE_DIR}/APS/lib/APS168.lib)
 
-set(MYSQL_ROOT_DIR     D:/Ihealth/Ihealth/ihealth/mysql)
-set(MYSQL_INCLUDE_DIR D:/Ihealth/Ihealth/ihealth/mysql/include)
-set(MYSQL_LIBRARY  D:/Ihealth/Ihealth/ihealth/mysql/lib/libmysql.lib)
+set(MYSQL_ROOT_DIR     ${CMAKE_CURRENT_SOURCE_DIR}/mysql)
+# set(MYSQL_INCLUDE_DIR CMAKE_CURRENT_SOURCE_DIR/mysql/include)
+set(MYSQL_LIBRARY   ${CMAKE_CURRENT_SOURCE_DIR}/mysql/lib/libmysql.lib)
 
-set(MSC_ROOT_DIR   D:/Ihealth/Ihealth/ihealth/msc)
-set(MSC_INCLUDE_DIR D:/Ihealth/Ihealth/ihealth/msc)
-set(MSC_LIBRARY   D:/Ihealth/Ihealth/ihealth/msc/msc.lib)
+set(MSC_ROOT_DIR   ${CMAKE_CURRENT_SOURCE_DIR}/msc)
+# set(MSC_INCLUDE_DIR CMAKE_CURRENT_SOURCE_DIR/msc)
+set(MSC_LIBRARY    ${CMAKE_CURRENT_SOURCE_DIR}/msc/msc.lib)
 
-set( WKE_ROOT_DIR      D:/Ihealth/Ihealth/ihealth/wke)
-set(WKE_INCLUDE_DIR  D:/Ihealth/Ihealth/ihealth/wke)
-set(WKE_LIBRARY   D:/Ihealth/Ihealth/ihealth/wke/wke.lib)
+set( WKE_ROOT_DIR      ${CMAKE_CURRENT_SOURCE_DIR}/wke)
+set(WKE_INCLUDE_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/wke)
+set(WKE_LIBRARY    ${CMAKE_CURRENT_SOURCE_DIR}/wke/wke.lib)
 
-set( ZPLAY_ROOT_DIR        D:/Ihealth/Ihealth/ihealth/zplay)
-set(ZPLAY_INCLUDE_DIR  D:/Ihealth/Ihealth/ihealth/zplay/include)
-set(ZPLAY_LIBRARY   D:/Ihealth/Ihealth/ihealth/zplay/lib/libzplay.lib)
+set( ZPLAY_ROOT_DIR        ${CMAKE_CURRENT_SOURCE_DIR}/zplay)
+set(ZPLAY_INCLUDE_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/zplay/include)
+set(ZPLAY_LIBRARY    ${CMAKE_CURRENT_SOURCE_DIR}/zplay/lib/libzplay.lib)
 
-# set(SPDLOG_DIR   D:/Ihealth/Ihealth/ihealth/spdlog/cmake)
+set(SPDLOG_INCLUDE_DIR    ${CMAKE_CURRENT_SOURCE_DIR}/spdlog/include) #这样就不要每次手动在include
 # # list(APPEND CMAKE_MODULE_PATH "${SPDLOG_DIR}/cmake")
 # find_package(SPDLOG REQUIRED)
 
 find_package(OpenCV REQUIRED)
-find_package (Boost REQUIRED)
 find_package (Boost REQUIRED)
 find_package(EIGEN)
 find_package(TBB)
@@ -56,7 +55,6 @@ find_package(NI)
 find_package(MYSQL)
 find_package(MSC)
 find_package(WKE)
-find_package(NI)
 find_package(ZPLAY)
 
 include_directories(
@@ -71,9 +69,11 @@ ${WKE_INCLUDE_DIR}
 ${OpenCV_INCLUDE_DIR} 
 ${Boost_INCLUDE_DIR}
 ${EIGEN_INCLUDE_DIR} 
-${NI_INCLUDE_DIRS}
+${NI_INCLUDE_DIR}
 ${ZPLAY_INCLUDE_DIR}
-${TBB_INCLUDE_DIR})
+${TBB_INCLUDE_DIR}
+${SPDLOG_INCLUDE_DIR}
+)
 
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR} Root_src)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/ATI/ATIDAQ ATI_src)
@@ -102,7 +102,6 @@ target_link_libraries(ihealth duilib CommonExt ${PUPILTRACKER_LIBRARY} ${APS_LIB
 ${TBB_LIBRARY} 
 ${ZPLAY_LIBRARY} 
 )
-
 if(WIN32)
    set_target_properties(ihealth PROPERTIES LINK_FLAGS_DEBUG "/SUBSYSTEM:windows")
    set_target_properties(ihealth PROPERTIES COMPILE_DEFINITIONS_DEBUG "/SUBSYSTEM:windows")

@@ -2287,7 +2287,7 @@ bool RFMainWindow::OnModifyPwdInfo(void *pParam)
         return true;
     }
 
-    RFModifyPwdFailedDialog(m_hWnd, 2);
+    RFModifyPwdFailedDialog(m_hWnd, 2); //修改密码成功
 
     ModifyPWDInfo pwd;
     pwd.loginid = m_login_info.login_id;
@@ -2295,7 +2295,7 @@ bool RFMainWindow::OnModifyPwdInfo(void *pParam)
     pwd.pwd = newpwd1;
 
     m_login_info.usrpwd = newpwd1;
-    RFPatientsManager::get()->modifyPwd(pwd);
+    RFPatientsManager::get()->modifyPwd(pwd); //涉及UI线程与数据库线程交互
     return true;
 }
 
