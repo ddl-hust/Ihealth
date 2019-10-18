@@ -108,8 +108,6 @@ double Robot::GetGripStrength()
     return output;
 }
 
-bool Robot::IsFire() { return activeCtrl->IsFire(); }
-
 void Robot::GetPlanePos(short w, short h, double XY[2]) { activeCtrl->CalculatePlaneXY(w, h, XY); }
 
 void Robot::CalculateRagPos(double XY[2]) { activeCtrl->CalculateRagXY(XY); }

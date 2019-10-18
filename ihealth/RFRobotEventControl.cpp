@@ -9,9 +9,6 @@ unsigned int __stdcall EventControl(PVOID pParam)
         if (!robotEvent->m_bStart) {
             break;
         }
-
-        // bool bFire = RFMainWindow::MainWindow->m_robot.isFire();
-
         double XY[2];
         RFMainWindow::MainWindow->m_robot.GetPlanePos(robotEvent->m_nWidth, robotEvent->m_nHeight, XY);
 
@@ -20,7 +17,6 @@ unsigned int __stdcall EventControl(PVOID pParam)
         //���Ǿͺ����ƶ����ͱ�Y
         robotEvent->m_fX = XY[0];
         robotEvent->m_fY = XY[1];
-        robotEvent->m_isFire = false;
         robotEvent->Push();
     }
 
@@ -31,8 +27,6 @@ RFRobotEventControl::RFRobotEventControl(void)
 {
     m_hEventControl = 0;
     m_bStart = false;
-
-    m_isFire = false;
     m_fX = .0f;
     m_fY = .0f;
 
@@ -47,7 +41,6 @@ bool RFRobotEventControl::Empty() { return !m_haveValue; }
 
 void RFRobotEventControl::GetValue(bool &bFire, int &X, int &Y)
 {
-    bFire = m_isFire;
     X = m_fX;
     Y = m_fY;
 
@@ -60,7 +53,6 @@ void RFRobotEventControl::Push() { m_haveValue = true; }
 
 void RFRobotEventControl::Start(int width, int height)
 {
-    m_isFire = false;
     m_fX = .0f;
     m_fY = .0f;
 
@@ -81,7 +73,6 @@ void RFRobotEventControl::Stop()
     }
 
     m_haveValue = false;
-    m_isFire = false;
     m_fX = .0f;
     m_fY = .0f;
     m_bStart = false;

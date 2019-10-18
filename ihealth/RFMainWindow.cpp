@@ -546,10 +546,6 @@ void RFMainWindow::BindManagerPatientPageEvent()
 
     CButtonUI *evaluation_begin2 = static_cast<CButtonUI *>(m_pm.FindControl(_T("evaluation_begin2")));
     evaluation_begin2->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVBegin2);
-
-    // 握力传感器开关的响应函数绑定
-    CCheckBoxUI *grip_strength_enable = static_cast<CCheckBoxUI *>(m_pm.FindControl(_T("grip_strength_enable")));
-    grip_strength_enable->OnNotify += MakeDelegate(this, &RFMainWindow::OnGripStrengthClicked);
     // 压力传感器开关的响应函数绑定
     CCheckBoxUI *pressure_sensor_enable = static_cast<CCheckBoxUI *>(m_pm.FindControl(_T("pressure_sensor_enable")));
     pressure_sensor_enable->OnNotify += MakeDelegate(this, &RFMainWindow::OnPressureSwitchChicked);
@@ -3274,22 +3270,6 @@ bool RFMainWindow::OnMusicItemDelete(void *pParam)
         pList->Remove(pListContainerElement);
     }
 
-    return true;
-}
-
-bool RFMainWindow::OnGripStrengthClicked(void *pParam)
-{
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
-
-    CCheckBoxUI *pCheckBox = static_cast<CCheckBoxUI *>(pMsg->pSender);
-    if (!pCheckBox->GetCheck()) {
-        m_grip_strength_enable = false;
-    }
-    else {
-        // 点击这里之后，图标变成ON，这个时候握力传感器是启用的
-        m_grip_strength_enable = true;
-    }
     return true;
 }
 bool RFMainWindow::OnPressureSwitchChicked(void *pParam)
@@ -6875,17 +6855,7 @@ void OnActiveGameDetectTimer(HWND hWnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTim
         RFMainWindow::MainWindow->StopGameRecord();
     }
 
-    bool fire = false;
-    // 这里采集握力传感器的值决定是否fire，只有在使能的情况下才进行采集
-    if (RFMainWindow::MainWindow->m_grip_strength_enable) {
-        if (RFMainWindow::MainWindow->m_robot.IsFire()) {
-            fire = true;
-        }
-    }
-    else {
-        fire = true;
-    }
-
+    bool fire = true;
     std::wstring gameType = game_webkit->RunJS(_T("getGameType();"));
     // 游戏的控制都在这里，通过判断游戏的type来执行不同的控制
     if (gameType == RF_GAME_NAME_FRY_EGG) {

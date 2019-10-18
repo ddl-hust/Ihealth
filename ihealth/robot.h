@@ -52,12 +52,11 @@ public:
     void ActiveStartMove(int id); //refactor for temp paitent data export solution
     void ActiveStopMove();
     double GetGripStrength();
-    bool IsFire();
     void GetPlanePos(short w, short h, double XY[2]);
     void CalculateRagPos(double XY[2]);
     void SetDamping(float FC = 0.1);
     // void ExportJointData(int id);
-    void SetPressureSensorOn(); //主动模式纯六维力-压力+六维力切换相关
+    void SetPressureSensorOn(); //主动模式纯六维力-压力+六维力切换相�?
 	void SetPressureSensorOff();
 
     /************************************************************************/
