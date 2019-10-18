@@ -227,12 +227,12 @@ function start(){
 		 time2++;
 		 if (time2==20) {
 			 //enemies.push(new enemy(57,clientWidth,'image/10.png',1,110,170,'image/enemy2_fly_1_boom.gif',20,600,1000));
-			  enemies.push(new bossenemy(57,clientWidth,'image/4.png',1,200,129,'image/4.gif',20,600,1000));
+			  enemies.push(new bossenemy(57,clientWidth,'image/4.png',1,200,129,'image/4.gif',30,600,1000));
 			 time2=0;
 		 }
 		 else if (time2%5==0) {
 			 //enemies.push(new enemy(25,clientWidth,'image/6.png',1,46,64,'image/enemy3_fly_1_boom.gif',5,400,500));
-			  enemies.push(new enemy(25,clientWidth,'image/2.png',1,120,91,'image/2.gif',5,400,500));
+			  enemies.push(new enemy(25,clientWidth,'image/2.png',1,120,91,'image/2.gif',10,400,100));
 		 }
 		 else{
 			 //enemies.push(new enemy(5,clientWidth,'image/4.png',1,34,24,'image/enemy1_fly_1_boom.gif',1,200,10));

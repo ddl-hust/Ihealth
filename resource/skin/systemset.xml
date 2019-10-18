@@ -23,17 +23,19 @@
 
 			<Control height="80"/>
 
-            <!-- <HorizontalLayout height="35">
+           <!-- <HorizontalLayout height="35">
             	<Label text="握力传感器开关" align="left" width="220" textcolor="#FF253C6E" font="4"/>
                 <CheckBox name="grip_strength_enable" width="60" normalimage="file='checkbox_on_off.png' source='343,518,473,560'" selectedimage="file='checkbox_on_off.png' source='509,518,639,560'" disabledimage="file='checkbox_on_off.png' source='343,518,473,560'"/>
-            </HorizontalLayout>
-
-            <Control height="80"/> -->
-            
-            <HorizontalLayout height="35">
+			</HorizontalLayout> 
+			
+			<Control height="80"/> -->
+			
+		    <HorizontalLayout height="35">
             	<Label text="压力传感器开关" align="left" width="220" textcolor="#FF253C6E" font="4"/>
                 <CheckBox name="pressure_sensor_enable" width="60" normalimage="file='checkbox_on_off.png' source='343,518,473,560'" selectedimage="file='checkbox_on_off.png' source='509,518,639,560'" disabledimage="file='checkbox_on_off.png' source='343,518,473,560'"/>
             </HorizontalLayout>
+
+            <Control height="80"/>
 
             <HorizontalLayout height="35">
                 <Label text="关节运动范围设置" align="left" height="35" textcolor="#FF253C6E" font="4"/>
@@ -50,17 +52,18 @@
                 <Edit name="sfe_rom_edit" align="left" height="35" width="100" textcolor="#ffff471a"  font="3" />
                 <Control />
             </HorizontalLayout>
-             <Control height="40"/>
-            <HorizontalLayout height="35">
-                <Label text="肘部灵敏度" alian="left" height="35" width="230" textcolor="#FF253C6E" font="3" />
-                <Control width="20" />
-                <Edit name="control_arm_sensitivity" align="left" height="35" width="100" textcolor="#ffff471a" font="3" />
-                <Control width="100" />
-                <Label text="肩部灵敏度" alian="left" height="35" width="230" textcolor="#FF253C6E" font="3" />
-                <Control width="20" />
-                <Edit name="control_shoulder_sensitivity" align="left" height="35" width="100" textcolor="#ffff471a" font="3" />    
-                <Control />
-            </HorizontalLayout>
+
+            <Control height="40"/>
+	        <HorizontalLayout height="35">
+	            <Label text="肘部灵敏度" alian="left" height="35" width="230" textcolor="#FF253C6E" font="3" />
+	            <Control width="20" />
+	            <Edit name="control_arm_sensitivity" align="left" height="35" width="100" textcolor="#ffff471a" font="3" />
+	            <Control width="100" />
+	            <Label text="肩部灵敏度" alian="left" height="35" width="230" textcolor="#FF253C6E" font="3" />
+	            <Control width="20" />
+	            <Edit name="control_shoulder_sensitivity" align="left" height="35" width="100" textcolor="#ffff471a" font="3" />    
+	            <Control />
+	        </HorizontalLayout>
           
 
 		     <Control height="810"/>

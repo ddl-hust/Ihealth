@@ -197,15 +197,15 @@ void RFPatientsTrainData::exportTrainData(std::wstring savepath)
 
 			std::wstring train_type = _T("");
 			if (begin->traintype == 1) {
-				train_type = _T("temp");
+				train_type = _T("关节运动角度");
 			} else if (begin->traintype == 2) {
-				train_type = _T("temp");
+				train_type = _T("握力");
 			} else if (begin->traintype == 3) {
-				train_type = _T("temp");
+				train_type = _T("EMG信号");
 			} else if (begin->traintype == 4) {
-				train_type = _T("temp");
+				train_type = _T("肩关节力矩");
 			} else if (begin->traintype == 5) {
-				train_type = _T("temp");
+				train_type = _T("肘关节力矩");
 			}
 			RFPatientsManager::get()->m_excel.SetCellString(row, 2, train_type);
 			RFPatientsManager::get()->m_excel.SetCellInt(row, 4, begin->timetrace);

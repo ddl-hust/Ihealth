@@ -21,7274 +21,7338 @@
 #include <cstdlib>
 
 
-static bool s_active_begin_recode = false;
+
+static bool	  s_active_begin_recode = false;
 static time_t s_active_game4_start = 0;
 static time_t s_active_game4_stop = 0;
 static int active_timer = 0;
 
-static std::vector<double> s_active_data[2];
-static std::vector<double> s_active_data_wl;
+static std::vector<double>	s_active_data[2];
+static std::vector<double>  s_active_data_wl;
 
-static time_t s_eyemode_start = 0;
-static time_t s_eyemode_stop = 0;
-static std::vector<double> s_eyemode_data[2];
+static time_t	s_eyemode_start = 0;
+static time_t	s_eyemode_stop = 0;
+static std::vector<double>	s_eyemode_data[2];
 
-//静态成员线程指针初始化
-CUIThread *RFMainWindow::UIThread = NULL;
-RFMySQLThread *RFMainWindow::DBThread = NULL;
-RFMainWindow *RFMainWindow::MainWindow = NULL;
+CUIThread* RFMainWindow::UIThread = NULL;
+RFMySQLThread* RFMainWindow::DBThread = NULL;
+RFMainWindow* RFMainWindow::MainWindow = NULL;
 
-RFMainWindow::RFMainWindow(void)
-{
-    m_mysql_connected = false;
+RFMainWindow::RFMainWindow(void) {
+	m_mysql_connected = false;
 
-    m_current_patient.id = -1;
-    m_emgmode_tracetime = 0;
-    m_emgmode_timer = NULL;
-    m_emg_createtime = 0;
+	m_current_patient.id = -1;
+	m_emgmode_tracetime = 0;
+	m_emgmode_timer = NULL;
+	m_emg_createtime = 0;
 }
 
-RFMainWindow::~RFMainWindow(void)
-{
-    ControlCard::GetInstance().Close();
-    m_robotEvent.Stop();
-    RFPatientsManager::release();
-    RFPatientsTrainInfo::release();
-    RFPatientsTrainDetails::release();
-    RFPassiveTrain::release();
-    RFEvaluationData::release();
-    RFEvaluationDetailData::release();
+RFMainWindow::~RFMainWindow(void) {
+	ControlCard::GetInstance().Close();
+	m_robotEvent.Stop();
+	RFPatientsManager::release();
+	RFPatientsTrainInfo::release();
+	RFPatientsTrainDetails::release();
+	RFPassiveTrain::release();
+	RFEvaluationData::release();
+	RFEvaluationDetailData::release();
 
-    CWorkThread::Dispose();
-    RFMySQLThread::Release(RFMainWindow::DBThread);
-    CWorkThread::Dispose();
+	CWorkThread::Dispose();
+	RFMySQLThread::Release(RFMainWindow::DBThread);
+	CWorkThread::Dispose();
 
-    CWorkThread::Dispose();
-    CUIThread::Release(UIThread);
-    CWorkThread::Dispose();
+	CWorkThread::Dispose();
+	CUIThread::Release(UIThread);
+	CWorkThread::Dispose();
 }
 
-LPCTSTR RFMainWindow::GetWindowClassName() const { return _T("RFMainWindow"); }
-
-UINT RFMainWindow::GetClassStyle() const { return CS_DBLCLKS; }
-
-void RFMainWindow::OnFinalMessage(HWND /*hWnd*/) {}
-
-CControlUI *RFMainWindow::CreateControl(LPCTSTR pstrClass)
-{
-    if (_tcsicmp(pstrClass, _T("wkeWebkit")) == 0)
-        return new CWkeWebkitUI;
-    else if (_tcsicmp(pstrClass, _T("MusicProgress")) == 0)
-        return new CProgressExUI;
-    else if (_tcsicmp(pstrClass, _T("AVCamera")) == 0)
-        return new CAVPlayerUI;
-    else if (_tcscmp(pstrClass, _T("Wave")) == 0)
-        return new CWaveUI;
-    else if (_tcscmp(pstrClass, _T("EMGWave")) == 0)
-        return new CEMGWaveUI;
-    return NULL;
+LPCTSTR RFMainWindow::GetWindowClassName() const { 
+	return _T("RFMainWindow");
 }
 
-void RFMainWindow::Init()
-{
-    Panic panic1 = CUIThread::Create(this->GetHWND());
-    UIThread = panic1.GetTag<CUIThread *>();
-
-    DBThread = RFMySQLThread::Create();
-
-    RFPatientsTrainDetails::get(); //单例模式
-    RFPatientsTrainInfo::get();
-    RFPatientsManager::get();
-    // RFPassiveTrain::get()->LoadPassiveTrainInfo();
-    MainWindow = this;
-    m_robot.setWindow(GetHWND());
-
-    ShowLoginPage();
+UINT RFMainWindow::GetClassStyle() const { 
+	return CS_DBLCLKS; 
 }
 
-void RFMainWindow::OnPrepare() {}
+void RFMainWindow::OnFinalMessage(HWND /*hWnd*/) { }
 
-void RFMainWindow::Closing() {}
+CControlUI* RFMainWindow::CreateControl(LPCTSTR pstrClass) {
+	if (_tcsicmp(pstrClass, _T("wkeWebkit")) == 0) return  new CWkeWebkitUI;
+	else if (_tcsicmp(pstrClass, _T("MusicProgress")) == 0) return new CProgressExUI;
+	else if (_tcsicmp(pstrClass, _T("AVCamera")) == 0)	return new CAVPlayerUI;
+	else if (_tcscmp(pstrClass, _T("Wave")) == 0) return new CWaveUI;
+	else if (_tcscmp(pstrClass, _T("EMGWave")) == 0) return new CEMGWaveUI;
+	return NULL;
+}
 
-void RFMainWindow::Notify(TNotifyUI &msg)
-{
-    if (msg.sType == _T("windowinit")) {
-        OnPrepare();
-    }
-    if (msg.sType == DUI_MSGTYPE_SCROLL) {
-        CScrollBarUI *pScrollBar = static_cast<CScrollBarUI *>(msg.pSender);
-        if (pScrollBar) {
-            std::wstring scrollname = pScrollBar->GetName();
-            if (scrollname == _T("zd_gjjd_scroll")) { // what the fucking name zd_gjjd_scroll !!!
-                CWaveUI *pWave = static_cast<CWaveUI *>(m_pm.FindControl(_T("zd_gjjd_wave")));
-                pWave->Invalidate();
+void RFMainWindow::Init() {
+	Panic panic1 = CUIThread::Create(this->GetHWND());
+	UIThread = panic1.GetTag<CUIThread*>();
+
+	DBThread = RFMySQLThread::Create();
+
+	RFPatientsTrainDetails::get();
+	RFPatientsTrainInfo::get();
+	RFPatientsManager::get();
+	// RFPassiveTrain::get()->LoadPassiveTrainInfo();
+	MainWindow = this;
+	m_robot.setWindow(GetHWND());
+
+	ShowLoginPage();
+}
+
+void RFMainWindow::OnPrepare() { }
+
+void RFMainWindow::Closing() { }
+
+void RFMainWindow::Notify(TNotifyUI& msg) {
+	if( msg.sType == _T("windowinit") ) 
+	{
+		OnPrepare();
+	}
+	if (msg.sType == DUI_MSGTYPE_SCROLL) {
+		CScrollBarUI* pScrollBar = static_cast<CScrollBarUI*>(msg.pSender);
+		if (pScrollBar) {
+			std::wstring scrollname = pScrollBar->GetName();
+			if (scrollname == _T("zd_gjjd_scroll")) {
+				CWaveUI* pWave = static_cast<CWaveUI*>(m_pm.FindControl(_T("zd_gjjd_wave")));
+				pWave->Invalidate();
 
 
-                UpdateZDGJJDWaveXNum((double)pWave->GetXStartValue() / 1000.0f);
-            }
-            else if (scrollname == _T("zd_wl_scroll")) {
-                CWaveUI *pWave = static_cast<CWaveUI *>(m_pm.FindControl(_T("zd_wl_wave")));
-                pWave->Invalidate();
+				UpdateZDGJJDWaveXNum((double)pWave->GetXStartValue() / 1000.0f);
+			} else if (scrollname == _T("zd_wl_scroll")) {
+				CWaveUI* pWave = static_cast<CWaveUI*>(m_pm.FindControl(_T("zd_wl_wave")));
+				pWave->Invalidate();
 
-                UpdateZDWLWaveXNum((double)pWave->GetXStartValue() / 1000.0f);
-            }
+				UpdateZDWLWaveXNum((double)pWave->GetXStartValue() / 1000.0f);
+			}
 
-            if (scrollname == _T("bd_jgj_scroll")) {
-                CWaveUI *pWave = static_cast<CWaveUI *>(m_pm.FindControl(_T("bd_jgj_wave")));
-                pWave->Invalidate();
+			if (scrollname == _T("bd_jgj_scroll")) {
+				CWaveUI* pWave = static_cast<CWaveUI*>(m_pm.FindControl(_T("bd_jgj_wave")));
+				pWave->Invalidate();
 
 
-                UpdateJGJWaveXNum((double)pWave->GetXStartValue() / 1000.0f);
-            }
-            else if (scrollname == _T("bd_zgj_scroll")) {
-                CWaveUI *pWave = static_cast<CWaveUI *>(m_pm.FindControl(_T("bd_zgj_wave")));
-                pWave->Invalidate();
+				UpdateJGJWaveXNum((double)pWave->GetXStartValue() / 1000.0f);
+			} else if (scrollname == _T("bd_zgj_scroll")) {
+				CWaveUI* pWave = static_cast<CWaveUI*>(m_pm.FindControl(_T("bd_zgj_wave")));
+				pWave->Invalidate();
 
-                UpdateZGJWaveXNum((double)pWave->GetXStartValue() / 1000.0f);
-            }
-            else if (scrollname == _T("yd_gjydjd_scroll")) {
-                CWaveUI *pWave = static_cast<CWaveUI *>(m_pm.FindControl(_T("yd_gjydjd_wave")));
-                pWave->Invalidate();
+				UpdateZGJWaveXNum((double)pWave->GetXStartValue() / 1000.0f);
+			} else if (scrollname == _T("yd_gjydjd_scroll")) {
+				CWaveUI* pWave = static_cast<CWaveUI*>(m_pm.FindControl(_T("yd_gjydjd_wave")));
+				pWave->Invalidate();
 
-                UpdateYDGJJDWaveXNum((double)pWave->GetXStartValue() / 1000.0f);
-            }
-            else if (scrollname == _T("emg_scroll")) {
-                CWaveUI *pWave = static_cast<CWaveUI *>(m_pm.FindControl(_T("emg_wave")));
-                pWave->Invalidate();
+				UpdateYDGJJDWaveXNum((double)pWave->GetXStartValue() / 1000.0f);
+			} else if (scrollname == _T("emg_scroll")) {
+				CWaveUI* pWave = static_cast<CWaveUI*>(m_pm.FindControl(_T("emg_wave")));
+				pWave->Invalidate();
 
-                UpdateEMGWaveXNum((double)pWave->GetXStartValue() / 1000.0f);
-            }
-            else if (scrollname == _T("emg_gjyd_scroll")) {
-                CWaveUI *pWave = static_cast<CWaveUI *>(m_pm.FindControl(_T("emg_gjyd_wave")));
-                pWave->Invalidate();
+				UpdateEMGWaveXNum((double)pWave->GetXStartValue() / 1000.0f);
+			} else if (scrollname == _T("emg_gjyd_scroll")) {
+				CWaveUI* pWave = static_cast<CWaveUI*>(m_pm.FindControl(_T("emg_gjyd_wave")));
+				pWave->Invalidate();
 
-                UpdateEMGGJYDWaveXNum((double)pWave->GetXStartValue() / 1000.0f);
-            }
-        }
-    }
-    if (msg.sType == DUI_MSGTYPE_VALUECHANGED_MOVE) {
-        CSliderUI *pSlider = static_cast<CSliderUI *>(msg.pSender);
-        if (pSlider) {
-            double v = 0.1 + (double)(pSlider->GetValue() / pSlider->GetMaxValue()) * 0.5;
-            m_robot.SetDamping(v);
-        }
-    }
+				UpdateEMGGJYDWaveXNum((double)pWave->GetXStartValue() / 1000.0f);
+			}
+			
+		}
+	}
+	if (msg.sType == DUI_MSGTYPE_VALUECHANGED_MOVE) {
+		CSliderUI* pSlider = static_cast<CSliderUI*>(msg.pSender);
+		if (pSlider) {
+			double v = 0.1 + (double)(pSlider->GetValue() / pSlider->GetMaxValue()) * 0.5;
+			m_robot.SetDamping(v);
+		}
+	}
 }
 
 void RFMainWindow::BindSelectPatientPageEvent()
 {
-    CButtonUI *select_patient_return = static_cast<CButtonUI *>(m_pm.FindControl(_T("select_patient_return")));
-    select_patient_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnReturnMainPage);
+	CButtonUI* select_patient_return = static_cast<CButtonUI*>(m_pm.FindControl(_T("select_patient_return")));
+	select_patient_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnReturnMainPage);
 
-    CButtonUI *prevpage = static_cast<CButtonUI *>(m_pm.FindControl(_T("last_page")));
-    prevpage->OnNotify += MakeDelegate(this, &RFMainWindow::OnPrevPage);
+	CButtonUI* prevpage = static_cast<CButtonUI*>(m_pm.FindControl(_T("last_page")));
+	prevpage->OnNotify += MakeDelegate(this, &RFMainWindow::OnPrevPage);
 
-    CButtonUI *page1 = static_cast<CButtonUI *>(m_pm.FindControl(_T("page1")));
-    page1->OnNotify += MakeDelegate(this, &RFMainWindow::OnPage1);
+	CButtonUI* page1 = static_cast<CButtonUI*>(m_pm.FindControl(_T("page1")));
+	page1->OnNotify += MakeDelegate(this, &RFMainWindow::OnPage1);
 
-    CButtonUI *page2 = static_cast<CButtonUI *>(m_pm.FindControl(_T("page2")));
-    page2->OnNotify += MakeDelegate(this, &RFMainWindow::OnPage2);
+	CButtonUI* page2 = static_cast<CButtonUI*>(m_pm.FindControl(_T("page2")));
+	page2->OnNotify += MakeDelegate(this, &RFMainWindow::OnPage2);
 
-    CButtonUI *page3 = static_cast<CButtonUI *>(m_pm.FindControl(_T("page3")));
-    page3->OnNotify += MakeDelegate(this, &RFMainWindow::OnPage3);
+	CButtonUI* page3 = static_cast<CButtonUI*>(m_pm.FindControl(_T("page3")));
+	page3->OnNotify += MakeDelegate(this, &RFMainWindow::OnPage3);
 
-    CButtonUI *page4 = static_cast<CButtonUI *>(m_pm.FindControl(_T("page4")));
-    page4->OnNotify += MakeDelegate(this, &RFMainWindow::OnPage4);
+	CButtonUI* page4 = static_cast<CButtonUI*>(m_pm.FindControl(_T("page4")));
+	page4->OnNotify += MakeDelegate(this, &RFMainWindow::OnPage4);
 
-    CButtonUI *nextpage = static_cast<CButtonUI *>(m_pm.FindControl(_T("next_page")));
-    nextpage->OnNotify += MakeDelegate(this, &RFMainWindow::OnNextPage);
+	CButtonUI* nextpage = static_cast<CButtonUI*>(m_pm.FindControl(_T("next_page")));
+	nextpage->OnNotify += MakeDelegate(this, &RFMainWindow::OnNextPage);
 
-    CButtonUI *select_patient_search = static_cast<CButtonUI *>(m_pm.FindControl(_T("select_patient_search")));
-    select_patient_search->OnNotify += MakeDelegate(this, &RFMainWindow::OnSearch);
+	CButtonUI* select_patient_search = static_cast<CButtonUI*>(m_pm.FindControl(_T("select_patient_search")));
+	select_patient_search->OnNotify += MakeDelegate(this, &RFMainWindow::OnSearch);
 }
 
 void RFMainWindow::BindManagerPatientPageEvent()
 {
-    CButtonUI *manger_patient_return = static_cast<CButtonUI *>(m_pm.FindControl(_T("manager_patient_return")));
-    manger_patient_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnReturnMainPage);
+	CButtonUI* manger_patient_return = static_cast<CButtonUI*>(m_pm.FindControl(_T("manager_patient_return")));
+	manger_patient_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnReturnMainPage);
 
-    CButtonUI *personor_info_return = static_cast<CButtonUI *>(m_pm.FindControl(_T("personor_info_return")));
-    personor_info_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnReturnMainPage);
+	CButtonUI* personor_info_return = static_cast<CButtonUI*>(m_pm.FindControl(_T("personor_info_return")));
+	personor_info_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnReturnMainPage);
 
-    CButtonUI *info_return = static_cast<CButtonUI *>(m_pm.FindControl(_T("systemset_info_return")));
-    info_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnSystemSetReturn);
+	CButtonUI* info_return = static_cast<CButtonUI*>(m_pm.FindControl(_T("systemset_info_return")));
+	info_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnSystemSetReturn);
 
-    CButtonUI *prevpage = static_cast<CButtonUI *>(m_pm.FindControl(_T("manage_last_page")));
-    prevpage->OnNotify += MakeDelegate(this, &RFMainWindow::OnManagerPrevPage);
+	CButtonUI* prevpage = static_cast<CButtonUI*>(m_pm.FindControl(_T("manage_last_page")));
+	prevpage->OnNotify += MakeDelegate(this, &RFMainWindow::OnManagerPrevPage);
 
-    CButtonUI *page1 = static_cast<CButtonUI *>(m_pm.FindControl(_T("manage_page1")));
-    page1->OnNotify += MakeDelegate(this, &RFMainWindow::OnManagerPage1);
+	CButtonUI* page1 = static_cast<CButtonUI*>(m_pm.FindControl(_T("manage_page1")));
+	page1->OnNotify += MakeDelegate(this, &RFMainWindow::OnManagerPage1);
 
-    CButtonUI *page2 = static_cast<CButtonUI *>(m_pm.FindControl(_T("manage_page2")));
-    page2->OnNotify += MakeDelegate(this, &RFMainWindow::OnManagerPage2);
+	CButtonUI* page2 = static_cast<CButtonUI*>(m_pm.FindControl(_T("manage_page2")));
+	page2->OnNotify += MakeDelegate(this, &RFMainWindow::OnManagerPage2);
 
-    CButtonUI *page3 = static_cast<CButtonUI *>(m_pm.FindControl(_T("manage_page3")));
-    page3->OnNotify += MakeDelegate(this, &RFMainWindow::OnManagerPage3);
+	CButtonUI* page3 = static_cast<CButtonUI*>(m_pm.FindControl(_T("manage_page3")));
+	page3->OnNotify += MakeDelegate(this, &RFMainWindow::OnManagerPage3);
 
-    CButtonUI *page4 = static_cast<CButtonUI *>(m_pm.FindControl(_T("manage_page4")));
-    page4->OnNotify += MakeDelegate(this, &RFMainWindow::OnManagerPage4);
+	CButtonUI* page4 = static_cast<CButtonUI*>(m_pm.FindControl(_T("manage_page4")));
+	page4->OnNotify += MakeDelegate(this, &RFMainWindow::OnManagerPage4);
 
-    CButtonUI *nextpage = static_cast<CButtonUI *>(m_pm.FindControl(_T("manage_next_page")));
-    nextpage->OnNotify += MakeDelegate(this, &RFMainWindow::OnManagerNextPage);
+	CButtonUI* nextpage = static_cast<CButtonUI*>(m_pm.FindControl(_T("manage_next_page")));
+	nextpage->OnNotify += MakeDelegate(this, &RFMainWindow::OnManagerNextPage);
 
-    CButtonUI *select_patient_search = static_cast<CButtonUI *>(m_pm.FindControl(_T("manager_patient_search")));
-    select_patient_search->OnNotify += MakeDelegate(this, &RFMainWindow::OnManagerSearch);
+	CButtonUI* select_patient_search = static_cast<CButtonUI*>(m_pm.FindControl(_T("manager_patient_search")));
+	select_patient_search->OnNotify += MakeDelegate(this, &RFMainWindow::OnManagerSearch);
 
-    CButtonUI *management_btn_tianjia = static_cast<CButtonUI *>(m_pm.FindControl(_T("management_btn_tianjia")));
-    management_btn_tianjia->OnNotify += MakeDelegate(this, &RFMainWindow::OnManagerPatientAdd);
+	CButtonUI* management_btn_tianjia = static_cast<CButtonUI*>(m_pm.FindControl(_T("management_btn_tianjia")));
+	management_btn_tianjia->OnNotify += MakeDelegate(this, &RFMainWindow::OnManagerPatientAdd);
 
-    CButtonUI *detail_return = static_cast<CButtonUI *>(m_pm.FindControl(_T("manager_patient_detail_return")));
-    detail_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnManagerPatient);
+	CButtonUI* detail_return= static_cast<CButtonUI*>(m_pm.FindControl(_T("manager_patient_detail_return")));
+	detail_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnManagerPatient);
+	
+	CButtonUI* edit_return= static_cast<CButtonUI*>(m_pm.FindControl(_T("manager_patient_bianji_return")));
+	edit_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnManagerPatient);
 
-    CButtonUI *edit_return = static_cast<CButtonUI *>(m_pm.FindControl(_T("manager_patient_bianji_return")));
-    edit_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnManagerPatient);
+	CButtonUI* add_return= static_cast<CButtonUI*>(m_pm.FindControl(_T("manager_patient_add_return")));
+	add_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnManagerPatient);
 
-    CButtonUI *add_return = static_cast<CButtonUI *>(m_pm.FindControl(_T("manager_patient_add_return")));
-    add_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnManagerPatient);
+	CButtonUI* about_return= static_cast<CButtonUI*>(m_pm.FindControl(_T("about_return")));
+	about_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnEntry);
 
-    CButtonUI *about_return = static_cast<CButtonUI *>(m_pm.FindControl(_T("about_return")));
-    about_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnEntry);
+	CButtonUI* patient_information_return= static_cast<CButtonUI*>(m_pm.FindControl(_T("patient_information_return")));
+	patient_information_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnReturnMainPage);
 
-    CButtonUI *patient_information_return = static_cast<CButtonUI *>(m_pm.FindControl(_T("patient_information_return")));
-    patient_information_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnReturnMainPage);
+	CButtonUI* patient_traindetail_return= static_cast<CButtonUI*>(m_pm.FindControl(_T("patient_traindetail_return")));
+	patient_traindetail_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainMessage);
 
-    CButtonUI *patient_traindetail_return = static_cast<CButtonUI *>(m_pm.FindControl(_T("patient_traindetail_return")));
-    patient_traindetail_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainMessage);
+	CButtonUI* train_main_page_return= static_cast<CButtonUI*>(m_pm.FindControl(_T("train_main_page_return")));
+	train_main_page_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnReturnMainPage);
 
-    CButtonUI *train_main_page_return = static_cast<CButtonUI *>(m_pm.FindControl(_T("train_main_page_return")));
-    train_main_page_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnReturnMainPage);
+	CButtonUI* active_train_page_return= static_cast<CButtonUI*>(m_pm.FindControl(_T("active_train_page_return")));
+	active_train_page_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainFromActiveTrain);
 
-    CButtonUI *active_train_page_return = static_cast<CButtonUI *>(m_pm.FindControl(_T("active_train_page_return")));
-    active_train_page_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainFromActiveTrain);
+	CButtonUI* passive_train_page_return= static_cast<CButtonUI*>(m_pm.FindControl(_T("passive_train_page_return")));
+	passive_train_page_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainFromPassiveTrain);
 
-    CButtonUI *passive_train_page_return = static_cast<CButtonUI *>(m_pm.FindControl(_T("passive_train_page_return")));
-    passive_train_page_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainFromPassiveTrain);
+	CButtonUI* eye_mode_return= static_cast<CButtonUI*>(m_pm.FindControl(_T("eye_mode_return")));
+	eye_mode_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainFromEyeMode);
 
-    CButtonUI *eye_mode_return = static_cast<CButtonUI *>(m_pm.FindControl(_T("eye_mode_return")));
-    eye_mode_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainFromEyeMode);
+	CButtonUI* emg_mode_return= static_cast<CButtonUI*>(m_pm.FindControl(_T("emg_mode_return")));
+	emg_mode_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrain);
 
-    CButtonUI *emg_mode_return = static_cast<CButtonUI *>(m_pm.FindControl(_T("emg_mode_return")));
-    emg_mode_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrain);
+	CButtonUI* traindetail_chart_return = static_cast<CButtonUI*>(m_pm.FindControl(_T("traindetail_chart_return")));
+	traindetail_chart_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainDetail);
 
-    CButtonUI *traindetail_chart_return = static_cast<CButtonUI *>(m_pm.FindControl(_T("traindetail_chart_return")));
-    traindetail_chart_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainDetail);
+	CButtonUI* active_train_game4_return= static_cast<CButtonUI*>(m_pm.FindControl(_T("active_train_game4_return")));
+	active_train_game4_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnActiveTrainFromGame);
+	
+	CButtonUI* evaluation_page_return= static_cast<CButtonUI*>(m_pm.FindControl(_T("evaluation_page_return")));
+	evaluation_page_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnReturnMainPage);
 
-    CButtonUI *active_train_game4_return = static_cast<CButtonUI *>(m_pm.FindControl(_T("active_train_game4_return")));
-    active_train_game4_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnActiveTrainFromGame);
+	CButtonUI* evaluation_history_return= static_cast<CButtonUI*>(m_pm.FindControl(_T("evaluation_history_return")));
+	evaluation_history_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnReturnEvaluationPage);
 
-    CButtonUI *evaluation_page_return = static_cast<CButtonUI *>(m_pm.FindControl(_T("evaluation_page_return")));
-    evaluation_page_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnReturnMainPage);
+	CButtonUI* evaluation_add_return = static_cast<CButtonUI*>(m_pm.FindControl(_T("evaluation_add_return")));
+	evaluation_add_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnReturnEvaluationHistoryPage);
 
-    CButtonUI *evaluation_history_return = static_cast<CButtonUI *>(m_pm.FindControl(_T("evaluation_history_return")));
-    evaluation_history_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnReturnEvaluationPage);
+	CButtonUI* evaluation_ydgn_add_return = static_cast<CButtonUI*>(m_pm.FindControl(_T("evaluation_ydgn_add_return")));
+	evaluation_ydgn_add_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnReturnEvaluationHistoryPage);
 
-    CButtonUI *evaluation_add_return = static_cast<CButtonUI *>(m_pm.FindControl(_T("evaluation_add_return")));
-    evaluation_add_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnReturnEvaluationHistoryPage);
+	CButtonUI* evaluation_ydgn_detail_return = static_cast<CButtonUI*>(m_pm.FindControl(_T("evaluation_ydgn_detail_return")));
+	evaluation_ydgn_detail_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnReturnEvaluationHistoryPage);
 
-    CButtonUI *evaluation_ydgn_add_return = static_cast<CButtonUI *>(m_pm.FindControl(_T("evaluation_ydgn_add_return")));
-    evaluation_ydgn_add_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnReturnEvaluationHistoryPage);
+	CButtonUI* evaluation_detail_return = static_cast<CButtonUI*>(m_pm.FindControl(_T("evaluation_detail_return")));
+	evaluation_detail_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnReturnEvaluationHistoryPage);
 
-    CButtonUI *evaluation_ydgn_detail_return = static_cast<CButtonUI *>(m_pm.FindControl(_T("evaluation_ydgn_detail_return")));
-    evaluation_ydgn_detail_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnReturnEvaluationHistoryPage);
 
-    CButtonUI *evaluation_detail_return = static_cast<CButtonUI *>(m_pm.FindControl(_T("evaluation_detail_return")));
-    evaluation_detail_return->OnNotify += MakeDelegate(this, &RFMainWindow::OnReturnEvaluationHistoryPage);
+	CButtonUI* manager_edit_patient_save= static_cast<CButtonUI*>(m_pm.FindControl(_T("manager_edit_patient_save")));
+	manager_edit_patient_save->OnNotify += MakeDelegate(this, &RFMainWindow::OnSavePatient);
 
+	CButtonUI* manager_patient_detail_edit = static_cast<CButtonUI*>(m_pm.FindControl(_T("manager_patient_detail_edit")));
+	manager_patient_detail_edit->OnNotify += MakeDelegate(this, &RFMainWindow::OnDetailPageEdit);
 
-    CButtonUI *manager_edit_patient_save = static_cast<CButtonUI *>(m_pm.FindControl(_T("manager_edit_patient_save")));
-    manager_edit_patient_save->OnNotify += MakeDelegate(this, &RFMainWindow::OnSavePatient);
+	CButtonUI* manager_patient_detail_delete = static_cast<CButtonUI*>(m_pm.FindControl(_T("manager_patient_detail_delete")));
+	manager_patient_detail_delete->OnNotify += MakeDelegate(this, &RFMainWindow::OnDetailPageDelete);
 
-    CButtonUI *manager_patient_detail_edit = static_cast<CButtonUI *>(m_pm.FindControl(_T("manager_patient_detail_edit")));
-    manager_patient_detail_edit->OnNotify += MakeDelegate(this, &RFMainWindow::OnDetailPageEdit);
+	CButtonUI* manager_add_patient_save = static_cast<CButtonUI*>(m_pm.FindControl(_T("manager_add_patient_save")));
+	manager_add_patient_save->OnNotify += MakeDelegate(this, &RFMainWindow::OnAddSavePatient);
 
-    CButtonUI *manager_patient_detail_delete = static_cast<CButtonUI *>(m_pm.FindControl(_T("manager_patient_detail_delete")));
-    manager_patient_detail_delete->OnNotify += MakeDelegate(this, &RFMainWindow::OnDetailPageDelete);
+	CButtonUI* manager_patient_shaixuan = static_cast<CButtonUI*>(m_pm.FindControl(_T("manager_patient_shaixuan")));
+	manager_patient_shaixuan->OnNotify += MakeDelegate(this, &RFMainWindow::OnFilter);
+	
+	CButtonUI* personor_info = static_cast<CButtonUI*>(m_pm.FindControl(_T("begin_edit_person_info")));
+	personor_info->OnNotify += MakeDelegate(this, &RFMainWindow::OnChangePersonInfoPage);
 
-    CButtonUI *manager_add_patient_save = static_cast<CButtonUI *>(m_pm.FindControl(_T("manager_add_patient_save")));
-    manager_add_patient_save->OnNotify += MakeDelegate(this, &RFMainWindow::OnAddSavePatient);
+	CButtonUI* changepwd_box = static_cast<CButtonUI*>(m_pm.FindControl(_T("begin_change_pwd")));
+	changepwd_box->OnNotify += MakeDelegate(this, &RFMainWindow::OnChangePasswordPage);
 
-    CButtonUI *manager_patient_shaixuan = static_cast<CButtonUI *>(m_pm.FindControl(_T("manager_patient_shaixuan")));
-    manager_patient_shaixuan->OnNotify += MakeDelegate(this, &RFMainWindow::OnFilter);
+	CButtonUI* personorinfo_save = static_cast<CButtonUI*>(m_pm.FindControl(_T("personorinfo_save")));
+	personorinfo_save->OnNotify += MakeDelegate(this, &RFMainWindow::OnSavePersonInfo);
 
-    CButtonUI *personor_info = static_cast<CButtonUI *>(m_pm.FindControl(_T("begin_edit_person_info")));
-    personor_info->OnNotify += MakeDelegate(this, &RFMainWindow::OnChangePersonInfoPage);
+	CButtonUI* personorinfo_pwd_save = static_cast<CButtonUI*>(m_pm.FindControl(_T("personorinfo_pwd_save")));
+	personorinfo_pwd_save->OnNotify += MakeDelegate(this, &RFMainWindow::OnModifyPwdInfo);
 
-    CButtonUI *changepwd_box = static_cast<CButtonUI *>(m_pm.FindControl(_T("begin_change_pwd")));
-    changepwd_box->OnNotify += MakeDelegate(this, &RFMainWindow::OnChangePasswordPage);
+	CButtonUI* manager_patient_export = static_cast<CButtonUI*>(m_pm.FindControl(_T("manager_patient_export")));
+	manager_patient_export->OnNotify += MakeDelegate(this, &RFMainWindow::OnExportFilterPatient);
 
-    CButtonUI *personorinfo_save = static_cast<CButtonUI *>(m_pm.FindControl(_T("personorinfo_save")));
-    personorinfo_save->OnNotify += MakeDelegate(this, &RFMainWindow::OnSavePersonInfo);
+	CButtonUI* manager_patient_import = static_cast<CButtonUI*>(m_pm.FindControl(_T("manager_patient_import")));
+	manager_patient_import->OnNotify += MakeDelegate(this, &RFMainWindow::OnImportPatient);
 
-    CButtonUI *personorinfo_pwd_save = static_cast<CButtonUI *>(m_pm.FindControl(_T("personorinfo_pwd_save")));
-    personorinfo_pwd_save->OnNotify += MakeDelegate(this, &RFMainWindow::OnModifyPwdInfo);
+	CButtonUI* manager_patient_detail_export = static_cast<CButtonUI*>(m_pm.FindControl(_T("manager_patient_detail_export")));
+	manager_patient_detail_export->OnNotify += MakeDelegate(this, &RFMainWindow::OnExportFilterPatientDetail);
+	
+	CButtonUI* traininfo_export = static_cast<CButtonUI*>(m_pm.FindControl(_T("traininfo_export")));
+	traininfo_export->OnNotify += MakeDelegate(this, &RFMainWindow::OnTrainInfoExport);
 
-    CButtonUI *manager_patient_export = static_cast<CButtonUI *>(m_pm.FindControl(_T("manager_patient_export")));
-    manager_patient_export->OnNotify += MakeDelegate(this, &RFMainWindow::OnExportFilterPatient);
+	CButtonUI* patient_traindetail_export = static_cast<CButtonUI*>(m_pm.FindControl(_T("patient_traindetail_export")));
+	patient_traindetail_export->OnNotify += MakeDelegate(this, &RFMainWindow::OnTrainDetailExport);
 
-    CButtonUI *manager_patient_import = static_cast<CButtonUI *>(m_pm.FindControl(_T("manager_patient_import")));
-    manager_patient_import->OnNotify += MakeDelegate(this, &RFMainWindow::OnImportPatient);
 
-    CButtonUI *manager_patient_detail_export = static_cast<CButtonUI *>(m_pm.FindControl(_T("manager_patient_detail_export")));
-    manager_patient_detail_export->OnNotify += MakeDelegate(this, &RFMainWindow::OnExportFilterPatientDetail);
+	CButtonUI* traindetail_chart_export = static_cast<CButtonUI*>(m_pm.FindControl(_T("traindetail_chart_export")));
+	traindetail_chart_export->OnNotify += MakeDelegate(this, &RFMainWindow::OnTrainDataExport);
 
-    CButtonUI *traininfo_export = static_cast<CButtonUI *>(m_pm.FindControl(_T("traininfo_export")));
-    traininfo_export->OnNotify += MakeDelegate(this, &RFMainWindow::OnTrainInfoExport);
 
-    CButtonUI *patient_traindetail_export = static_cast<CButtonUI *>(m_pm.FindControl(_T("patient_traindetail_export")));
-    patient_traindetail_export->OnNotify += MakeDelegate(this, &RFMainWindow::OnTrainDetailExport);
+	CButtonUI* train_main_page_active = static_cast<CButtonUI*>(m_pm.FindControl(_T("train_main_page_active")));
+	train_main_page_active->OnNotify += MakeDelegate(this, &RFMainWindow::OnActiveTrain);
 
+	CButtonUI* train_main_page_passive = static_cast<CButtonUI*>(m_pm.FindControl(_T("train_main_page_passive")));
+	train_main_page_passive->OnNotify += MakeDelegate(this, &RFMainWindow::OnPassiveTrain);
 
-    CButtonUI *traindetail_chart_export = static_cast<CButtonUI *>(m_pm.FindControl(_T("traindetail_chart_export")));
-    traindetail_chart_export->OnNotify += MakeDelegate(this, &RFMainWindow::OnTrainDataExport);
+	CButtonUI* pf_last_page = static_cast<CButtonUI*>(m_pm.FindControl(_T("pf_last_page")));
+	pf_last_page->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainInfoPrevPage);
 
+	CButtonUI* pf_page1 = static_cast<CButtonUI*>(m_pm.FindControl(_T("pf_page1")));
+	pf_page1->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainInfoPage1);
 
-    CButtonUI *train_main_page_active = static_cast<CButtonUI *>(m_pm.FindControl(_T("train_main_page_active")));
-    train_main_page_active->OnNotify += MakeDelegate(this, &RFMainWindow::OnActiveTrain);
+	CButtonUI* pf_page2 = static_cast<CButtonUI*>(m_pm.FindControl(_T("pf_page2")));
+	pf_page2->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainInfoPage2);
 
-    CButtonUI *train_main_page_passive = static_cast<CButtonUI *>(m_pm.FindControl(_T("train_main_page_passive")));
-    train_main_page_passive->OnNotify += MakeDelegate(this, &RFMainWindow::OnPassiveTrain);
+	CButtonUI* pf_page3 = static_cast<CButtonUI*>(m_pm.FindControl(_T("pf_page3")));
+	pf_page3->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainInfoPage3);
 
-    CButtonUI *pf_last_page = static_cast<CButtonUI *>(m_pm.FindControl(_T("pf_last_page")));
-    pf_last_page->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainInfoPrevPage);
+	CButtonUI* pf_page4 = static_cast<CButtonUI*>(m_pm.FindControl(_T("pf_page4")));
+	pf_page4->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainInfoPage4);
 
-    CButtonUI *pf_page1 = static_cast<CButtonUI *>(m_pm.FindControl(_T("pf_page1")));
-    pf_page1->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainInfoPage1);
+	CButtonUI* pf_next_page = static_cast<CButtonUI*>(m_pm.FindControl(_T("pf_next_page")));
+	pf_next_page->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainInfoNextPage);
 
-    CButtonUI *pf_page2 = static_cast<CButtonUI *>(m_pm.FindControl(_T("pf_page2")));
-    pf_page2->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainInfoPage2);
+	CButtonUI* pf_search = static_cast<CButtonUI*>(m_pm.FindControl(_T("pf_search")));
+	pf_search->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainSearch);
 
-    CButtonUI *pf_page3 = static_cast<CButtonUI *>(m_pm.FindControl(_T("pf_page3")));
-    pf_page3->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainInfoPage3);
 
-    CButtonUI *pf_page4 = static_cast<CButtonUI *>(m_pm.FindControl(_T("pf_page4")));
-    pf_page4->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainInfoPage4);
+	CButtonUI* pd_last_page = static_cast<CButtonUI*>(m_pm.FindControl(_T("pd_last_page")));
+	pd_last_page->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainDetailPrevPage);
 
-    CButtonUI *pf_next_page = static_cast<CButtonUI *>(m_pm.FindControl(_T("pf_next_page")));
-    pf_next_page->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainInfoNextPage);
+	CButtonUI* pd_page1 = static_cast<CButtonUI*>(m_pm.FindControl(_T("pd_page1")));
+	pd_page1->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainDetailPage1);
 
-    CButtonUI *pf_search = static_cast<CButtonUI *>(m_pm.FindControl(_T("pf_search")));
-    pf_search->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainSearch);
+	CButtonUI* pd_page2 = static_cast<CButtonUI*>(m_pm.FindControl(_T("pd_page2")));
+	pd_page2->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainDetailPage2);
 
+	CButtonUI* pd_page3 = static_cast<CButtonUI*>(m_pm.FindControl(_T("pd_page3")));
+	pd_page3->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainDetailPage3);
 
-    CButtonUI *pd_last_page = static_cast<CButtonUI *>(m_pm.FindControl(_T("pd_last_page")));
-    pd_last_page->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainDetailPrevPage);
+	CButtonUI* pd_page4 = static_cast<CButtonUI*>(m_pm.FindControl(_T("pd_page4")));
+	pd_page4->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainDetailPage4);
 
-    CButtonUI *pd_page1 = static_cast<CButtonUI *>(m_pm.FindControl(_T("pd_page1")));
-    pd_page1->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainDetailPage1);
+	CButtonUI* pd_next_page = static_cast<CButtonUI*>(m_pm.FindControl(_T("pd_next_page")));
+	pd_next_page->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainDetailNextPage);
 
-    CButtonUI *pd_page2 = static_cast<CButtonUI *>(m_pm.FindControl(_T("pd_page2")));
-    pd_page2->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainDetailPage2);
+	CButtonUI* traindetail_search = static_cast<CButtonUI*>(m_pm.FindControl(_T("traindetail_search")));
+	traindetail_search->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainDetailSearch);
 
-    CButtonUI *pd_page3 = static_cast<CButtonUI *>(m_pm.FindControl(_T("pd_page3")));
-    pd_page3->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainDetailPage3);
+	CButtonUI* passive_play = static_cast<CButtonUI*>(m_pm.FindControl(_T("passive_play")));
+	passive_play->OnNotify += MakeDelegate(this, &RFMainWindow::OnPassiveTrainPlay);
 
-    CButtonUI *pd_page4 = static_cast<CButtonUI *>(m_pm.FindControl(_T("pd_page4")));
-    pd_page4->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainDetailPage4);
+	CButtonUI* passive_play10 = static_cast<CButtonUI*>(m_pm.FindControl(_T("passive_play10")));
+	passive_play10->OnNotify += MakeDelegate(this, &RFMainWindow::OnPassiveTrainPlayByAuto);
 
-    CButtonUI *pd_next_page = static_cast<CButtonUI *>(m_pm.FindControl(_T("pd_next_page")));
-    pd_next_page->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainDetailNextPage);
+	CButtonUI* passive_list = static_cast<CButtonUI*>(m_pm.FindControl(_T("passive_list")));
+	passive_list->OnNotify += MakeDelegate(this, &RFMainWindow::OnPassiveTrainPlayByOrder);
 
-    CButtonUI *traindetail_search = static_cast<CButtonUI *>(m_pm.FindControl(_T("traindetail_search")));
-    traindetail_search->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainDetailSearch);
+	CButtonUI* passive_recover = static_cast<CButtonUI*>(m_pm.FindControl(_T("passive_recover")));
+	passive_recover->OnNotify += MakeDelegate(this, &RFMainWindow::OnPassiveTrainRecover);
 
-    CButtonUI *passive_play = static_cast<CButtonUI *>(m_pm.FindControl(_T("passive_play")));
-    passive_play->OnNotify += MakeDelegate(this, &RFMainWindow::OnPassiveTrainPlay);
+	CButtonUI* passive_volume = static_cast<CButtonUI*>(m_pm.FindControl(_T("passive_volume")));
+	passive_volume->OnNotify += MakeDelegate(this, &RFMainWindow::OnPassiveTrainVolumeSet);
 
-    CButtonUI *passive_play10 = static_cast<CButtonUI *>(m_pm.FindControl(_T("passive_play10")));
-    passive_play10->OnNotify += MakeDelegate(this, &RFMainWindow::OnPassiveTrainPlayByAuto);
+	CButtonUI* zd_gjjd_chart_btn = static_cast<CButtonUI*>(m_pm.FindControl(_T("zd_gjjd_chart_btn")));
+	zd_gjjd_chart_btn->OnNotify += MakeDelegate(this, &RFMainWindow::OnZDGGJDChart);
+	
+	//CButtonUI* zd_wl_chart_btn = static_cast<CButtonUI*>(m_pm.FindControl(_T("zd_wl_chart_btn")));
+	//zd_wl_chart_btn->OnNotify += MakeDelegate(this, &RFMainWindow::OnZDWLChart);
 
-    CButtonUI *passive_list = static_cast<CButtonUI *>(m_pm.FindControl(_T("passive_list")));
-    passive_list->OnNotify += MakeDelegate(this, &RFMainWindow::OnPassiveTrainPlayByOrder);
+	CButtonUI* bd_zgj_chart_btn = static_cast<CButtonUI*>(m_pm.FindControl(_T("bd_zgj_chart_btn")));
+	bd_zgj_chart_btn->OnNotify += MakeDelegate(this, &RFMainWindow::OnBDZGJChart);
+	
+	CButtonUI* bd_jgj_chart_btn = static_cast<CButtonUI*>(m_pm.FindControl(_T("bd_jgj_chart_btn")));
+	bd_jgj_chart_btn->OnNotify += MakeDelegate(this, &RFMainWindow::OnBDJGJChart);
 
-    CButtonUI *passive_recover = static_cast<CButtonUI *>(m_pm.FindControl(_T("passive_recover")));
-    passive_recover->OnNotify += MakeDelegate(this, &RFMainWindow::OnPassiveTrainRecover);
+	CButtonUI* emg_chart_btn = static_cast<CButtonUI*>(m_pm.FindControl(_T("emg_chart_btn")));
+	emg_chart_btn->OnNotify += MakeDelegate(this, &RFMainWindow::OnEMGChart);
 
-    CButtonUI *passive_volume = static_cast<CButtonUI *>(m_pm.FindControl(_T("passive_volume")));
-    passive_volume->OnNotify += MakeDelegate(this, &RFMainWindow::OnPassiveTrainVolumeSet);
+	CButtonUI* emg_gjyd_chart_btn = static_cast<CButtonUI*>(m_pm.FindControl(_T("emg_gjyd_chart_btn")));
+	emg_gjyd_chart_btn->OnNotify += MakeDelegate(this, &RFMainWindow::OnEMGYDJDChart);
 
-    CButtonUI *zd_gjjd_chart_btn = static_cast<CButtonUI *>(m_pm.FindControl(_T("zd_gjjd_chart_btn")));
-    zd_gjjd_chart_btn->OnNotify += MakeDelegate(this, &RFMainWindow::OnZDGGJDChart);
+	CButtonUI* passive_train_add = static_cast<CButtonUI*>(m_pm.FindControl(_T("passive_train_add")));
+	passive_train_add->OnNotify += MakeDelegate(this, &RFMainWindow::OnAddAction);
 
-    // CButtonUI* zd_wl_chart_btn = static_cast<CButtonUI*>(m_pm.FindControl(_T("zd_wl_chart_btn")));
-    // zd_wl_chart_btn->OnNotify += MakeDelegate(this, &RFMainWindow::OnZDWLChart);
+	CButtonUI* eye_mode_setting = static_cast<CButtonUI*>(m_pm.FindControl(_T("eye_mode_setting")));
+	eye_mode_setting->OnNotify += MakeDelegate(this, &RFMainWindow::OnEyeModeSetting);
 
-    CButtonUI *bd_zgj_chart_btn = static_cast<CButtonUI *>(m_pm.FindControl(_T("bd_zgj_chart_btn")));
-    bd_zgj_chart_btn->OnNotify += MakeDelegate(this, &RFMainWindow::OnBDZGJChart);
+	CCheckBoxUI* eye_mode_startstop = static_cast<CCheckBoxUI*>(m_pm.FindControl(_T("eye_mode_startstop")));
+	eye_mode_startstop->OnNotify += MakeDelegate(this, &RFMainWindow::OnEyeModeStartStop);
 
-    CButtonUI *bd_jgj_chart_btn = static_cast<CButtonUI *>(m_pm.FindControl(_T("bd_jgj_chart_btn")));
-    bd_jgj_chart_btn->OnNotify += MakeDelegate(this, &RFMainWindow::OnBDJGJChart);
+	CButtonUI* eye_mode_recovery = static_cast<CButtonUI*>(m_pm.FindControl(_T("eye_mode_recovery")));
+	eye_mode_recovery->OnNotify += MakeDelegate(this, &RFMainWindow::OnEyeModeRecovery);
 
-    CButtonUI *emg_chart_btn = static_cast<CButtonUI *>(m_pm.FindControl(_T("emg_chart_btn")));
-    emg_chart_btn->OnNotify += MakeDelegate(this, &RFMainWindow::OnEMGChart);
+	CButtonUI* emg_mode_start = static_cast<CButtonUI*>(m_pm.FindControl(_T("emg_mode_start")));
+	emg_mode_start->OnNotify += MakeDelegate(this, &RFMainWindow::OnEMGModeStart);
 
-    CButtonUI *emg_gjyd_chart_btn = static_cast<CButtonUI *>(m_pm.FindControl(_T("emg_gjyd_chart_btn")));
-    emg_gjyd_chart_btn->OnNotify += MakeDelegate(this, &RFMainWindow::OnEMGYDJDChart);
+	CButtonUI* emg_mode_recovery = static_cast<CButtonUI*>(m_pm.FindControl(_T("emg_mode_recovery")));
+	emg_mode_recovery->OnNotify += MakeDelegate(this, &RFMainWindow::OnEMGModeRecovery);
 
-    CButtonUI *passive_train_add = static_cast<CButtonUI *>(m_pm.FindControl(_T("passive_train_add")));
-    passive_train_add->OnNotify += MakeDelegate(this, &RFMainWindow::OnAddAction);
+	CButtonUI* active_game_plane_battle = static_cast<CButtonUI*>(m_pm.FindControl(_T("active_game_plane_battle")));
+	if (active_game_plane_battle != NULL) active_game_plane_battle->OnNotify += MakeDelegate(this, &RFMainWindow::OnActiveGamePlaneBattle);
 
-    CButtonUI *eye_mode_setting = static_cast<CButtonUI *>(m_pm.FindControl(_T("eye_mode_setting")));
-    eye_mode_setting->OnNotify += MakeDelegate(this, &RFMainWindow::OnEyeModeSetting);
 
-    CCheckBoxUI *eye_mode_startstop = static_cast<CCheckBoxUI *>(m_pm.FindControl(_T("eye_mode_startstop")));
-    eye_mode_startstop->OnNotify += MakeDelegate(this, &RFMainWindow::OnEyeModeStartStop);
+	CButtonUI* active_game_clean_window = static_cast<CButtonUI*>(m_pm.FindControl(_T("active_game_clean_window")));
+	if (active_game_clean_window != NULL) active_game_clean_window->OnNotify += MakeDelegate(this, &RFMainWindow::OnActiveGameCleanWindow);
 
-    CButtonUI *eye_mode_recovery = static_cast<CButtonUI *>(m_pm.FindControl(_T("eye_mode_recovery")));
-    eye_mode_recovery->OnNotify += MakeDelegate(this, &RFMainWindow::OnEyeModeRecovery);
 
-    CButtonUI *emg_mode_start = static_cast<CButtonUI *>(m_pm.FindControl(_T("emg_mode_start")));
-    emg_mode_start->OnNotify += MakeDelegate(this, &RFMainWindow::OnEMGModeStart);
+	CButtonUI* active_game_fry_egg = static_cast<CButtonUI*>(m_pm.FindControl(_T("active_game_fry_egg")));
+	if (active_game_fry_egg != NULL) active_game_fry_egg->OnNotify += MakeDelegate(this, &RFMainWindow::OnActiveGameFryEgg);
 
-    CButtonUI *emg_mode_recovery = static_cast<CButtonUI *>(m_pm.FindControl(_T("emg_mode_recovery")));
-    emg_mode_recovery->OnNotify += MakeDelegate(this, &RFMainWindow::OnEMGModeRecovery);
+	CButtonUI* btn_game4 = static_cast<CButtonUI*>(m_pm.FindControl(_T("btn_game4")));
+	btn_game4->OnNotify += MakeDelegate(this, &RFMainWindow::OnGame4);
 
-    CButtonUI *active_game_plane_battle = static_cast<CButtonUI *>(m_pm.FindControl(_T("active_game_plane_battle")));
-    if (active_game_plane_battle != NULL) active_game_plane_battle->OnNotify += MakeDelegate(this, &RFMainWindow::OnActiveGamePlaneBattle);
 
+	CButtonUI* btn_game3 = static_cast<CButtonUI*>(m_pm.FindControl(_T("btn_game3")));
+	btn_game3->OnNotify += MakeDelegate(this, &RFMainWindow::OnGame3);
 
-    CButtonUI *active_game_clean_window = static_cast<CButtonUI *>(m_pm.FindControl(_T("active_game_clean_window")));
-    if (active_game_clean_window != NULL) active_game_clean_window->OnNotify += MakeDelegate(this, &RFMainWindow::OnActiveGameCleanWindow);
 
+	CButtonUI* btn_game2 = static_cast<CButtonUI*>(m_pm.FindControl(_T("btn_game2")));
+	btn_game2->OnNotify += MakeDelegate(this, &RFMainWindow::OnGame2);
 
-    CButtonUI *active_game_fry_egg = static_cast<CButtonUI *>(m_pm.FindControl(_T("active_game_fry_egg")));
-    if (active_game_fry_egg != NULL) active_game_fry_egg->OnNotify += MakeDelegate(this, &RFMainWindow::OnActiveGameFryEgg);
+	// 主动运动中的计时器
+	CLabelUI* active_train_timer = static_cast<CButtonUI*>(m_pm.FindControl(_T("active_train_timer")));
 
-    CButtonUI *btn_game4 = static_cast<CButtonUI *>(m_pm.FindControl(_T("btn_game4")));
-    btn_game4->OnNotify += MakeDelegate(this, &RFMainWindow::OnGame4);
+	CCheckBoxUI* game4_nandu_select = static_cast<CCheckBoxUI*>(m_pm.FindControl(_T("game4_nandu_select")));
+	game4_nandu_select->OnNotify += MakeDelegate(this, &RFMainWindow::OnGame4NanduSetingMenu); 
+	
+	CButtonUI* game4_start = static_cast<CButtonUI*>(m_pm.FindControl(_T("game4_start")));
+	game4_start->OnNotify += MakeDelegate(this, &RFMainWindow::OnGame4Start);
 
+	CButtonUI* game4_recovery = static_cast<CButtonUI*>(m_pm.FindControl(_T("game4_recovery")));
+	game4_recovery->OnNotify += MakeDelegate(this, &RFMainWindow::OnGame4Recovery);
 
-    CButtonUI *btn_game3 = static_cast<CButtonUI *>(m_pm.FindControl(_T("btn_game3")));
-    btn_game3->OnNotify += MakeDelegate(this, &RFMainWindow::OnGame3);
+	CButtonUI* evaluation1 = static_cast<CButtonUI*>(m_pm.FindControl(_T("evaluation1")));
+	evaluation1->OnNotify += MakeDelegate(this, &RFMainWindow::OnEvaluation1);
 
+	CButtonUI* evaluation2 = static_cast<CButtonUI*>(m_pm.FindControl(_T("evaluation2")));
+	evaluation2->OnNotify += MakeDelegate(this, &RFMainWindow::OnEvaluation2);
 
-    CButtonUI *btn_game2 = static_cast<CButtonUI *>(m_pm.FindControl(_T("btn_game2")));
-    btn_game2->OnNotify += MakeDelegate(this, &RFMainWindow::OnGame2);
+	CButtonUI* evaluation3 = static_cast<CButtonUI*>(m_pm.FindControl(_T("evaluation3")));
+	evaluation3->OnNotify += MakeDelegate(this, &RFMainWindow::OnEvaluation3);
 
-    // 主动运动中的计时器
-    CLabelUI *active_train_timer = static_cast<CButtonUI *>(m_pm.FindControl(_T("active_train_timer")));
 
-    CCheckBoxUI *game4_nandu_select = static_cast<CCheckBoxUI *>(m_pm.FindControl(_T("game4_nandu_select")));
-    game4_nandu_select->OnNotify += MakeDelegate(this, &RFMainWindow::OnGame4NanduSetingMenu);
+	CButtonUI* ev_last_page = static_cast<CButtonUI*>(m_pm.FindControl(_T("ev_last_page")));
+	ev_last_page->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVLastPage);
 
-    CButtonUI *game4_start = static_cast<CButtonUI *>(m_pm.FindControl(_T("game4_start")));
-    game4_start->OnNotify +=
-        MakeDelegate(this, &RFMainWindow::OnGame4Start); // fuck name can you believe this is the begin of game what is the fucking "4"'s function???
+	CButtonUI* ev_page1 = static_cast<CButtonUI*>(m_pm.FindControl(_T("ev_page1")));
+	ev_page1->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVPage1);
 
-    CButtonUI *game4_recovery = static_cast<CButtonUI *>(m_pm.FindControl(_T("game4_recovery")));
-    game4_recovery->OnNotify += MakeDelegate(this, &RFMainWindow::OnGame4Recovery);
+	CButtonUI* ev_page2 = static_cast<CButtonUI*>(m_pm.FindControl(_T("ev_page2")));
+	ev_page2->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVPage2);
 
-    CButtonUI *evaluation1 = static_cast<CButtonUI *>(m_pm.FindControl(_T("evaluation1")));
-    evaluation1->OnNotify += MakeDelegate(this, &RFMainWindow::OnEvaluation1);
+	CButtonUI* ev_page3 = static_cast<CButtonUI*>(m_pm.FindControl(_T("ev_page3")));
+	ev_page3->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVPage3);
 
-    CButtonUI *evaluation2 = static_cast<CButtonUI *>(m_pm.FindControl(_T("evaluation2")));
-    evaluation2->OnNotify += MakeDelegate(this, &RFMainWindow::OnEvaluation2);
+	CButtonUI* ev_page4 = static_cast<CButtonUI*>(m_pm.FindControl(_T("ev_page4")));
+	ev_page4->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVPage4);
 
-    CButtonUI *evaluation3 = static_cast<CButtonUI *>(m_pm.FindControl(_T("evaluation3")));
-    evaluation3->OnNotify += MakeDelegate(this, &RFMainWindow::OnEvaluation3);
+	CButtonUI* ev_next_page = static_cast<CButtonUI*>(m_pm.FindControl(_T("ev_next_page")));
+	ev_next_page->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVNextPage);
 
+	CButtonUI* evaluation_add =  static_cast<CButtonUI*>(m_pm.FindControl(_T("evaluation_add")));
+	evaluation_add->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVAdd);
 
-    CButtonUI *ev_last_page = static_cast<CButtonUI *>(m_pm.FindControl(_T("ev_last_page")));
-    ev_last_page->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVLastPage);
+	CButtonUI* evaluation_add_prev = static_cast<CButtonUI*>(m_pm.FindControl(_T("evaluation_add_prev")));
+	evaluation_add_prev->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVAddPrev);
 
-    CButtonUI *ev_page1 = static_cast<CButtonUI *>(m_pm.FindControl(_T("ev_page1")));
-    ev_page1->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVPage1);
+	CButtonUI* evaluation_add_submit = static_cast<CButtonUI*>(m_pm.FindControl(_T("evaluation_add_submit")));
+	evaluation_add_submit->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVAddSubmit);
 
-    CButtonUI *ev_page2 = static_cast<CButtonUI *>(m_pm.FindControl(_T("ev_page2")));
-    ev_page2->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVPage2);
+	CButtonUI* evaluation_add_next = static_cast<CButtonUI*>(m_pm.FindControl(_T("evaluation_add_next")));
+	evaluation_add_next->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVAddNext);
 
-    CButtonUI *ev_page3 = static_cast<CButtonUI *>(m_pm.FindControl(_T("ev_page3")));
-    ev_page3->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVPage3);
+	CButtonUI* evd_last_page = static_cast<CButtonUI*>(m_pm.FindControl(_T("evd_last_page")));
+	evd_last_page->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVDLastPage);
 
-    CButtonUI *ev_page4 = static_cast<CButtonUI *>(m_pm.FindControl(_T("ev_page4")));
-    ev_page4->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVPage4);
+	CButtonUI* evd_page1 = static_cast<CButtonUI*>(m_pm.FindControl(_T("evd_page1")));
+	evd_page1->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVDPage1);
 
-    CButtonUI *ev_next_page = static_cast<CButtonUI *>(m_pm.FindControl(_T("ev_next_page")));
-    ev_next_page->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVNextPage);
+	CButtonUI* evd_page2 = static_cast<CButtonUI*>(m_pm.FindControl(_T("evd_page2")));
+	evd_page2->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVDPage2);
 
-    CButtonUI *evaluation_add = static_cast<CButtonUI *>(m_pm.FindControl(_T("evaluation_add")));
-    evaluation_add->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVAdd);
+	CButtonUI* evd_page3 = static_cast<CButtonUI*>(m_pm.FindControl(_T("evd_page3")));
+	evd_page3->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVDPage3);
 
-    CButtonUI *evaluation_add_prev = static_cast<CButtonUI *>(m_pm.FindControl(_T("evaluation_add_prev")));
-    evaluation_add_prev->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVAddPrev);
+	CButtonUI* evd_page4 = static_cast<CButtonUI*>(m_pm.FindControl(_T("evd_page4")));
+	evd_page4->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVDPage4);
 
-    CButtonUI *evaluation_add_submit = static_cast<CButtonUI *>(m_pm.FindControl(_T("evaluation_add_submit")));
-    evaluation_add_submit->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVAddSubmit);
+	CButtonUI* evd_next_page = static_cast<CButtonUI*>(m_pm.FindControl(_T("evd_next_page")));
+	evd_next_page->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVDNextPage);
 
-    CButtonUI *evaluation_add_next = static_cast<CButtonUI *>(m_pm.FindControl(_T("evaluation_add_next")));
-    evaluation_add_next->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVAddNext);
+	CButtonUI* evaluation_start = static_cast<CButtonUI*>(m_pm.FindControl(_T("evaluation_start")));
+	evaluation_start->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVStart);
+	
+	CButtonUI* evaluation_end = static_cast<CButtonUI*>(m_pm.FindControl(_T("evaluation_end")));
+	evaluation_end->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVStop);
 
-    CButtonUI *evd_last_page = static_cast<CButtonUI *>(m_pm.FindControl(_T("evd_last_page")));
-    evd_last_page->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVDLastPage);
+	CButtonUI* evaluation_begin1 = static_cast<CButtonUI*>(m_pm.FindControl(_T("evaluation_begin1")));
+	evaluation_begin1->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVBegin1);
 
-    CButtonUI *evd_page1 = static_cast<CButtonUI *>(m_pm.FindControl(_T("evd_page1")));
-    evd_page1->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVDPage1);
+	CButtonUI* evaluation_begin2 = static_cast<CButtonUI*>(m_pm.FindControl(_T("evaluation_begin2")));
+	evaluation_begin2->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVBegin2);
+	
+	// 握力传感器开关的响应函数绑定
+	//CCheckBoxUI* grip_strength_enable = static_cast<CCheckBoxUI*>(m_pm.FindControl(_T("grip_strength_enable")));
+	//grip_strength_enable->OnNotify += MakeDelegate(this, &RFMainWindow::OnGripStrengthClicked);
 
-    CButtonUI *evd_page2 = static_cast<CButtonUI *>(m_pm.FindControl(_T("evd_page2")));
-    evd_page2->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVDPage2);
-
-    CButtonUI *evd_page3 = static_cast<CButtonUI *>(m_pm.FindControl(_T("evd_page3")));
-    evd_page3->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVDPage3);
-
-    CButtonUI *evd_page4 = static_cast<CButtonUI *>(m_pm.FindControl(_T("evd_page4")));
-    evd_page4->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVDPage4);
-
-    CButtonUI *evd_next_page = static_cast<CButtonUI *>(m_pm.FindControl(_T("evd_next_page")));
-    evd_next_page->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVDNextPage);
-
-    // CButtonUI *evaluation_start = static_cast<CButtonUI *>(m_pm.FindControl(_T("evaluation_start")));
-    // evaluation_start->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVStart);
-
-    CButtonUI *evaluation_end = static_cast<CButtonUI *>(m_pm.FindControl(_T("evaluation_end")));
-    evaluation_end->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVStop);
-
-    CButtonUI *evaluation_begin1 = static_cast<CButtonUI *>(m_pm.FindControl(_T("evaluation_begin1")));
-    evaluation_begin1->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVBegin1);
-
-    CButtonUI *evaluation_begin2 = static_cast<CButtonUI *>(m_pm.FindControl(_T("evaluation_begin2")));
-    evaluation_begin2->OnNotify += MakeDelegate(this, &RFMainWindow::OnEVBegin2);
-    // 压力传感器开关的响应函数绑定
-    CCheckBoxUI *pressure_sensor_enable = static_cast<CCheckBoxUI *>(m_pm.FindControl(_T("pressure_sensor_enable")));
-    pressure_sensor_enable->OnNotify += MakeDelegate(this, &RFMainWindow::OnPressureSwitchChicked);
+	// 压力传感器开关的响应函数绑定
+	CCheckBoxUI* pressure_sensor_enable = static_cast<CCheckBoxUI*>(m_pm.FindControl(_T("pressure_sensor_enable")));
+	pressure_sensor_enable->OnNotify += MakeDelegate(this, &RFMainWindow::OnPressureSwitchChicked);
 }
 
-LRESULT RFMainWindow::OnCommunicate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
+LRESULT RFMainWindow::OnCommunicate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
-    CUIThread *pCurrentThread = (CUIThread *)wParam;
-    if (pCurrentThread == NULL) return 0;
+	CUIThread *pCurrentThread = (CUIThread*)wParam;
+	if (pCurrentThread == NULL)
+		return 0;
 
-    CTask *pTask = (CTask *)lParam;
-    if (pTask == NULL) return 0;
+	CTask *pTask = (CTask*)lParam;
+	if (pTask == NULL)
+		return 0;
 
-    pCurrentThread->ExecuteTask(pTask);
-    return 0;
+	pCurrentThread->ExecuteTask(pTask);
+	return 0;
 }
 
-LRESULT RFMainWindow::OnAppClick(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
+LRESULT RFMainWindow::OnAppClick(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
-    bHandled = FALSE;
-    POINT pt;
-    pt.x = GET_X_LPARAM(lParam);
-    pt.y = GET_Y_LPARAM(lParam);
+	bHandled = FALSE;
+	POINT pt; pt.x = GET_X_LPARAM(lParam); pt.y = GET_Y_LPARAM(lParam);
 
-    //通过判断鼠标点击位置来确定患者选择，以及给当前患者初始化相应属性
-    CControlUI *pControl = static_cast<CControlUI *>(m_pm.FindControl(pt));
-    //通过label控件来确定当前病人信息
-    if (pControl && _tcsncmp(pControl->GetName(), _T("cell"), 4) == 0) {
-        std::string name = TGUTF16ToUTF8((std::wstring)pControl->GetName());
-        int row = atoi(name.substr(4, 1).c_str()); // cell 命名规则 eg. cell23 2行3列(2,3)
-        wchar_t cell_name[32] = _T("");
-        wsprintf(cell_name, _T("cell%d2"), row);
-        // AllocConsole();
-        // freopen("CONOUT$", "w", stdout);
-        CLabelUI *pName = static_cast<CLabelUI *>(m_pm.FindControl(cell_name));
-        if (pName) {
-            m_current_patient.name = pName->GetText();
-            // m_current_patient.id = 1;
-        }
+	// 通过比对点击的控件的名字来判断是不是选择患者的页面
+	CControlUI* pControl = static_cast<CControlUI*>(m_pm.FindControl(pt));
+	if (pControl && _tcsncmp(pControl->GetName(), _T("cell"), 4) == 0) {
+		std::string name = TGUTF16ToUTF8((std::wstring)pControl->GetName());
+		int row = atoi(name.substr(4, 1).c_str());
+		wchar_t cell_name[32] = _T("");
+		wsprintf(cell_name, _T("cell%d2"), row);
 
-        wsprintf(cell_name, _T("cell%d1"), row);
-        CLabelUI *pID = static_cast<CLabelUI *>(m_pm.FindControl(cell_name));
-        if (pID) {
-            m_current_patient.id = _wtoi(((std::wstring)pID->GetText()).c_str());
-        }
-        // through mysql get the stored elbow and shoulder joint limits
-        char sql[1024] = "";
-        sprintf(sql, "select saa_rom,sfe_rom from patient where id=%d and flag=0", m_current_patient.id);
-        RFMYSQLStmt stmt;
-        if (stmt.Prepare(RFMainWindow::DBThread->m_db, sql)) {
-            if (stmt.Step() > 0) {
-                m_current_patient.SAA_ROM = stmt.GetDouble(0);
-                m_current_patient.SFE_ROM = stmt.GetDouble(1);
-            }
-        }
-        stmt.Finalize();
+		CLabelUI* pName = static_cast<CLabelUI*>(m_pm.FindControl(cell_name));
+		if (pName) {
+			m_current_patient.name = pName->GetText();
+			//m_current_patient.id = 1;
+		}
 
-        ShowMainPage();
+		wsprintf(cell_name, _T("cell%d1"), row);
+		CLabelUI* pID = static_cast<CLabelUI*>(m_pm.FindControl(cell_name));
+		if (pID) {
+			m_current_patient.id = _wtoi(((std::wstring)pID->GetText()).c_str());
+		}
 
-        bHandled = TRUE;
-    }
-    //通过父控件来确定当前病人信息
-    if (pControl && pControl->m_pParent && _tcsncmp(pControl->m_pParent->GetName(), _T("row"), 3) == 0) {
-        std::string name = TGUTF16ToUTF8((std::wstring)pControl->m_pParent->GetName());
-        int row = atoi(name.substr(3, 2).c_str()) - 1;
-        wchar_t cell_name[32] = _T("");
-        wsprintf(cell_name, _T("cell%d2"), row);
+		// 查询SAA_ROM和SFE_ROM
+		char sql[1024] = "";
+		sprintf(sql, "select saa_rom,sfe_rom from patient where id=%d and flag=0", m_current_patient.id);
+		RFMYSQLStmt stmt;
+		if (stmt.Prepare(RFMainWindow::DBThread->m_db, sql)) {
+			if (stmt.Step() > 0) {
+				m_current_patient.SAA_ROM = stmt.GetDouble(0);
+				m_current_patient.SFE_ROM = stmt.GetDouble(1);
+			}
+		}
+		stmt.Finalize();
 
-        CLabelUI *pName = static_cast<CLabelUI *>(m_pm.FindControl(cell_name));
-        if (pName) {
-            m_current_patient.name = pName->GetText();
-            // m_current_patient.id = 1;
-        }
+		ShowMainPage();
 
-        wsprintf(cell_name, _T("cell%d1"), row);
-        CLabelUI *pID = static_cast<CLabelUI *>(m_pm.FindControl(cell_name));
-        if (pID) {
-            m_current_patient.id = _wtoi(((std::wstring)pID->GetText()).c_str());
-        }
+		bHandled = TRUE;
+	}
 
-        ShowMainPage();
+	if (pControl && pControl->m_pParent && _tcsncmp(pControl->m_pParent->GetName(), _T("row"), 3) == 0) {
+		std::string name = TGUTF16ToUTF8((std::wstring)pControl->m_pParent->GetName());
+		int row = atoi(name.substr(3, 2).c_str()) - 1;
+		wchar_t cell_name[32] = _T("");
+		wsprintf(cell_name, _T("cell%d2"), row);
 
-        bHandled = TRUE;
-    }
-    //管理患者界面
-    if (pControl && _tcscmp(pControl->GetName(), _T("manager_patient_detail")) == 0) {
-        bHandled = TRUE;
+		CLabelUI* pName = static_cast<CLabelUI*>(m_pm.FindControl(cell_name));
+		if (pName) {
+			m_current_patient.name = pName->GetText();
+			//m_current_patient.id = 1;
+		}
 
+		wsprintf(cell_name, _T("cell%d1"), row);
+		CLabelUI* pID = static_cast<CLabelUI*>(m_pm.FindControl(cell_name));
+		if (pID) {
+			m_current_patient.id = _wtoi(((std::wstring)pID->GetText()).c_str());
+		}
 
-        if (pControl && pControl->GetParent() && pControl->GetParent()->GetParent()) {
-            CControlUI *pParent = pControl->GetParent()->GetParent();
+		ShowMainPage();
 
-            std::wstring name = pParent->GetName();
-            name = name.substr(name.length() - 1, 1);
-            int row = _wtoi(name.c_str());
+		bHandled = TRUE;
+	}
 
-            ShowPatientDetail(RFPatientsManager::get()->m_current_page, row - 1);
-        }
-    }
-    else if (pControl && _tcscmp(pControl->GetName(), _T("manager_patient_modify")) == 0) {
-        bHandled = TRUE;
+	if (pControl && _tcscmp(pControl->GetName(), _T("manager_patient_detail")) == 0) {
+		bHandled = TRUE;
+		
+		
+		if (pControl && pControl->GetParent() && pControl->GetParent()->GetParent()) {
+			CControlUI* pParent = pControl->GetParent()->GetParent();
 
-        if (pControl && pControl->GetParent() && pControl->GetParent()->GetParent()) {
-            CControlUI *pParent = pControl->GetParent()->GetParent();
+			std::wstring name = pParent->GetName();
+			name = name.substr(name.length() - 1, 1);
+			int row = _wtoi(name.c_str());
 
-            std::wstring name = pParent->GetName();
-            name = name.substr(name.length() - 1, 1);
-            int row = _wtoi(name.c_str());
+			ShowPatientDetail(RFPatientsManager::get()->m_current_page, row - 1);
+		}
+	} else if (pControl && _tcscmp(pControl->GetName(), _T("manager_patient_modify")) == 0)  {
+		bHandled = TRUE;
 
-            ShowPatientEdit(RFPatientsManager::get()->m_current_page, row - 1);
-        }
-    }
-    else if (pControl && _tcscmp(pControl->GetName(), _T("manager_patient_delete")) == 0) {
-        bHandled = TRUE;
+		if (pControl && pControl->GetParent() && pControl->GetParent()->GetParent()) {
+			CControlUI* pParent = pControl->GetParent()->GetParent();
 
-        if (pControl && pControl->GetParent() && pControl->GetParent()->GetParent()) {
-            CContainerUI *pParent = static_cast<CContainerUI *>(pControl->GetParent()->GetParent());
+			std::wstring name = pParent->GetName();
+			name = name.substr(name.length() - 1, 1);
+			int row = _wtoi(name.c_str());
 
-            if (!RFDeletePatientConfirmDialog(GetHWND())) {
-                return 0;
-            }
+			ShowPatientEdit(RFPatientsManager::get()->m_current_page, row - 1);
+		}
+	}  else if (pControl && _tcscmp(pControl->GetName(), _T("manager_patient_delete")) == 0)  {
+		bHandled = TRUE;
+	
+		if (pControl && pControl->GetParent() && pControl->GetParent()->GetParent()) {
+			CContainerUI* pParent = static_cast<CContainerUI*>(pControl->GetParent()->GetParent());
 
-            std::wstring name = pParent->GetName();
-            name = name.substr(name.length() - 1, 1);
-            int row = _wtoi(name.c_str());
-            wchar_t cell_name[128] = _T("");
-            wsprintf(cell_name, _T("manage_cell%d1"), row - 1);
-            CLabelUI *pLabel = static_cast<CLabelUI *>(pParent->FindSubControl(cell_name));
-            if (pLabel) {
-                DeletePatient(_wtoi(((std::wstring)pLabel->GetText()).c_str()));
-            }
-        }
-    }
-    //训练信息界面
-    else if (pControl && _tcsncmp(pControl->GetName(), _T("patient_information_detail"), _tcslen(_T("patient_information_detail"))) == 0) {
-        std::wstring name = pControl->GetName();
+			if (!RFDeletePatientConfirmDialog(GetHWND())) {
+				return 0;
+			}
 
-        std::wstring cellname = _T("pf_cell") + name.substr(name.size() - 1, 1) + _T("1");
-        CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(cellname.c_str()));
+			std::wstring name = pParent->GetName();
+			name = name.substr(name.length() - 1, 1);
+			int row = _wtoi(name.c_str());
+			wchar_t cell_name[128] = _T("");
+			wsprintf(cell_name, _T("manage_cell%d1"), row - 1);
+			CLabelUI* pLabel = static_cast<CLabelUI*>(pParent->FindSubControl(cell_name));
+			if (pLabel) {
+				DeletePatient(_wtoi(((std::wstring)pLabel->GetText()).c_str()));
+			}
+		}
+	} else if (pControl && _tcsncmp(pControl->GetName(), _T("patient_information_detail"), _tcslen(_T("patient_information_detail"))) == 0) {
+		std::wstring name = pControl->GetName();
 
-        ShowPatientTrainDetail((std::wstring)pLabel->GetText());
-    }
-    //训练信息图表
-    else if (pControl && _tcsncmp(pControl->GetName(), _T("train_detail_detail"), _tcslen(_T("train_detail_detail"))) == 0) {
-        int id = pControl->GetTag();
+		std::wstring cellname = _T("pf_cell") + name.substr(name.size() - 1, 1) + _T("1");
+		CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(cellname.c_str()));
+		
+		ShowPatientTrainDetail((std::wstring)pLabel->GetText());
+	} else if (pControl && _tcsncmp(pControl->GetName(), _T("train_detail_detail"), _tcslen(_T("train_detail_detail"))) == 0) {
+		int id = pControl->GetTag();
 
-        ShowTrainDataChartPage(id);
-    }
-    //评估信息
-    else if (pControl && _tcsncmp(pControl->GetName(), _T("eval_detail"), _tcslen(_T("eval_detail"))) == 0) {
-        std::wstring name = pControl->GetName();
-        std::wstring cellname = _T("eval_cell") + name.substr(name.size() - 1, 1) + _T("1");
-        CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(cellname.c_str()));
-        ShowEVDetail((std::wstring)pLabel->GetText());
-    }
+		ShowTrainDataChartPage(id);
+	} else if (pControl && _tcsncmp(pControl->GetName(), _T("eval_detail"), _tcslen(_T("eval_detail"))) == 0) {
+		std::wstring name = pControl->GetName();
+		std::wstring cellname = _T("eval_cell") + name.substr(name.size() - 1, 1) + _T("1");
+		CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(cellname.c_str()));
+		ShowEVDetail((std::wstring)pLabel->GetText());
+	}
 
 
-    return 0;
+	return 0;
 }
 
-LRESULT RFMainWindow::OnDuiCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
+LRESULT RFMainWindow::OnDuiCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
-    LONG styleValue = ::GetWindowLong(*this, GWL_STYLE);
-    styleValue &= ~WS_CAPTION;
-    ::SetWindowLong(*this, GWL_STYLE, styleValue | WS_CLIPSIBLINGS | WS_CLIPCHILDREN);
-
-    m_pm.Init(m_hWnd);
-    CDialogBuilder builder;
-    CVerticalLayoutUI *pRoot = static_cast<CVerticalLayoutUI *>(builder.Create(_T("skin.xml"), (UINT)0, NULL, &m_pm));
+	LONG styleValue = ::GetWindowLong(*this, GWL_STYLE);
+	styleValue &= ~WS_CAPTION;
+	::SetWindowLong(*this, GWL_STYLE, styleValue | WS_CLIPSIBLINGS | WS_CLIPCHILDREN);
+
+	m_pm.Init(m_hWnd);
+	CDialogBuilder builder;
+	CVerticalLayoutUI* pRoot = static_cast<CVerticalLayoutUI*>(builder.Create(_T("skin.xml"), (UINT)0,  NULL, &m_pm));
+	
+	CDialogBuilder builder1;
+	CContainerUI *pSelectPatient = static_cast<CContainerUI*>(builder1.Create(_T("select.xml"), (UINT)0));
+	//wchar_t message[1024];
+	//builder1.GetLastErrorMessage(message, 1024);
+	//builder1.GetLastErrorLocation(message, 1024);
+	pRoot->Add(pSelectPatient);
+
+	CDialogBuilder builder2;
+	CContainerUI *pManagerPatient = static_cast<CContainerUI*>(builder2.Create(_T("manager.xml"), (UINT)0));
+	pRoot->Add(pManagerPatient);
+
+	CDialogBuilder builder3;
+	CContainerUI *pManagerPatientDetail = static_cast<CContainerUI*>(builder3.Create(_T("detail.xml"), (UINT)0));
+	pRoot->Add(pManagerPatientDetail);
+
+	CDialogBuilder builder4;
+	CContainerUI *pManagerPatientEdit = static_cast<CContainerUI*>(builder4.Create(_T("edit.xml"), (UINT)0));
+	pRoot->Add(pManagerPatientEdit);
+
+	CDialogBuilder builder5;
+	CContainerUI *pAbout = static_cast<CContainerUI*>(builder5.Create(_T("about.xml"), (UINT)0));
+	pRoot->Add(pAbout);
+
+	CDialogBuilder builder6;
+	CContainerUI *pAdd = static_cast<CContainerUI*>(builder6.Create(_T("add.xml"), (UINT)0));
+	pRoot->Add(pAdd);
+
+	CDialogBuilder builder7;
+	CContainerUI *pPersonor = static_cast<CContainerUI*>(builder7.Create(_T("personor.xml"), (UINT)0));
+	pRoot->Add(pPersonor);
+
+	CDialogBuilder builder8;
+	CContainerUI *pTrain = static_cast<CContainerUI*>(builder8.Create(_T("train.xml"), (UINT)0));
+	pRoot->Add(pTrain);
+
+	CDialogBuilder builder9;
+	CContainerUI *pActiveTrain = static_cast<CContainerUI*>(builder9.Create(_T("active_train.xml"), (UINT)0, this));
+	pRoot->Add(pActiveTrain);
+
+	CDialogBuilder builder10;
+	CContainerUI *pTrainInfo = static_cast<CContainerUI*>(builder10.Create(_T("traininfo.xml"), (UINT)0));
+	pRoot->Add(pTrainInfo);
+
+	CDialogBuilder builder11;
+	CContainerUI *pTrainDetail = static_cast<CContainerUI*>(builder11.Create(_T("traindetail.xml"), (UINT)0));
+	pRoot->Add(pTrainDetail);
+
+	CDialogBuilder builder12;
+	CContainerUI *pPassiveTrain = static_cast<CContainerUI*>(builder12.Create(_T("passive_train.xml"), (UINT)0, this));
+	pRoot->Add(pPassiveTrain);
+
+	CDialogBuilder builder13;
+	CContainerUI *pEyeMode = static_cast<CContainerUI*>(builder13.Create(_T("eyemode.xml"), (UINT)0, this));
+	pRoot->Add(pEyeMode);
+
+	CDialogBuilder builder14;
+	CContainerUI *pEMGMode = static_cast<CContainerUI*>(builder14.Create(_T("emgmode.xml"), (UINT)0, this));
+	pRoot->Add(pEMGMode);
+
+	CDialogBuilder builder15;
+	CContainerUI *pTrainDetailChart = static_cast<CContainerUI*>(builder15.Create(_T("traindetailchart.xml"), (UINT)0, this));
+	pRoot->Add(pTrainDetailChart);
+
+
+	CDialogBuilder builder16;
+	CContainerUI *pGame4 = static_cast<CContainerUI*>(builder16.Create(_T("game4.xml"), (UINT)0, this, &m_pm));
+	pRoot->Add(pGame4);
+
+	CDialogBuilder builder17;
+	CContainerUI *pEvaluation = static_cast<CContainerUI*>(builder17.Create(_T("evaluation_system.xml"), (UINT)0, this, &m_pm));
+	pRoot->Add(pEvaluation);
+
+	CDialogBuilder builder18;
+	CContainerUI *pEvaluationHistory = static_cast<CContainerUI*>(builder18.Create(_T("evaluation_history.xml"), (UINT)0, this, &m_pm));
+	pRoot->Add(pEvaluationHistory);
+
+	CDialogBuilder builder19;
+	CContainerUI *pEvaluationAdd = static_cast<CContainerUI*>(builder19.Create(_T("evaluation_add.xml"), (UINT)0, this, &m_pm));
+	pRoot->Add(pEvaluationAdd);
+
+	CDialogBuilder builder20;
+	CContainerUI *pEvaluationDetail = static_cast<CContainerUI*>(builder20.Create(_T("evaluation_detail.xml"), (UINT)0, this, &m_pm));
+	pRoot->Add(pEvaluationDetail);
+
+	CDialogBuilder builder21;
+	CContainerUI *pEvaluationYDGNAdd = static_cast<CContainerUI*>(builder21.Create(_T("evaluation_ydgn_add.xml"), (UINT)0, this, &m_pm));
+	pRoot->Add(pEvaluationYDGNAdd);
+
+	CDialogBuilder builder22;
+	CContainerUI *pEvaluationYDGNADetail = static_cast<CContainerUI*>(builder22.Create(_T("evaluation_ydgn_detail.xml"), (UINT)0, this, &m_pm));
+	pRoot->Add(pEvaluationYDGNADetail);
+	
+	CDialogBuilder builder23;
+	CContainerUI *pSystemset = static_cast<CContainerUI*>(builder23.Create(_T("systemset.xml"), (UINT)0));
+	pRoot->Add(pSystemset);
+
+	m_pm.AttachDialog(pRoot);
+	m_pm.AddNotifier(this);
+	
+	m_login_page = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("login_bg")));
+	m_login_input_page = static_cast<CContainerUI*>(m_pm.FindControl(_T("input_login")));
+	m_login_success_page = static_cast<CContainerUI*>(m_pm.FindControl(_T("success_login")));
+	m_main_page = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("main_page")));
+	m_patient_select_page = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(_T("select_patient")));
+	m_patient_manager_page = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(_T("manager_patient")));
+	m_patient_detail_page = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(_T("manager_patient_detail")));
+	m_patient_edit_page = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(_T("manager_patient_bianji")));
+	m_patient_add_page = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(_T("manager_patient_add")));
+	m_about_page = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(_T("about")));
+	m_personor_info_edit_page = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(_T("personor_info_edit_page")));
+	m_train_main_page = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(_T("train_main_page")));
+	m_active_train_page = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(_T("active_train_page")));
+	m_patient_train_info = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(_T("patient_information")));
+	m_patient_train_detail = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(_T("patient_traindetail")));
+	m_passive_train_page = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(_T("passive_train_page")));
+	m_eyemode_page = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(_T("eye_mode")));
+	m_emgmode_page = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(_T("emg_mode")));
+	m_traindetail_chart = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(_T("traindetail_chart")));
+	m_active_train_game4_page = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(_T("active_train_game4_page")));
+	m_evaluation_page =  static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(_T("evaluation_page")));
+	m_evaluation_history_page =  static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(_T("evaluation_history_page")));
+	m_evaluation_add_page =   static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(_T("evaluation_add_page")));
+	m_evaluation_detail_page =   static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(_T("evaluation_detail_page")));
+	m_evaluation_ydgn_add_page =   static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(_T("evaluation_ydgn_add_page")));
+	m_evaluation_ydgn_detail_page = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(_T("evaluation_ydgn_detail_page")));
+	//m_active_train_page_list = static_cast<CVerticalLayoutUI>(m_pm.FindControl(_T("active_train_page_list")));
+	m_systemset_info_edit_page = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(_T("systemset_info_edit_page")));
 
-    CDialogBuilder builder1;
-    CContainerUI *pSelectPatient = static_cast<CContainerUI *>(builder1.Create(_T("select.xml"), (UINT)0));
-    // wchar_t message[1024];
-    // builder1.GetLastErrorMessage(message, 1024);
-    // builder1.GetLastErrorLocation(message, 1024);
-    pRoot->Add(pSelectPatient);
-
-    CDialogBuilder builder2;
-    CContainerUI *pManagerPatient = static_cast<CContainerUI *>(builder2.Create(_T("manager.xml"), (UINT)0));
-    pRoot->Add(pManagerPatient);
-
-    CDialogBuilder builder3;
-    CContainerUI *pManagerPatientDetail = static_cast<CContainerUI *>(builder3.Create(_T("detail.xml"), (UINT)0));
-    pRoot->Add(pManagerPatientDetail);
-
-    CDialogBuilder builder4;
-    CContainerUI *pManagerPatientEdit = static_cast<CContainerUI *>(builder4.Create(_T("edit.xml"), (UINT)0));
-    pRoot->Add(pManagerPatientEdit);
-
-    CDialogBuilder builder5;
-    CContainerUI *pAbout = static_cast<CContainerUI *>(builder5.Create(_T("about.xml"), (UINT)0));
-    pRoot->Add(pAbout);
-
-    CDialogBuilder builder6;
-    CContainerUI *pAdd = static_cast<CContainerUI *>(builder6.Create(_T("add.xml"), (UINT)0));
-    pRoot->Add(pAdd);
-
-    CDialogBuilder builder7;
-    CContainerUI *pPersonor = static_cast<CContainerUI *>(builder7.Create(_T("personor.xml"), (UINT)0));
-    pRoot->Add(pPersonor);
-
-    CDialogBuilder builder8;
-    CContainerUI *pTrain = static_cast<CContainerUI *>(builder8.Create(_T("train.xml"), (UINT)0));
-    pRoot->Add(pTrain);
-
-    CDialogBuilder builder9;
-    CContainerUI *pActiveTrain = static_cast<CContainerUI *>(builder9.Create(_T("active_train.xml"), (UINT)0, this));
-    pRoot->Add(pActiveTrain);
-
-    CDialogBuilder builder10;
-    CContainerUI *pTrainInfo = static_cast<CContainerUI *>(builder10.Create(_T("traininfo.xml"), (UINT)0));
-    pRoot->Add(pTrainInfo);
-
-    CDialogBuilder builder11;
-    CContainerUI *pTrainDetail = static_cast<CContainerUI *>(builder11.Create(_T("traindetail.xml"), (UINT)0));
-    pRoot->Add(pTrainDetail);
-
-    CDialogBuilder builder12;
-    CContainerUI *pPassiveTrain = static_cast<CContainerUI *>(builder12.Create(_T("passive_train.xml"), (UINT)0, this));
-    pRoot->Add(pPassiveTrain);
-
-    CDialogBuilder builder13;
-    CContainerUI *pEyeMode = static_cast<CContainerUI *>(builder13.Create(_T("eyemode.xml"), (UINT)0, this));
-    pRoot->Add(pEyeMode);
-
-    CDialogBuilder builder14;
-    CContainerUI *pEMGMode = static_cast<CContainerUI *>(builder14.Create(_T("emgmode.xml"), (UINT)0, this));
-    pRoot->Add(pEMGMode);
-
-    CDialogBuilder builder15;
-    CContainerUI *pTrainDetailChart = static_cast<CContainerUI *>(builder15.Create(_T("traindetailchart.xml"), (UINT)0, this));
-    pRoot->Add(pTrainDetailChart);
-
-
-    CDialogBuilder builder16;
-    CContainerUI *pGame4 = static_cast<CContainerUI *>(builder16.Create(_T("game4.xml"), (UINT)0, this, &m_pm));
-    pRoot->Add(pGame4);
-
-    CDialogBuilder builder17;
-    CContainerUI *pEvaluation = static_cast<CContainerUI *>(builder17.Create(_T("evaluation_system.xml"), (UINT)0, this, &m_pm));
-    pRoot->Add(pEvaluation);
-
-    CDialogBuilder builder18;
-    CContainerUI *pEvaluationHistory = static_cast<CContainerUI *>(builder18.Create(_T("evaluation_history.xml"), (UINT)0, this, &m_pm));
-    pRoot->Add(pEvaluationHistory);
-
-    CDialogBuilder builder19;
-    CContainerUI *pEvaluationAdd = static_cast<CContainerUI *>(builder19.Create(_T("evaluation_add.xml"), (UINT)0, this, &m_pm));
-    pRoot->Add(pEvaluationAdd);
-
-    CDialogBuilder builder20;
-    CContainerUI *pEvaluationDetail = static_cast<CContainerUI *>(builder20.Create(_T("evaluation_detail.xml"), (UINT)0, this, &m_pm));
-    pRoot->Add(pEvaluationDetail);
-
-    CDialogBuilder builder21;
-    CContainerUI *pEvaluationYDGNAdd = static_cast<CContainerUI *>(builder21.Create(_T("evaluation_ydgn_add.xml"), (UINT)0, this, &m_pm));
-    pRoot->Add(pEvaluationYDGNAdd);
-
-    CDialogBuilder builder22;
-    CContainerUI *pEvaluationYDGNADetail = static_cast<CContainerUI *>(builder22.Create(_T("evaluation_ydgn_detail.xml"), (UINT)0, this, &m_pm));
-    pRoot->Add(pEvaluationYDGNADetail);
-
-    CDialogBuilder builder23;
-    CContainerUI *pSystemset = static_cast<CContainerUI *>(builder23.Create(_T("systemset.xml"), (UINT)0));
-    pRoot->Add(pSystemset);
+	m_welcom_menu = static_cast<CButtonUI*>(m_pm.FindControl(_T("welcom_menu")));
+	m_welcom_menu->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
 
-    m_pm.AttachDialog(pRoot);
-    m_pm.AddNotifier(this);
+	CButtonUI* pWelcom = static_cast<CButtonUI*>(m_pm.FindControl(_T("about_welcom")));
+	pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
 
-    m_login_page = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("login_bg")));
-    m_login_input_page = static_cast<CContainerUI *>(m_pm.FindControl(_T("input_login")));
-    m_login_success_page = static_cast<CContainerUI *>(m_pm.FindControl(_T("success_login")));
-    m_main_page = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("main_page")));
-    m_patient_select_page = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(_T("select_patient")));
-    m_patient_manager_page = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(_T("manager_patient")));
-    m_patient_detail_page = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(_T("manager_patient_detail")));
-    m_patient_edit_page = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(_T("manager_patient_bianji")));
-    m_patient_add_page = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(_T("manager_patient_add")));
-    m_about_page = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(_T("about")));
-    m_personor_info_edit_page = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(_T("personor_info_edit_page")));
-    m_train_main_page = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(_T("train_main_page")));
-    m_active_train_page = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(_T("active_train_page")));
-    m_patient_train_info = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(_T("patient_information")));
-    m_patient_train_detail = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(_T("patient_traindetail")));
-    m_passive_train_page = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(_T("passive_train_page")));
-    m_eyemode_page = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(_T("eye_mode")));
-    m_emgmode_page = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(_T("emg_mode")));
-    m_traindetail_chart = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(_T("traindetail_chart")));
-    m_active_train_game4_page = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(_T("active_train_game4_page")));
-    m_evaluation_page = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(_T("evaluation_page")));
-    m_evaluation_history_page = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(_T("evaluation_history_page")));
-    m_evaluation_add_page = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(_T("evaluation_add_page")));
-    m_evaluation_detail_page = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(_T("evaluation_detail_page")));
-    m_evaluation_ydgn_add_page = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(_T("evaluation_ydgn_add_page")));
-    m_evaluation_ydgn_detail_page = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(_T("evaluation_ydgn_detail_page")));
-    // m_active_train_page_list = static_cast<CVerticalLayoutUI>(m_pm.FindControl(_T("active_train_page_list")));
-    m_systemset_info_edit_page = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(_T("systemset_info_edit_page")));
+	pWelcom = static_cast<CButtonUI*>(m_pm.FindControl(_T("manager_patient_add_welcom")));
+	pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
 
-    m_welcom_menu = static_cast<CButtonUI *>(m_pm.FindControl(_T("welcom_menu")));
-    m_welcom_menu->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
+	pWelcom = static_cast<CButtonUI*>(m_pm.FindControl(_T("manager_patient_detail_welcom")));
+	pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
 
-    CButtonUI *pWelcom = static_cast<CButtonUI *>(m_pm.FindControl(_T("about_welcom")));
-    pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
+	pWelcom = static_cast<CButtonUI*>(m_pm.FindControl(_T("manager_patient_bianji_welcom")));
+	pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
 
-    pWelcom = static_cast<CButtonUI *>(m_pm.FindControl(_T("manager_patient_add_welcom")));
-    pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
+	pWelcom = static_cast<CButtonUI*>(m_pm.FindControl(_T("manager_patient_welcom")));
+	pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
 
-    pWelcom = static_cast<CButtonUI *>(m_pm.FindControl(_T("manager_patient_detail_welcom")));
-    pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
+	pWelcom = static_cast<CButtonUI*>(m_pm.FindControl(_T("personor_welcom")));
+	pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
 
-    pWelcom = static_cast<CButtonUI *>(m_pm.FindControl(_T("manager_patient_bianji_welcom")));
-    pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
+	pWelcom = static_cast<CButtonUI*>(m_pm.FindControl(_T("select_patient_welcom")));
+	pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
 
-    pWelcom = static_cast<CButtonUI *>(m_pm.FindControl(_T("manager_patient_welcom")));
-    pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
+	pWelcom = static_cast<CButtonUI*>(m_pm.FindControl(_T("train_main_page_welcom")));
+	pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
 
-    pWelcom = static_cast<CButtonUI *>(m_pm.FindControl(_T("personor_welcom")));
-    pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
+	pWelcom = static_cast<CButtonUI*>(m_pm.FindControl(_T("active_train_page_welcom")));
+	pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
 
-    pWelcom = static_cast<CButtonUI *>(m_pm.FindControl(_T("select_patient_welcom")));
-    pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
+	pWelcom = static_cast<CButtonUI*>(m_pm.FindControl(_T("passive_train_page_welcom")));
+	pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
 
-    pWelcom = static_cast<CButtonUI *>(m_pm.FindControl(_T("train_main_page_welcom")));
-    pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
+	pWelcom = static_cast<CButtonUI*>(m_pm.FindControl(_T("emg_mode_welcom")));
+	pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
 
-    pWelcom = static_cast<CButtonUI *>(m_pm.FindControl(_T("active_train_page_welcom")));
-    pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
+	pWelcom = static_cast<CButtonUI*>(m_pm.FindControl(_T("eye_mode_welcom")));
+	pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
 
-    pWelcom = static_cast<CButtonUI *>(m_pm.FindControl(_T("passive_train_page_welcom")));
-    pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
+	pWelcom = static_cast<CButtonUI*>(m_pm.FindControl(_T("patient_information_welcom")));
+	pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
 
-    pWelcom = static_cast<CButtonUI *>(m_pm.FindControl(_T("emg_mode_welcom")));
-    pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
+	pWelcom = static_cast<CButtonUI*>(m_pm.FindControl(_T("patient_traindetail_welcom")));
+	pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
 
-    pWelcom = static_cast<CButtonUI *>(m_pm.FindControl(_T("eye_mode_welcom")));
-    pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
 
-    pWelcom = static_cast<CButtonUI *>(m_pm.FindControl(_T("patient_information_welcom")));
-    pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
+	pWelcom = static_cast<CButtonUI*>(m_pm.FindControl(_T("traindetail_chart_welcom")));
+	pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
+	
+	pWelcom = static_cast<CButtonUI*>(m_pm.FindControl(_T("active_train_game4_welcom")));
+	pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
 
-    pWelcom = static_cast<CButtonUI *>(m_pm.FindControl(_T("patient_traindetail_welcom")));
-    pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
+	pWelcom = static_cast<CButtonUI*>(m_pm.FindControl(_T("evaluation_page_welcom")));
+	pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
 
+	pWelcom = static_cast<CButtonUI*>(m_pm.FindControl(_T("evaluation_history_welcom")));
+	pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
 
-    pWelcom = static_cast<CButtonUI *>(m_pm.FindControl(_T("traindetail_chart_welcom")));
-    pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
+	pWelcom = static_cast<CButtonUI*>(m_pm.FindControl(_T("evaluation_detail_welcom")));
+	pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
 
-    pWelcom = static_cast<CButtonUI *>(m_pm.FindControl(_T("active_train_game4_welcom")));
-    pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
+	pWelcom = static_cast<CButtonUI*>(m_pm.FindControl(_T("evaluation_ydgn_add_welcom")));
+	pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
 
-    pWelcom = static_cast<CButtonUI *>(m_pm.FindControl(_T("evaluation_page_welcom")));
-    pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
+	pWelcom = static_cast<CButtonUI*>(m_pm.FindControl(_T("evaluation_add_welcom")));
+	pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
 
-    pWelcom = static_cast<CButtonUI *>(m_pm.FindControl(_T("evaluation_history_welcom")));
-    pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
+	pWelcom = static_cast<CButtonUI*>(m_pm.FindControl(_T("evaluation_ydgn_detail_welcom")));
+	pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
 
-    pWelcom = static_cast<CButtonUI *>(m_pm.FindControl(_T("evaluation_detail_welcom")));
-    pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
+	m_main_tip = static_cast<CButtonUI*>(m_pm.FindControl(_T("main_tip")));
 
-    pWelcom = static_cast<CButtonUI *>(m_pm.FindControl(_T("evaluation_ydgn_add_welcom")));
-    pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
+	CButtonUI* login = static_cast<CButtonUI*>(m_pm.FindControl(_T("login")));
+	login->OnNotify += MakeDelegate(this, &RFMainWindow::OnLogin);
 
-    pWelcom = static_cast<CButtonUI *>(m_pm.FindControl(_T("evaluation_add_welcom")));
-    pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
+	m_welcom = static_cast<CLabelUI*>(m_pm.FindControl(_T("welcom")));
+	m_manager_patient_header = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(_T("manager_patient_header")));
+	m_manager_patient_filterheader = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(_T("manager_patient_filter_header")));
 
-    pWelcom = static_cast<CButtonUI *>(m_pm.FindControl(_T("evaluation_ydgn_detail_welcom")));
-    pWelcom->OnNotify += MakeDelegate(this, &RFMainWindow::OnPersonerCenterMenu);
 
-    m_main_tip = static_cast<CButtonUI *>(m_pm.FindControl(_T("main_tip")));
 
-    CButtonUI *login = static_cast<CButtonUI *>(m_pm.FindControl(_T("login")));
-    login->OnNotify += MakeDelegate(this, &RFMainWindow::OnLogin);
+	CButtonUI* entry = static_cast<CButtonUI*>(m_pm.FindControl(_T("enter")));
+	entry->OnNotify += MakeDelegate(this, &RFMainWindow::OnEntry);
 
-    m_welcom = static_cast<CLabelUI *>(m_pm.FindControl(_T("welcom")));
-    m_manager_patient_header = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(_T("manager_patient_header")));
-    m_manager_patient_filterheader = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(_T("manager_patient_filter_header")));
+	CButtonUI* main_enter = static_cast<CButtonUI*>(m_pm.FindControl(_T("main_enter")));
+	main_enter->OnNotify += MakeDelegate(this, &RFMainWindow::OnSelectPatient);
 
+	CButtonUI* main_manager = static_cast<CButtonUI*>(m_pm.FindControl(_T("main_manager")));
+	main_manager->OnNotify += MakeDelegate(this, &RFMainWindow::OnManagerPatient);
 
-    CButtonUI *entry = static_cast<CButtonUI *>(m_pm.FindControl(_T("enter")));
-    entry->OnNotify += MakeDelegate(this, &RFMainWindow::OnEntry);
+	CButtonUI* main_train = static_cast<CButtonUI*>(m_pm.FindControl(_T("main_train")));
+	main_train->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrain);
 
-    CButtonUI *main_enter = static_cast<CButtonUI *>(m_pm.FindControl(_T("main_enter")));
-    main_enter->OnNotify += MakeDelegate(this, &RFMainWindow::OnSelectPatient);
+	CButtonUI* main_train_info = static_cast<CButtonUI*>(m_pm.FindControl(_T("main_train_info")));
+	main_train_info->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainMessage);
 
-    CButtonUI *main_manager = static_cast<CButtonUI *>(m_pm.FindControl(_T("main_manager")));
-    main_manager->OnNotify += MakeDelegate(this, &RFMainWindow::OnManagerPatient);
+	CButtonUI* main_assessment = static_cast<CButtonUI*>(m_pm.FindControl(_T("main_assessment")));
+	main_assessment->OnNotify += MakeDelegate(this, &RFMainWindow::OnPassessment);
 
-    CButtonUI *main_train = static_cast<CButtonUI *>(m_pm.FindControl(_T("main_train")));
-    main_train->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrain);
+	CButtonUI* main_about = static_cast<CButtonUI*>(m_pm.FindControl(_T("main_about")));
+	main_about->OnNotify += MakeDelegate(this, &RFMainWindow::OnAbout);
 
-    CButtonUI *main_train_info = static_cast<CButtonUI *>(m_pm.FindControl(_T("main_train_info")));
-    main_train_info->OnNotify += MakeDelegate(this, &RFMainWindow::OnPatientTrainMessage);
+	CButtonUI* train_main_page_eye = static_cast<CButtonUI*>(m_pm.FindControl(_T("train_main_page_eye")));
+	train_main_page_eye->OnNotify += MakeDelegate(this, &RFMainWindow::OnEyeModeTrainPage); 
 
-    CButtonUI *main_assessment = static_cast<CButtonUI *>(m_pm.FindControl(_T("main_assessment")));
-    main_assessment->OnNotify += MakeDelegate(this, &RFMainWindow::OnPassessment);
+	CButtonUI* train_main_page_sEMG = static_cast<CButtonUI*>(m_pm.FindControl(_T("train_main_page_sEMG")));
+	train_main_page_sEMG->OnNotify += MakeDelegate(this, &RFMainWindow::OnEMGModeTrainPage); 
+	
 
-    CButtonUI *main_about = static_cast<CButtonUI *>(m_pm.FindControl(_T("main_about")));
-    main_about->OnNotify += MakeDelegate(this, &RFMainWindow::OnAbout);
+	Init();
 
-    CButtonUI *train_main_page_eye = static_cast<CButtonUI *>(m_pm.FindControl(_T("train_main_page_eye")));
-    train_main_page_eye->OnNotify += MakeDelegate(this, &RFMainWindow::OnEyeModeTrainPage);
-
-    CButtonUI *train_main_page_sEMG = static_cast<CButtonUI *>(m_pm.FindControl(_T("train_main_page_sEMG")));
-    train_main_page_sEMG->OnNotify += MakeDelegate(this, &RFMainWindow::OnEMGModeTrainPage);
-
-
-    Init();
-
-    BindSelectPatientPageEvent();
-    BindManagerPatientPageEvent();
-    return 0;
+	BindSelectPatientPageEvent();
+	BindManagerPatientPageEvent();
+	return 0;
 }
 
-LRESULT RFMainWindow::OnClose(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
+LRESULT RFMainWindow::OnClose(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
-    bHandled = FALSE;
+	bHandled = FALSE;
 
-    return 0;
+	return 0;
 }
 
-LRESULT RFMainWindow::OnDestroy(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled) { return 0; }
-
-LRESULT RFMainWindow::OnNcActivate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
+LRESULT RFMainWindow::OnDestroy(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
-    if (::IsIconic(*this)) bHandled = FALSE;
-    return (wParam == 0) ? TRUE : FALSE;
+	return 0;
 }
 
-
-LRESULT RFMainWindow::OnNcCalcSize(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled) { return 0; }
-
-LRESULT RFMainWindow::OnNcPaint(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled) { return 0; }
-
-LRESULT RFMainWindow::OnNcHitTest(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
+LRESULT RFMainWindow::OnNcActivate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
-    POINT pt;
-    pt.x = GET_X_LPARAM(lParam);
-    pt.y = GET_Y_LPARAM(lParam);
-    ::ScreenToClient(*this, &pt);
-
-    RECT rcClient;
-    ::GetClientRect(*this, &rcClient);
-
-    if (!::IsZoomed(*this)) {
-        RECT rcSizeBox = m_pm.GetSizeBox();
-        if (pt.y < rcClient.top + rcSizeBox.top) {
-            if (pt.x < rcClient.left + rcSizeBox.left) return HTTOPLEFT;
-            if (pt.x > rcClient.right - rcSizeBox.right) return HTTOPRIGHT;
-
-            return HTTOP;
-        }
-        else if (pt.y > rcClient.bottom - rcSizeBox.bottom) {
-            if (pt.x < rcClient.left + rcSizeBox.left) return HTBOTTOMLEFT;
-            if (pt.x > rcClient.right - rcSizeBox.right) return HTBOTTOMRIGHT;
-
-            return HTBOTTOM;
-        }
-
-        if (pt.x < rcClient.left + rcSizeBox.left) return HTLEFT;
-
-        if (pt.x > rcClient.right - rcSizeBox.right) return HTRIGHT;
-    }
-
-    RECT rcCaption = m_pm.GetCaptionRect();
-    if (pt.x >= rcClient.left + rcCaption.left && pt.x < rcClient.right - rcCaption.right && pt.y >= rcCaption.top && pt.y < rcCaption.bottom) {
-        CControlUI *pControl = static_cast<CControlUI *>(m_pm.FindControl(pt));
-        if (pControl && _tcsncmp(pControl->GetName(), _T("row"), 3) == 0) {
-            return HTCLIENT;
-        }
-
-        if (pControl && _tcsncmp(pControl->GetName(), _T("cell"), 4) == 0) {
-            return HTCLIENT;
-        }
-
-        if (pControl && pControl->m_pParent && _tcsncmp(pControl->m_pParent->GetName(), _T("row"), 3) == 0) {
-            return HTCLIENT;
-        }
-
-        if (pControl && _tcscmp(pControl->GetClass(), _T("ButtonUI")) != 0 && _tcscmp(pControl->GetClass(), _T("OptionUI")) != 0
-            && _tcscmp(pControl->GetClass(), _T("CheckBoxUI")) != 0 && _tcscmp(pControl->GetClass(), _T("TextUI")) != 0
-            && _tcscmp(pControl->GetClass(), _T("EditUI")) != 0 && _tcscmp(pControl->GetClass(), _T("RichEditUI")) != 0
-            && _tcscmp(pControl->GetClass(), _T("ComboUI")) != 0 && _tcscmp(pControl->GetClass(), _T("DateTimeUI")) != 0
-            && _tcscmp(pControl->GetClass(), _T("ScrollBarUI")) != 0)
-            // return HTCAPTION;
-            return HTCLIENT;
-    }
-
-    return HTCLIENT;
+	if( ::IsIconic(*this) ) bHandled = FALSE;
+	return (wParam == 0) ? TRUE : FALSE;
 }
 
 
-LRESULT RFMainWindow::OnSize(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
+LRESULT RFMainWindow::OnNcCalcSize(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
-    SIZE szRoundCorner = m_pm.GetRoundCorner();
-    if (!::IsIconic(*this) && (szRoundCorner.cx != 0 || szRoundCorner.cy != 0)) {
-        CDuiRect rcWnd;
-        ::GetWindowRect(*this, &rcWnd);
-        rcWnd.Offset(-rcWnd.left, -rcWnd.top);
-        rcWnd.right++;
-        rcWnd.bottom++;
-        HRGN hRgn = ::CreateRoundRectRgn(rcWnd.left, rcWnd.top, rcWnd.right, rcWnd.bottom, szRoundCorner.cx, szRoundCorner.cy);
-        ::SetWindowRgn(*this, hRgn, TRUE);
-        ::DeleteObject(hRgn);
-    }
-
-    bHandled = FALSE;
-    return 0;
+	return 0;
 }
 
-LRESULT RFMainWindow::OnGetMinMaxInfo(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
+LRESULT RFMainWindow::OnNcPaint(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
-    MONITORINFO oMonitor = {};
-    oMonitor.cbSize = sizeof(oMonitor);
-    ::GetMonitorInfo(::MonitorFromWindow(*this, MONITOR_DEFAULTTOPRIMARY), &oMonitor);
-    CDuiRect rcWork = oMonitor.rcWork;
-    rcWork.Offset(-oMonitor.rcMonitor.left, -oMonitor.rcMonitor.top);
-
-    LPMINMAXINFO lpMMI = (LPMINMAXINFO)lParam;
-    lpMMI->ptMaxPosition.x = rcWork.left;
-    lpMMI->ptMaxPosition.y = rcWork.top;
-    lpMMI->ptMaxSize.x = rcWork.right;
-    lpMMI->ptMaxSize.y = rcWork.bottom;
-
-    bHandled = FALSE;
-    return 0;
+	return 0;
 }
 
-LRESULT RFMainWindow::OnSysCommand(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
+LRESULT RFMainWindow::OnNcHitTest(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
-    // 有时会在收到WM_NCDESTROY后收到wParam为SC_CLOSE的WM_SYSCOMMAND
-    if (wParam == SC_CLOSE) {
-        ::PostQuitMessage(0L);
-        bHandled = TRUE;
-        return 0;
-    }
-    BOOL bZoomed = ::IsZoomed(*this);
-    LRESULT lRes = CWindowWnd::HandleMessage(uMsg, wParam, lParam);
-    if (::IsZoomed(*this) != bZoomed) {
-        if (!bZoomed) {
-            CControlUI *pControl = static_cast<CControlUI *>(m_pm.FindControl(_T("maxbtn")));
-            if (pControl) pControl->SetVisible(false);
-            pControl = static_cast<CControlUI *>(m_pm.FindControl(_T("restorebtn")));
-            if (pControl) pControl->SetVisible(true);
-        }
-        else {
-            CControlUI *pControl = static_cast<CControlUI *>(m_pm.FindControl(_T("maxbtn")));
-            if (pControl) pControl->SetVisible(true);
-            pControl = static_cast<CControlUI *>(m_pm.FindControl(_T("restorebtn")));
-            if (pControl) pControl->SetVisible(false);
-        }
-    }
-    return lRes;
+	POINT pt; pt.x = GET_X_LPARAM(lParam); pt.y = GET_Y_LPARAM(lParam);
+	::ScreenToClient(*this, &pt);
+
+	RECT rcClient;
+	::GetClientRect(*this, &rcClient);
+
+	if( !::IsZoomed(*this) ) {
+		RECT rcSizeBox = m_pm.GetSizeBox();
+		if( pt.y < rcClient.top + rcSizeBox.top ) {
+			if( pt.x < rcClient.left + rcSizeBox.left ) 
+				return HTTOPLEFT;
+			if( pt.x > rcClient.right - rcSizeBox.right ) 
+				return HTTOPRIGHT;
+
+			return HTTOP;
+		}
+		else if( pt.y > rcClient.bottom - rcSizeBox.bottom ) {
+			if( pt.x < rcClient.left + rcSizeBox.left ) 
+				return HTBOTTOMLEFT;
+			if( pt.x > rcClient.right - rcSizeBox.right ) 
+				return HTBOTTOMRIGHT;
+
+			return HTBOTTOM;
+		}
+
+		if( pt.x < rcClient.left + rcSizeBox.left ) 
+			return HTLEFT;
+
+		if( pt.x > rcClient.right - rcSizeBox.right ) 
+			return HTRIGHT;
+	}
+
+	RECT rcCaption = m_pm.GetCaptionRect();
+	if( pt.x >= rcClient.left + rcCaption.left && pt.x < rcClient.right - rcCaption.right \
+		&& pt.y >= rcCaption.top && pt.y < rcCaption.bottom ) {
+			CControlUI* pControl = static_cast<CControlUI*>(m_pm.FindControl(pt));
+			if (pControl && _tcsncmp(pControl->GetName(), _T("row"), 3) == 0)
+			{
+				return HTCLIENT;
+			}
+
+			if (pControl && _tcsncmp(pControl->GetName(), _T("cell"), 4) == 0)
+			{
+				return HTCLIENT;
+			}
+
+			if (pControl && pControl->m_pParent && _tcsncmp(pControl->m_pParent->GetName(), _T("row"), 3) == 0) {
+				return HTCLIENT;
+			}
+
+			if( pControl && _tcscmp(pControl->GetClass(), _T("ButtonUI")) != 0 && 
+				_tcscmp(pControl->GetClass(), _T("OptionUI")) != 0 &&
+				_tcscmp(pControl->GetClass(), _T("CheckBoxUI")) != 0 &&
+				_tcscmp(pControl->GetClass(), _T("TextUI")) != 0 &&
+				_tcscmp(pControl->GetClass(), _T("EditUI")) != 0 &&
+				_tcscmp(pControl->GetClass(), _T("RichEditUI")) != 0 &&
+				_tcscmp(pControl->GetClass(), _T("ComboUI")) != 0 &&
+				_tcscmp(pControl->GetClass(), _T("DateTimeUI")) != 0 &&
+				_tcscmp(pControl->GetClass(), _T("ScrollBarUI")) != 0
+				)
+				//return HTCAPTION;
+				return HTCLIENT;
+	}
+
+	return HTCLIENT;
 }
 
-LRESULT RFMainWindow::OnKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
+
+LRESULT RFMainWindow::OnSize(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
-    bHandled = FALSE;
-    if (uMsg == WM_KEYDOWN) {
-        if (wParam == VK_ESCAPE) {
-            ::PostQuitMessage(0L);
-            return true;
-        }
-    }
-    return 0;
+	SIZE szRoundCorner = m_pm.GetRoundCorner();
+	if( !::IsIconic(*this) && (szRoundCorner.cx != 0 || szRoundCorner.cy != 0) ) {
+		CDuiRect rcWnd;
+		::GetWindowRect(*this, &rcWnd);
+		rcWnd.Offset(-rcWnd.left, -rcWnd.top);
+		rcWnd.right++; rcWnd.bottom++;
+		HRGN hRgn = ::CreateRoundRectRgn(rcWnd.left, rcWnd.top, rcWnd.right, rcWnd.bottom, szRoundCorner.cx, szRoundCorner.cy);
+		::SetWindowRgn(*this, hRgn, TRUE);
+		::DeleteObject(hRgn);
+	}
+
+	bHandled = FALSE;
+	return 0;
 }
 
-LRESULT RFMainWindow::OnMenuClick(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
+LRESULT RFMainWindow::OnGetMinMaxInfo(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 {
-    bHandled = FALSE;
-    CDuiString *name = (CDuiString *)wParam;
+	MONITORINFO oMonitor = {};
+	oMonitor.cbSize = sizeof(oMonitor);
+	::GetMonitorInfo(::MonitorFromWindow(*this, MONITOR_DEFAULTTOPRIMARY), &oMonitor);
+	CDuiRect rcWork = oMonitor.rcWork;
+	rcWork.Offset(-oMonitor.rcMonitor.left, -oMonitor.rcMonitor.top);
 
-    if (*name == _T("menu_personor_center")) {
-        ShowPersonorPage();
-    }
+	LPMINMAXINFO lpMMI = (LPMINMAXINFO) lParam;
+	lpMMI->ptMaxPosition.x	= rcWork.left;
+	lpMMI->ptMaxPosition.y	= rcWork.top;
+	lpMMI->ptMaxSize.x		= rcWork.right;
+	lpMMI->ptMaxSize.y		= rcWork.bottom;
 
-    if (*name == _T("menu_set_system")) {
-        // 如果没有选患者的话要先选患者
-        if (m_current_patient.id < 0) {
-            RFSelectPatientDialog(GetHWND());
-            return 1;
-        }
+	bHandled = FALSE;
+	return 0;
+}
 
-        ShowSetSystemPage();
-    }
+LRESULT RFMainWindow::OnSysCommand(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+	// 有时会在收到WM_NCDESTROY后收到wParam为SC_CLOSE的WM_SYSCOMMAND
+	if( wParam == SC_CLOSE ) {
+		::PostQuitMessage(0L);
+		bHandled = TRUE;
+		return 0;
+	}
+	BOOL bZoomed = ::IsZoomed(*this);
+	LRESULT lRes = CWindowWnd::HandleMessage(uMsg, wParam, lParam);
+	if( ::IsZoomed(*this) != bZoomed ) {
+		if( !bZoomed ) {
+			CControlUI* pControl = static_cast<CControlUI*>(m_pm.FindControl(_T("maxbtn")));
+			if( pControl ) pControl->SetVisible(false);
+			pControl = static_cast<CControlUI*>(m_pm.FindControl(_T("restorebtn")));
+			if( pControl ) pControl->SetVisible(true);
+		}
+		else {
+			CControlUI* pControl = static_cast<CControlUI*>(m_pm.FindControl(_T("maxbtn")));
+			if( pControl ) pControl->SetVisible(true);
+			pControl = static_cast<CControlUI*>(m_pm.FindControl(_T("restorebtn")));
+			if( pControl ) pControl->SetVisible(false);
+		}
+	}
+	return lRes;
+}
 
-    if (*name == _T("menu_change_account")) {
-        m_current_patient.id = -1;
-        RFPatientsManager::release();
-        RFPatientsManager::get();
-        ShowLoginPage();
-    }
-    if (*name == _T("menu_active_timer")) {
-        CLabelUI *timer = static_cast<CLabelUI *>(m_pm.FindControl(_T("active_train_timer")));
-        timer->SetVisible(true);
-    }
+LRESULT RFMainWindow::OnKeyDown(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+	bHandled = FALSE;
+	if( uMsg == WM_KEYDOWN ) {
+		if( wParam == VK_ESCAPE ) {
+			::PostQuitMessage(0L);
+			return true;
+		}
 
-    if (*name == _T("menu_exit_system")) {
-        ::PostQuitMessage(0L);
-    }
+	}
+	return 0;
+}
 
-    // if (*name == _T("nandu1")) {
-    //     CWkeWebkitUI *game4 = static_cast<CWkeWebkitUI *>(m_pm.FindControl(_T("game4")));
-    //     if (game4) {
-    //         // CDuiString respath = CPaintManagerUI::GetResourcePath() + _T("/Plane2/index.html");
-    //         // game4->SetFile((std::wstring)respath);
+LRESULT RFMainWindow::OnMenuClick(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+{
+	bHandled = FALSE;
+	CDuiString *name = (CDuiString*)wParam;
 
-    //         game4->RunJS(_T("Checkpoint1();"));
-    //     }
-    //     m_robot.SetDamping(0.1);
-    // }
-    // if (*name == _T("nandu2")) {
-    //     CWkeWebkitUI *game4 = static_cast<CWkeWebkitUI *>(m_pm.FindControl(_T("game4")));
-    //     if (game4) {
-    //         // CDuiString respath = CPaintManagerUI::GetResourcePath() + _T("/Plane1/index.html");
-    //         // game4->SetFile((std::wstring)respath);
-    //         game4->RunJS(_T("Checkpoint2();"));
-    //     }
-    //     m_robot.SetDamping(0.3);
-    // }
-    // if (*name == _T("nandu3")) {
-    //     CWkeWebkitUI *game4 = static_cast<CWkeWebkitUI *>(m_pm.FindControl(_T("game4")));
-    //     if (game4) {
-    //         // CDuiString respath = CPaintManagerUI::GetResourcePath() + _T("/Plane/index.html");
-    //         // game4->SetFile((std::wstring)respath);
-    //         game4->RunJS(_T("Checkpoint3();"));
-    //     }
-    //     m_robot.SetDamping(0.5);
-    // }
-    return 0;
+	if (*name == _T("menu_personor_center")) {
+		ShowPersonorPage();
+	}
+
+	if (*name == _T("menu_set_system")) {
+		// 如果没有选患者的话要先选患者
+		if (m_current_patient.id < 0) {
+			RFSelectPatientDialog(GetHWND());
+			return 1;
+		}
+
+		ShowSetSystemPage();
+	}
+	
+	if (*name == _T("menu_change_account")) {
+		m_current_patient.id = -1;
+		RFPatientsManager::release();
+		RFPatientsManager::get();
+		ShowLoginPage();
+	}
+	if (*name == _T("menu_active_timer")) {
+		CLabelUI *timer = static_cast<CLabelUI *>(m_pm.FindControl(_T("active_train_timer")));
+		timer->SetVisible(true);
+	}
+	
+	if (*name == _T("menu_exit_system")) {
+		::PostQuitMessage(0L);
+	}
+
+	if (*name == _T("nandu1")) {
+		CWkeWebkitUI* game4 = static_cast<CWkeWebkitUI*>(m_pm.FindControl(_T("game4")));
+		if (game4) {
+			//CDuiString respath = CPaintManagerUI::GetResourcePath() + _T("/Plane2/index.html");
+			//game4->SetFile((std::wstring)respath);
+
+			game4->RunJS(_T("Checkpoint1();"));
+		}
+		m_robot.SetDamping(0.1);
+	} 
+	if (*name == _T("nandu2")) {
+		CWkeWebkitUI* game4 = static_cast<CWkeWebkitUI*>(m_pm.FindControl(_T("game4")));
+		if (game4) {
+			//CDuiString respath = CPaintManagerUI::GetResourcePath() + _T("/Plane1/index.html");
+			//game4->SetFile((std::wstring)respath);
+			game4->RunJS(_T("Checkpoint2();"));
+		}
+		m_robot.SetDamping(0.3);
+	}
+	if (*name == _T("nandu3")) {
+		CWkeWebkitUI* game4 = static_cast<CWkeWebkitUI*>(m_pm.FindControl(_T("game4")));
+		if (game4) {
+			//CDuiString respath = CPaintManagerUI::GetResourcePath() + _T("/Plane/index.html");
+			//game4->SetFile((std::wstring)respath);
+			game4->RunJS(_T("Checkpoint3();"));
+		}
+		m_robot.SetDamping(0.5);
+	}
+	return 0;
 }
 
 LRESULT RFMainWindow::HandleMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    LRESULT lRes = 0;
-    BOOL bHandled = TRUE;
-    switch (uMsg) {
-    case WM_CREATE:
-        lRes = OnDuiCreate(uMsg, wParam, lParam, bHandled);
-        break;
-    case WM_CLOSE:
-        lRes = OnClose(uMsg, wParam, lParam, bHandled);
-        break;
-    case WM_DESTROY:
-        lRes = OnDestroy(uMsg, wParam, lParam, bHandled);
-        break;
-    case WM_NCACTIVATE:
-        lRes = OnNcActivate(uMsg, wParam, lParam, bHandled);
-        break;
-    case WM_NCCALCSIZE:
-        lRes = OnNcCalcSize(uMsg, wParam, lParam, bHandled);
-        break;
-    case WM_NCPAINT:
-        lRes = OnNcPaint(uMsg, wParam, lParam, bHandled);
-        break;
-    case WM_NCHITTEST:
-        lRes = OnNcHitTest(uMsg, wParam, lParam, bHandled);
-        break;
-    case WM_SIZE:
-        lRes = OnSize(uMsg, wParam, lParam, bHandled);
-        break;
-    case WM_GETMINMAXINFO:
-        lRes = OnGetMinMaxInfo(uMsg, wParam, lParam, bHandled);
-        break;
-    case WM_SYSCOMMAND:
-        lRes = OnSysCommand(uMsg, wParam, lParam, bHandled);
-        break;
-    case WM_COMMUNICATE:
-        lRes = OnCommunicate(uMsg, wParam, lParam, bHandled);
-        break;
-    case WM_LBUTTONDOWN:
-        lRes = OnAppClick(uMsg, wParam, lParam, bHandled);
-        break;
-    case WM_KEYDOWN:
-        lRes = OnKeyDown(uMsg, wParam, lParam, bHandled);
-        break;
-    case WM_MENUCLICK:
-        lRes = OnMenuClick(uMsg, wParam, lParam, bHandled);
-        break;
-    case WM_EMG_DATA_SAMPLE_MSG:
-        lRes = OnEmgSampleData(uMsg, wParam, lParam);
-        break;
-    case TorqueError:
-        lRes = OnTorqueError(uMsg, wParam, lParam);
-        break;
-    case PullForceError:
-        lRes = OnPullForceError(uMsg, wParam, lParam);
-        break;
-    default:
-        bHandled = FALSE;
-    }
+	LRESULT lRes = 0;
+	BOOL bHandled = TRUE;
+	switch( uMsg ) {
+		case WM_CREATE:        lRes = OnDuiCreate(uMsg, wParam, lParam, bHandled); break;
+		case WM_CLOSE:         lRes = OnClose(uMsg, wParam, lParam, bHandled); break;
+		case WM_DESTROY:       lRes = OnDestroy(uMsg, wParam, lParam, bHandled); break;
+		case WM_NCACTIVATE:    lRes = OnNcActivate(uMsg, wParam, lParam, bHandled); break;
+		case WM_NCCALCSIZE:    lRes = OnNcCalcSize(uMsg, wParam, lParam, bHandled); break;
+		case WM_NCPAINT:       lRes = OnNcPaint(uMsg, wParam, lParam, bHandled); break;
+		case WM_NCHITTEST:     lRes = OnNcHitTest(uMsg, wParam, lParam, bHandled); break;
+		case WM_SIZE:          lRes = OnSize(uMsg, wParam, lParam, bHandled); break;
+		case WM_GETMINMAXINFO: lRes = OnGetMinMaxInfo(uMsg, wParam, lParam, bHandled); break;
+		case WM_SYSCOMMAND:    lRes = OnSysCommand(uMsg, wParam, lParam, bHandled); break;
+		case WM_COMMUNICATE:   lRes = OnCommunicate(uMsg, wParam, lParam, bHandled); break;
+		case WM_LBUTTONDOWN:   lRes = OnAppClick(uMsg, wParam, lParam, bHandled); break;
+		case WM_KEYDOWN:	   lRes = OnKeyDown(uMsg, wParam, lParam, bHandled); break;
+		case WM_MENUCLICK:	   lRes = OnMenuClick(uMsg, wParam, lParam, bHandled); break;
+		case WM_EMG_DATA_SAMPLE_MSG: lRes = OnEmgSampleData(uMsg, wParam, lParam); break;
+		case TorqueError: lRes = OnTorqueError(uMsg, wParam, lParam); break;
+		case PullForceError: lRes = OnPullForceError(uMsg, wParam, lParam); break;
+		default:
+			bHandled = FALSE;
+	}
 
-    if (bHandled) return lRes;
-    if (m_pm.MessageHandler(uMsg, wParam, lParam, lRes)) return lRes;
-    return CWindowWnd::HandleMessage(uMsg, wParam, lParam);
+	if( bHandled ) return lRes;
+	if( m_pm.MessageHandler(uMsg, wParam, lParam, lRes) ) return lRes;
+	return CWindowWnd::HandleMessage(uMsg, wParam, lParam);
 }
 
 
-LRESULT RFMainWindow::MessageHandler(UINT uMsg, WPARAM wParam, LPARAM lParam, bool &bHandled)
+LRESULT RFMainWindow::MessageHandler(UINT uMsg, WPARAM wParam, LPARAM lParam, bool& bHandled)
 {
-    if (uMsg == WM_KEYDOWN) {
-        if (wParam == VK_ESCAPE) {
-            Close();
-            return true;
-        }
-    }
-    return false;
+	if( uMsg == WM_KEYDOWN ) {
+		if( wParam == VK_ESCAPE ) {
+			Close();
+			return true;
+		}
+
+	}
+	return false;
 }
 
 LRESULT RFMainWindow::OnEmgSampleData(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    double *pRawData = (double *)lParam;
+	double* pRawData = (double*)lParam;
+	
 
 
-    EMGLineWaveData wavedata;
-    wavedata.x = RFMainWindow::MainWindow->m_emgmode_tracetime;
-    wavedata.y = pRawData[0]; // 0+(500-0)*rand()/(RAND_MAX + 1.0);
-    wavedata.y = 500 * wavedata.y;
-    m_emgmode_data[0].push_back(wavedata.y);
-    CEMGWaveUI *pEMGWave1 = static_cast<CEMGWaveUI *>(RFMainWindow::MainWindow->m_pm.FindControl(_T("emgmode_wave1")));
-    pEMGWave1->PushData(wavedata);
+	EMGLineWaveData wavedata;
+	wavedata.x = RFMainWindow::MainWindow->m_emgmode_tracetime;
+	wavedata.y = pRawData[0];//0+(500-0)*rand()/(RAND_MAX + 1.0); 
+	wavedata.y = 500 * wavedata.y;
+	m_emgmode_data[0].push_back(wavedata.y);
+	CEMGWaveUI* pEMGWave1 = static_cast<CEMGWaveUI*>(RFMainWindow::MainWindow->m_pm.FindControl(_T("emgmode_wave1")));
+	pEMGWave1->PushData(wavedata);
 
-    wavedata.y = pRawData[1];
-    m_emgmode_data[0].push_back(wavedata.y);
-    wavedata.y = 500 * wavedata.y;
-    m_emgmode_data[1].push_back(wavedata.y);
-    CEMGWaveUI *pEMGWave2 = static_cast<CEMGWaveUI *>(RFMainWindow::MainWindow->m_pm.FindControl(_T("emgmode_wave2")));
-    pEMGWave2->PushData(wavedata);
+	wavedata.y = pRawData[1];
+	m_emgmode_data[0].push_back(wavedata.y);
+	wavedata.y = 500 * wavedata.y;
+	m_emgmode_data[1].push_back(wavedata.y);
+	CEMGWaveUI* pEMGWave2 = static_cast<CEMGWaveUI*>(RFMainWindow::MainWindow->m_pm.FindControl(_T("emgmode_wave2")));
+	pEMGWave2->PushData(wavedata);
 
-    wavedata.y = pRawData[2];
-    m_emgmode_data[0].push_back(wavedata.y);
-    wavedata.y = 500 * wavedata.y;
-    m_emgmode_data[2].push_back(wavedata.y);
-    CEMGWaveUI *pEMGWave3 = static_cast<CEMGWaveUI *>(RFMainWindow::MainWindow->m_pm.FindControl(_T("emgmode_wave3")));
-    pEMGWave3->PushData(wavedata);
+	wavedata.y = pRawData[2];
+	m_emgmode_data[0].push_back(wavedata.y);
+	wavedata.y = 500 * wavedata.y;
+	m_emgmode_data[2].push_back(wavedata.y);
+	CEMGWaveUI* pEMGWave3 = static_cast<CEMGWaveUI*>(RFMainWindow::MainWindow->m_pm.FindControl(_T("emgmode_wave3")));
+	pEMGWave3->PushData(wavedata);
 
-    wavedata.y = pRawData[3];
-    m_emgmode_data[0].push_back(wavedata.y);
-    wavedata.y = 500 * wavedata.y;
-    m_emgmode_data[3].push_back(wavedata.y);
-    CEMGWaveUI *pEMGWave4 = static_cast<CEMGWaveUI *>(RFMainWindow::MainWindow->m_pm.FindControl(_T("emgmode_wave4")));
-    pEMGWave4->PushData(wavedata);
+	wavedata.y = pRawData[3];
+	m_emgmode_data[0].push_back(wavedata.y);
+	wavedata.y = 500 * wavedata.y;
+	m_emgmode_data[3].push_back(wavedata.y);
+	CEMGWaveUI* pEMGWave4 = static_cast<CEMGWaveUI*>(RFMainWindow::MainWindow->m_pm.FindControl(_T("emgmode_wave4")));
+	pEMGWave4->PushData(wavedata);
 
-    if (RFMainWindow::MainWindow->m_emgmode_tracetime % 200 == 0) {
-        m_emgmode_ydjd[0].push_back(pRawData[4]);
-        m_emgmode_ydjd[1].push_back(pRawData[5]);
-    }
-    RFMainWindow::MainWindow->m_emgmode_tracetime += 100;
+	if (RFMainWindow::MainWindow->m_emgmode_tracetime % 200 == 0) {
+		m_emgmode_ydjd[0].push_back(pRawData[4]);
+		m_emgmode_ydjd[1].push_back(pRawData[5]);
+	}
+	RFMainWindow::MainWindow->m_emgmode_tracetime += 100;
 
-    delete[] pRawData;
-    return true;
+	delete[] pRawData;
+	return true;
 }
 
-LRESULT RFMainWindow::OnTorqueError(UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-    //直接主动和被动都停下来
-    m_robot.ActiveStopMove();
-    m_passive_train_action.StopPlay();
+LRESULT RFMainWindow::OnTorqueError(UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	//直接主动和被动都停下来
+	m_robot.ActiveStopMove();
+	m_passive_train_action.StopPlay();
 
-    // 把主动运动的button状态改变过来
-    CCheckBoxUI *pCheckBox1 = static_cast<CCheckBoxUI *>(m_pm.FindControl(_T("game4_start")));
-    pCheckBox1->SetCheck(false);
-    // 把被动运动的button的状态改变过来
-    CCheckBoxUI *pCheckBox2 = static_cast<CCheckBoxUI *>(m_pm.FindControl(_T("passive_play")));
-    pCheckBox2->SetCheck(false);
-    return true;
+	// 把主动运动的button状态改变过来
+	CCheckBoxUI *pCheckBox1 = static_cast<CCheckBoxUI*>(m_pm.FindControl(_T("game4_start")));
+	pCheckBox1->SetCheck(false);
+	// 把被动运动的button的状态改变过来
+	CCheckBoxUI* pCheckBox2 = static_cast<CCheckBoxUI*>(m_pm.FindControl(_T("passive_play")));
+	pCheckBox2->SetCheck(false);
+	return true;
 }
 
-LRESULT RFMainWindow::OnPullForceError(UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-    //直接主动和被动都停下来
-    m_robot.ActiveStopMove();
-    m_passive_train_action.StopPlay();
-    // 把主动运动的button状态改变过来
-    CCheckBoxUI *pCheckBox1 = static_cast<CCheckBoxUI *>(m_pm.FindControl(_T("game4_start")));
-    pCheckBox1->SetCheck(false);
-    // 把被动运动的button的状态改变过来
-    CCheckBoxUI *pCheckBox2 = static_cast<CCheckBoxUI *>(m_pm.FindControl(_T("passive_play")));
-    pCheckBox2->SetCheck(false);
-    return true;
+LRESULT RFMainWindow::OnPullForceError(UINT uMsg, WPARAM wParam, LPARAM lParam) {
+	//直接主动和被动都停下来
+	m_robot.ActiveStopMove();
+	m_passive_train_action.StopPlay();
+	// 把主动运动的button状态改变过来
+	CCheckBoxUI *pCheckBox1 = static_cast<CCheckBoxUI*>(m_pm.FindControl(_T("game4_start")));
+	pCheckBox1->SetCheck(false);
+	// 把被动运动的button的状态改变过来
+	CCheckBoxUI* pCheckBox2 = static_cast<CCheckBoxUI*>(m_pm.FindControl(_T("passive_play")));
+	pCheckBox2->SetCheck(false);
+	//将复位开关关闭，这样即使在复位时也能停止
+	ControlCard::GetInstance().is_reset_stop = true;
+	return true;
 }
 
 bool RFMainWindow::OnLogin(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
 
-    std::wstring usr = _T(""), pwd = _T("");
-    CEditUI *usredit = static_cast<CEditUI *>(m_pm.FindControl(_T("input_login_usr_txt")));
-    if (usredit) {
-        usr = usredit->GetText();
-    }
+	std::wstring usr = _T(""), pwd = _T("");
+	CEditUI* usredit = static_cast<CEditUI*>(m_pm.FindControl(_T("input_login_usr_txt")));
+	if (usredit) {
+		usr = usredit->GetText();
+	}
 
-    CEditUI *pwdedit = static_cast<CEditUI *>(m_pm.FindControl(_T("input_login_pwd_txt")));
-    if (pwdedit) {
-        pwd = pwdedit->GetText();
-    }
+	CEditUI* pwdedit = static_cast<CEditUI*>(m_pm.FindControl(_T("input_login_pwd_txt")));
+	if (pwdedit) {
+		pwd = pwdedit->GetText();
+	}
 
-    if (!m_mysql_connected) {
-        RFConnectFailDialog(GetHWND());
+	if (!m_mysql_connected) {
+		RFConnectFailDialog(GetHWND());
 
-        CTask::Assign(CTask::NotWait, Panic(), NULL, EventHandle(&RFMySQLThread::ReConnect), RFMainWindow::UIThread, RFMainWindow::DBThread);
-        return true;
-    }
+		CTask::Assign(CTask::NotWait, Panic(), NULL, EventHandle(&RFMySQLThread::ReConnect), RFMainWindow::UIThread, RFMainWindow::DBThread);
+		return true;
+	}
 
-    if (usr.empty() || pwd.empty()) {
-        RFLoginFailDialog(GetHWND());
-        return true;
-    }
+	if (usr.empty() || pwd.empty()) {
+		RFLoginFailDialog(GetHWND());
+		return true;
+	}
 
-    LoginInfo *pLoginInfo = new LoginInfo;
-    pLoginInfo->usrname = usr;
-    pLoginInfo->usrpwd = pwd;
-    pLoginInfo->role = 2;
+	LoginInfo *pLoginInfo = new LoginInfo;
+	pLoginInfo->usrname = usr;
+	pLoginInfo->usrpwd = pwd;
+	pLoginInfo->role = 2;
 
-    CTask::Assign(CTask::NotWait, Panic(), pLoginInfo, EventHandle(&RFMySQLThread::Login), RFMainWindow::UIThread, RFMainWindow::DBThread);
+	CTask::Assign(CTask::NotWait, Panic(), pLoginInfo, EventHandle(&RFMySQLThread::Login), RFMainWindow::UIThread, RFMainWindow::DBThread);
 
-    return true;
+	return true;
 }
 
 int RFMainWindow::OnLoginOK(EventArg *pArg)
 {
-    RFMySQLThread *pCurrentThread = pArg->GetSender<RFMySQLThread *>();
-    CTask *pTask = pArg->GetAttach<CTask *>();
+	RFMySQLThread *pCurrentThread = pArg->GetSender<RFMySQLThread*>();
+	CTask *pTask = pArg->GetAttach<CTask*>();
 
-    LoginInfo *pLoginInfo = pTask->GetContext<LoginInfo *>();
-    if (pLoginInfo != NULL) {
-        if (pLoginInfo->logined == 1) {
-            std::wstring welcome = _T("欢迎您，") + pLoginInfo->login_user + _T("!");
-            RFMainWindow::MainWindow->m_welcom->SetText(welcome.c_str());
-            RFMainWindow::MainWindow->ShowLoginSuccessPage();
-            RFMainWindow::MainWindow->m_pm.Invalidate(RFMainWindow::MainWindow->m_welcom->m_rcItem);
-        }
-        else {
-            RFLoginFailDialog(RFMainWindow::MainWindow->GetHWND());
+	LoginInfo *pLoginInfo = pTask->GetContext<LoginInfo*>();
+	if (pLoginInfo != NULL) {
+		if (pLoginInfo->logined == 1) {
+			std::wstring welcome = _T("欢迎您，") + pLoginInfo->login_user + _T("!");
+			RFMainWindow::MainWindow->m_welcom->SetText(welcome.c_str());
+			RFMainWindow::MainWindow->ShowLoginSuccessPage();
+			RFMainWindow::MainWindow->m_pm.Invalidate(RFMainWindow::MainWindow->m_welcom->m_rcItem);
+		} else {
+			RFLoginFailDialog(RFMainWindow::MainWindow->GetHWND());
 
-            delete pLoginInfo;
-            pLoginInfo = NULL;
-            return 1;
-        }
+			delete pLoginInfo;
+			pLoginInfo = NULL;
+			return 1;
+		}
 
-        RFMainWindow::MainWindow->m_login_info = *pLoginInfo;
-        RFPatientsManager::get()->SetHospitalID(pLoginInfo->hospitalid);
-        RFPatientsManager::get()->setDoctorID(pLoginInfo->doctorid);
-        RFPatientsManager::get()->step();
-        RFPatientsTrainInfo::get()->setHospitalID(pLoginInfo->hospitalid);
-        RFPatientsTrainInfo::get()->setDoctorID(pLoginInfo->doctorid);
-        RFPatientsTrainInfo::get()->LoadPatientTrainInfo();
-        RFPatientsTrainDetails::get()->SetHospitalID(pLoginInfo->hospitalid);
-        RFPatientsTrainDetails::get()->SetDoctorID(pLoginInfo->doctorid);
-        RFPatientsTrainDetails::get()->LoadPatientTrainDetails();
-        RFEvaluationData::get()->setDoctorID(pLoginInfo->doctorid);
+		RFMainWindow::MainWindow->m_login_info = *pLoginInfo;
+		RFPatientsManager::get()->SetHospitalID(pLoginInfo->hospitalid);
+		RFPatientsManager::get()->setDoctorID(pLoginInfo->doctorid);
+		RFPatientsManager::get()->step();
+		RFPatientsTrainInfo::get()->setHospitalID(pLoginInfo->hospitalid);
+		RFPatientsTrainInfo::get()->setDoctorID(pLoginInfo->doctorid);
+		RFPatientsTrainInfo::get()->LoadPatientTrainInfo();
+		RFPatientsTrainDetails::get()->SetHospitalID(pLoginInfo->hospitalid);
+		RFPatientsTrainDetails::get()->SetDoctorID(pLoginInfo->doctorid);
+		RFPatientsTrainDetails::get()->LoadPatientTrainDetails();
+		RFEvaluationData::get()->setDoctorID(pLoginInfo->doctorid);
 
-        RFPassiveTrain::get()->LoadPassiveTrainInfo();
+		RFPassiveTrain::get()->LoadPassiveTrainInfo();
 
-        delete pLoginInfo;
-        pLoginInfo = NULL;
-    }
-    else {
-        RFLoginFailDialog(RFMainWindow::MainWindow->GetHWND());
-    }
+		delete pLoginInfo;
+		pLoginInfo = NULL;
+	} else {
+		RFLoginFailDialog(RFMainWindow::MainWindow->GetHWND());
+	}
+	
 
-
-    return 1;
+	return 1;
 }
 
-int RFMainWindow::OnConnectOK(EventArg *pArg)
+int RFMainWindow::OnConnectOK(EventArg* pArg)
 {
-    RFMainWindow::MainWindow->m_mysql_connected = true;
-    return 1;
+	RFMainWindow::MainWindow->m_mysql_connected = true;
+	return 1;
 }
 
-int RFMainWindow::OnConnectFail(EventArg *pArg)
+int RFMainWindow::OnConnectFail(EventArg* pArg)
 {
-    RFMainWindow::MainWindow->m_mysql_connected = false;
-    return 1;
+	RFMainWindow::MainWindow->m_mysql_connected = false;
+	return 1;
 }
 
 bool RFMainWindow::OnGame4NanduSetingMenu(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
-    if (!pMsg->pSender) {
-        return false;
-    }
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
+	if (!pMsg->pSender) {
+		return false;
+	}
 
-    POINT point;
-    point.x = pMsg->pSender->GetPos().right - (173 * RF_WINDOW_WIDTH) / RF_DESIGN_WINDOW_WIDTH;
-    point.y = pMsg->pSender->GetPos().bottom + (8 * RF_WINDOW_HEIGHT) / RF_DESIGN_WINDOW_HEIGHT;
+	POINT point;
+	point.x = pMsg->pSender->GetPos().right - (173 * RF_WINDOW_WIDTH) / RF_DESIGN_WINDOW_WIDTH;
+	point.y = pMsg->pSender->GetPos().bottom + (8 * RF_WINDOW_HEIGHT) / RF_DESIGN_WINDOW_HEIGHT;
 
-    ::ClientToScreen(m_hWnd, &point);
+	::ClientToScreen(m_hWnd, &point);
 
-    CMenuWnd *pMenu = CMenuWnd::CreateMenu(NULL, _T("game4nandu.xml"), point, &m_pm);
-    // pMenu->ResizeMenu();
+	CMenuWnd* pMenu = CMenuWnd::CreateMenu(NULL, _T("game4nandu.xml"), point, &m_pm);
+	//pMenu->ResizeMenu();
 }
 
-bool RFMainWindow::OnPersonerCenterMenu(void *pParam)
-{
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
-    if (!pMsg->pSender) {
-        return false;
-    }
+bool RFMainWindow::OnPersonerCenterMenu(void *pParam) {
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
+	if (!pMsg->pSender) {
+		return false;
+	}
 
-    POINT point;
-    point.x = pMsg->pSender->GetPos().right - 217;
-    point.y = pMsg->pSender->GetPos().bottom + 8;
+	POINT point;
+	point.x = pMsg->pSender->GetPos().right - 217;
+	point.y = pMsg->pSender->GetPos().bottom + 8;
 
-    ::ClientToScreen(m_hWnd, &point);
+	::ClientToScreen(m_hWnd, &point);
 
-    CDuiString str = pMsg->pSender->GetName();
-    CMenuWnd *pMenu = nullptr;
-    if (str == _T("active_train_game4_welcom")) {
-        pMenu = CMenuWnd::CreateMenu(NULL, _T("personer_menu_active.xml"), point, &m_pm);
-    }
-    else {
-        pMenu = CMenuWnd::CreateMenu(NULL, _T("personer_menu.xml"), point, &m_pm);
-    }
+	CDuiString str = pMsg->pSender->GetName();
+	CMenuWnd* pMenu = nullptr;
+	if (str == _T("active_train_game4_welcom")) {
+		pMenu = CMenuWnd::CreateMenu(NULL, _T("personer_menu_active.xml"), point, &m_pm);
+	} else {
+		pMenu = CMenuWnd::CreateMenu(NULL, _T("personer_menu.xml"), point, &m_pm);
+	}
 }
 
 
 bool RFMainWindow::OnEntry(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
 
-    std::wstring welcom = _T("欢迎您，") + RFMainWindow::MainWindow->m_login_info.login_user + _T("！∨");
+	std::wstring welcom = _T("欢迎您，") + RFMainWindow::MainWindow->m_login_info.login_user + _T("！∨");
 
-    ShowMainPage();
-    RFMainWindow::MainWindow->m_welcom_menu->SetText(welcom.c_str());
+	ShowMainPage();
+	RFMainWindow::MainWindow->m_welcom_menu->SetText(welcom.c_str());
 
-    return true;
+	return true;
 }
 
-bool RFMainWindow::OnSelectPatient(void *pParam)
+bool RFMainWindow::OnSelectPatient(void* pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
+	
+	CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("select_patient_welcom")));
+	pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
 
-    CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("select_patient_welcom")));
-    pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+	UpdatePatientPage(RFPatientsManager::get()->getPage(RFPatientsManager::get()->m_current_page));
+	UpdatePageNumber(RFPatientsManager::get()->m_current_page);
+	ShowSelectPatientPage();
 
-    UpdatePatientPage(RFPatientsManager::get()->getPage(RFPatientsManager::get()->m_current_page));
-    UpdatePageNumber(RFPatientsManager::get()->m_current_page);
-    ShowSelectPatientPage();
-
-    return true;
+	return true;
 }
 
-bool RFMainWindow::OnManagerPatient(void *pParam)
+bool RFMainWindow::OnManagerPatient(void* pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
-    /*
-    if (m_current_patient.id < 0) {
-        RFSelectPatientDialog(GetHWND());
-        return true;
-    }
-    */
-    CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("manager_patient_welcom")));
-    pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
+	/*
+	if (m_current_patient.id < 0) {
+		RFSelectPatientDialog(GetHWND());
+		return true;
+	}
+	*/
+	CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("manager_patient_welcom")));
+	pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
 
-    UpdateManagePatientPage(RFPatientsManager::get()->getPage(RFPatientsManager::get()->m_current_page));
-    UpdateManagePageNumber(RFPatientsManager::get()->m_current_page);
-    ShowManagerPatientPage();
-    return true;
-}
-
-
-bool RFMainWindow::OnPatientTrain(void *pParam)
-{
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
-
-    if (m_current_patient.id < 0) {
-        RFSelectPatientDialog(GetHWND());
-        return true;
-    }
-
-    CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("train_main_page_welcom")));
-    pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
-
-    ShowTrainPage();
-    return true;
+	UpdateManagePatientPage(RFPatientsManager::get()->getPage(RFPatientsManager::get()->m_current_page));
+	UpdateManagePageNumber(RFPatientsManager::get()->m_current_page);
+	ShowManagerPatientPage();
+	return true;
 }
 
 
-bool RFMainWindow::OnPatientTrainFromActiveTrain(void *pParam)
+bool RFMainWindow::OnPatientTrain(void* pParam)
 {
-    // TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
-    // if (pMsg->sType != _T("click"))
-    //	return false;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
 
-    if (m_current_patient.id < 0) {
-        RFSelectPatientDialog(GetHWND());
-        return true;
-    }
+	if (m_current_patient.id < 0) {
+		RFSelectPatientDialog(GetHWND());
+		return true;
+	}
 
-    // CVerticalLayoutUI* active_train_page_list = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("active_train_page_list")));
-    // if (active_train_page_list->IsVisible()) {
-    //	active_train_page_list->SetVisible(false);
-    //	CVerticalLayoutUI* active_train_page_main = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("active_train_page_main")));
-    //	active_train_page_main->SetVisible(true);
+	CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("train_main_page_welcom")));
+	pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
 
-    //	return true;
-    //}
+	ShowTrainPage();
+	return true;
+}
 
-    CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("train_main_page_welcom")));
-    pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
 
-    ShowTrainPage();
-    return true;
+bool RFMainWindow::OnPatientTrainFromActiveTrain(void* pParam)
+{
+	//TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	//if (pMsg->sType != _T("click"))
+	//	return false;
+
+	if (m_current_patient.id < 0) {
+		RFSelectPatientDialog(GetHWND());
+		return true;
+	}
+
+	//CVerticalLayoutUI* active_train_page_list = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("active_train_page_list")));
+	//if (active_train_page_list->IsVisible()) {
+	//	active_train_page_list->SetVisible(false);
+	//	CVerticalLayoutUI* active_train_page_main = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("active_train_page_main")));
+	//	active_train_page_main->SetVisible(true);
+
+	//	return true;
+	//}
+
+	CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("train_main_page_welcom")));
+	pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+
+	ShowTrainPage();
+	return true;
 }
 
 bool RFMainWindow::OnPatientTrainFromPassiveTrain(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
 
-    m_passive_train_action.StopPlay();
+	m_passive_train_action.StopPlay();
 
-    CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("train_main_page_welcom")));
-    pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+	CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("train_main_page_welcom")));
+	pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
 
-    ShowTrainPage();
-    return true;
+	ShowTrainPage();
+	return true;
 }
 
-bool RFMainWindow::OnPatientTrainMessage(void *pParam)
+bool RFMainWindow::OnPatientTrainMessage(void* pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
 
-    if (m_current_patient.id < 0) {
-        RFSelectPatientDialog(GetHWND());
-        return true;
-    }
+	if (m_current_patient.id < 0) {
+		RFSelectPatientDialog(GetHWND());
+		return true;
+	}
 
-    CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("patient_information_welcom")));
-    pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+	CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("patient_information_welcom")));
+	pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
 
-    UpdateTrainInfoPage(RFPatientsTrainInfo::get()->getPageElement(RFPatientsTrainInfo::get()->m_current_page));
-    UpdateTrainInfoPageNumber(RFPatientsTrainInfo::get()->m_current_page);
-    ShowPatientTrainInformation();
+	UpdateTrainInfoPage(RFPatientsTrainInfo::get()->getPageElement(RFPatientsTrainInfo::get()->m_current_page));
+	UpdateTrainInfoPageNumber(RFPatientsTrainInfo::get()->m_current_page);
+	ShowPatientTrainInformation();
 
-    return true;
+	return true;
 }
 
 bool RFMainWindow::OnPatientTrainDetail(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("patient_traindetail_welcom")));
-    pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+	CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("patient_traindetail_welcom")));
+	pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
 
-    ShowPatientTrainDetail(m_current_patient_id_detail);
-    return true;
+	ShowPatientTrainDetail(m_current_patient_id_detail);
+	return true;
 }
 
-bool RFMainWindow::OnPassessment(void *pParam)
+bool RFMainWindow::OnPassessment(void* pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
 
-    if (m_current_patient.id < 0) {
-        RFSelectPatientDialog(GetHWND());
-        return true;
-    }
+	if (m_current_patient.id < 0) {
+		RFSelectPatientDialog(GetHWND());
+		return true;
+	}
 
-    CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("evaluation_page_welcom")));
-    pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+	CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("evaluation_page_welcom")));
+	pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
 
-    ShowEvaluationPage();
-    return true;
+	ShowEvaluationPage();
+	return true;
 }
 
-bool RFMainWindow::OnAbout(void *pParam)
+bool RFMainWindow::OnAbout(void* pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
 
-    ShowAboutPage();
+	ShowAboutPage();
 
-    return true;
+	return true;
 }
 
 bool RFMainWindow::OnPatientTrainFromEyeMode(void *pParam)
 {
-    m_robot.stopEyeMove();
-    m_robot.exitEyeMode();
-    RFMainWindow::OnPatientTrain(pParam);
-    return true;
+	m_robot.stopEyeMove();
+	m_robot.exitEyeMode();
+	RFMainWindow::OnPatientTrain(pParam);
+	return true;
 }
 
 bool RFMainWindow::OnChangePersonInfoPage(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    CVerticalLayoutUI *pPersonorInfo = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("personor_info")));
-    pPersonorInfo->SetVisible(true);
+	CVerticalLayoutUI *pPersonorInfo = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("personor_info")));
+	pPersonorInfo->SetVisible(true);
 
-    CVerticalLayoutUI *pChangePwdPage = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("changepwd_box")));
-    pChangePwdPage->SetVisible(false);
+	CVerticalLayoutUI *pChangePwdPage = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("changepwd_box")));
+	pChangePwdPage->SetVisible(false);
 
-    UpdatePersonInfo();
-    return true;
+	UpdatePersonInfo();
+	return true;
 }
 
 bool RFMainWindow::OnChangePasswordPage(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
 
-    CVerticalLayoutUI *pPersonorInfo = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("personor_info")));
-    pPersonorInfo->SetVisible(false);
+	CVerticalLayoutUI *pPersonorInfo = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("personor_info")));
+	pPersonorInfo->SetVisible(false);
 
-    CVerticalLayoutUI *pChangePwdPage = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("changepwd_box")));
-    pChangePwdPage->SetVisible(true);
+	CVerticalLayoutUI *pChangePwdPage = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("changepwd_box")));
+	pChangePwdPage->SetVisible(true);
 
-    return true;
+	return true;
 }
 
 bool RFMainWindow::OnPrevPage(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    CButtonUI *pControl = static_cast<CButtonUI *>(pMsg->pSender);
-    int cur_page = RFPatientsManager::get()->m_current_page;
-    if (cur_page < 1) {
-        return true;
-    }
+	CButtonUI* pControl = static_cast<CButtonUI*>(pMsg->pSender);
+	int cur_page = RFPatientsManager::get()->m_current_page;
+	if (cur_page < 1) {
+		return true;
+	}
+	
+	RFPatientsManager::get()->setPage(cur_page - 1);
 
-    RFPatientsManager::get()->setPage(cur_page - 1);
+	UpdatePageNumber(cur_page - 1);
+	UpdatePatientPage(RFPatientsManager::get()->getPage(cur_page - 1));
 
-    UpdatePageNumber(cur_page - 1);
-    UpdatePatientPage(RFPatientsManager::get()->getPage(cur_page - 1));
-
-    return true;
+	return true;
 }
 
 bool RFMainWindow::OnPage1(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
-    CButtonUI *pControl = static_cast<CButtonUI *>(pMsg->pSender);
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
+	CButtonUI* pControl = static_cast<CButtonUI*>(pMsg->pSender);
+	
+	int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
+	RFPatientsManager::get()->setPage(page);
 
-    int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
-    RFPatientsManager::get()->setPage(page);
+	UpdatePageNumber(page);
+	UpdatePatientPage(RFPatientsManager::get()->getPage(page));
 
-    UpdatePageNumber(page);
-    UpdatePatientPage(RFPatientsManager::get()->getPage(page));
-
-    return true;
+	return true;
 }
 
 bool RFMainWindow::OnPage2(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
-    CButtonUI *pControl = static_cast<CButtonUI *>(pMsg->pSender);
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
+	CButtonUI* pControl = static_cast<CButtonUI*>(pMsg->pSender);
 
-    int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
-    RFPatientsManager::get()->setPage(page);
+	int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
+	RFPatientsManager::get()->setPage(page);
 
-    UpdatePageNumber(page);
-    UpdatePatientPage(RFPatientsManager::get()->getPage(page));
-    return true;
+	UpdatePageNumber(page);
+	UpdatePatientPage(RFPatientsManager::get()->getPage(page));
+	return true;
 }
 bool RFMainWindow::OnPage3(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
-    CButtonUI *pControl = static_cast<CButtonUI *>(pMsg->pSender);
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
+	CButtonUI* pControl = static_cast<CButtonUI*>(pMsg->pSender);
 
-    int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
-    RFPatientsManager::get()->setPage(page);
+	int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
+	RFPatientsManager::get()->setPage(page);
 
-    UpdatePageNumber(page);
-    UpdatePatientPage(RFPatientsManager::get()->getPage(page));
+	UpdatePageNumber(page);
+	UpdatePatientPage(RFPatientsManager::get()->getPage(page));
 
-    return true;
+	return true;
 }
 bool RFMainWindow::OnPage4(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
-    CButtonUI *pControl = static_cast<CButtonUI *>(pMsg->pSender);
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
+	CButtonUI* pControl = static_cast<CButtonUI*>(pMsg->pSender);
 
-    int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
-    RFPatientsManager::get()->setPage(page);
+	int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
+	RFPatientsManager::get()->setPage(page);
 
-    UpdatePageNumber(page);
-    UpdatePatientPage(RFPatientsManager::get()->getPage(page));
+	UpdatePageNumber(page);
+	UpdatePatientPage(RFPatientsManager::get()->getPage(page));
 
-    return true;
+	return true;
 }
 bool RFMainWindow::OnNextPage(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
-    CButtonUI *pControl = static_cast<CButtonUI *>(pMsg->pSender);
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
+	CButtonUI* pControl = static_cast<CButtonUI*>(pMsg->pSender);
 
-    int page = RFPatientsManager::get()->m_current_page + 1;
-    std::list<PatientInfo> patients = RFPatientsManager::get()->getPage(page);
-    if (patients.size() < 1) {
-        return true;
-    }
+	int page = RFPatientsManager::get()->m_current_page + 1;
+	std::list<PatientInfo> patients = RFPatientsManager::get()->getPage(page);
+	if (patients.size() < 1) {
+		return true;
+	}
 
-    RFPatientsManager::get()->setPage(page);
+	RFPatientsManager::get()->setPage(page);
 
-    UpdatePageNumber(page);
-    UpdatePatientPage(patients);
-    return true;
+	UpdatePageNumber(page);
+	UpdatePatientPage(patients);
+	return true;
 }
 
 bool RFMainWindow::OnSearch(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
-    CButtonUI *pControl = static_cast<CButtonUI *>(pMsg->pSender);
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
+	CButtonUI* pControl = static_cast<CButtonUI*>(pMsg->pSender);
 
-    CLabelUI *pLable = static_cast<CLabelUI *>(m_pm.FindControl(_T("select_patient_search_txt")));
-    std::wstring patientname = pLable->GetText();
+	CLabelUI *pLable = static_cast<CLabelUI*>(m_pm.FindControl(_T("select_patient_search_txt")));
+	std::wstring patientname = pLable->GetText();
 
-    RFPatientsManager::get()->search(patientname);
+	RFPatientsManager::get()->search(patientname);
 
-    return true;
+	return true;
 }
 
 
-bool RFMainWindow::OnManagerPrevPage(void *pParam)
+bool RFMainWindow::OnManagerPrevPage(void* pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    CButtonUI *pControl = static_cast<CButtonUI *>(pMsg->pSender);
-    int cur_page = RFPatientsManager::get()->m_current_page;
-    if (cur_page < 1) {
-        return true;
-    }
+	CButtonUI* pControl = static_cast<CButtonUI*>(pMsg->pSender);
+	int cur_page = RFPatientsManager::get()->m_current_page;
+	if (cur_page < 1) {
+		return true;
+	}
 
-    RFPatientsManager::get()->setPage(cur_page - 1);
+	RFPatientsManager::get()->setPage(cur_page - 1);
 
-    UpdateManagePageNumber(cur_page - 1);
-    UpdateManagePatientPage(RFPatientsManager::get()->getPage(cur_page - 1));
+	UpdateManagePageNumber(cur_page - 1);
+	UpdateManagePatientPage(RFPatientsManager::get()->getPage(cur_page - 1));
 
-    return true;
+	return true;
 }
 
 bool RFMainWindow::OnManagerPage1(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
-    CButtonUI *pControl = static_cast<CButtonUI *>(pMsg->pSender);
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
+	CButtonUI* pControl = static_cast<CButtonUI*>(pMsg->pSender);
 
-    int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
-    RFPatientsManager::get()->setPage(page);
+	int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
+	RFPatientsManager::get()->setPage(page);
 
-    UpdateManagePageNumber(page);
-    UpdateManagePatientPage(RFPatientsManager::get()->getPage(page));
+	UpdateManagePageNumber(page);
+	UpdateManagePatientPage(RFPatientsManager::get()->getPage(page));
 
-    return true;
+	return true;
 }
 
 bool RFMainWindow::OnManagerPage2(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
-    CButtonUI *pControl = static_cast<CButtonUI *>(pMsg->pSender);
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
+	CButtonUI* pControl = static_cast<CButtonUI*>(pMsg->pSender);
 
-    int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
-    RFPatientsManager::get()->setPage(page);
+	int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
+	RFPatientsManager::get()->setPage(page);
 
-    UpdateManagePageNumber(page);
-    UpdateManagePatientPage(RFPatientsManager::get()->getPage(page));
+	UpdateManagePageNumber(page);
+	UpdateManagePatientPage(RFPatientsManager::get()->getPage(page));
 
-    return true;
+	return true;
 }
 
 bool RFMainWindow::OnManagerPage3(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
-    CButtonUI *pControl = static_cast<CButtonUI *>(pMsg->pSender);
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
+	CButtonUI* pControl = static_cast<CButtonUI*>(pMsg->pSender);
 
-    int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
-    RFPatientsManager::get()->setPage(page);
+	int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
+	RFPatientsManager::get()->setPage(page);
 
-    UpdateManagePageNumber(page);
-    UpdateManagePatientPage(RFPatientsManager::get()->getPage(page));
+	UpdateManagePageNumber(page);
+	UpdateManagePatientPage(RFPatientsManager::get()->getPage(page));
 
-    return true;
+	return true;
 }
 
 bool RFMainWindow::OnManagerPage4(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
-    CButtonUI *pControl = static_cast<CButtonUI *>(pMsg->pSender);
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
+	CButtonUI* pControl = static_cast<CButtonUI*>(pMsg->pSender);
 
-    int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
-    RFPatientsManager::get()->setPage(page);
+	int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
+	RFPatientsManager::get()->setPage(page);
 
-    UpdateManagePageNumber(page);
-    UpdateManagePatientPage(RFPatientsManager::get()->getPage(page));
+	UpdateManagePageNumber(page);
+	UpdateManagePatientPage(RFPatientsManager::get()->getPage(page));
 
-    return true;
+	return true;
 }
 
 bool RFMainWindow::OnManagerNextPage(void *pParam)
 {
 
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
-    CButtonUI *pControl = static_cast<CButtonUI *>(pMsg->pSender);
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
+	CButtonUI* pControl = static_cast<CButtonUI*>(pMsg->pSender);
 
-    int page = RFPatientsManager::get()->m_current_page + 1;
-    std::list<PatientInfo> patients = RFPatientsManager::get()->getPage(page);
-    if (patients.size() < 1) {
-        return true;
-    }
+	int page = RFPatientsManager::get()->m_current_page + 1;
+	std::list<PatientInfo> patients = RFPatientsManager::get()->getPage(page);
+	if (patients.size() < 1) {
+		return true;
+	}
 
-    RFPatientsManager::get()->setPage(page);
+	RFPatientsManager::get()->setPage(page);
 
-    UpdateManagePageNumber(page);
-    UpdateManagePatientPage(patients);
-    return true;
+	UpdateManagePageNumber(page);
+	UpdateManagePatientPage(patients);
+	return true;
 }
 
 bool RFMainWindow::OnManagerSearch(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
-    CButtonUI *pControl = static_cast<CButtonUI *>(pMsg->pSender);
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
+	CButtonUI* pControl = static_cast<CButtonUI*>(pMsg->pSender);
 
-    CLabelUI *pLable = static_cast<CLabelUI *>(m_pm.FindControl(_T("manager_patient_search_txt")));
-    std::wstring patientid = pLable->GetText();
+	CLabelUI *pLable = static_cast<CLabelUI*>(m_pm.FindControl(_T("manager_patient_search_txt")));
+	std::wstring patientid = pLable->GetText();
 
-    RFPatientsManager::get()->search(patientid);
+	RFPatientsManager::get()->search(patientid);
 
-    return true;
+	return true;
 }
 
 bool RFMainWindow::OnManagerPatientAdd(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    RFPatientsManager::get()->nextPatientID();
+	RFPatientsManager::get()->nextPatientID();
 
-    return true;
+	return true;
 }
 
 bool RFMainWindow::OnPatientTrainInfoPrevPage(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
+	
+	int cur_page = RFPatientsTrainInfo::get()->m_current_page;
+	if (cur_page < 1) {
+		return true;
+	}
 
-    int cur_page = RFPatientsTrainInfo::get()->m_current_page;
-    if (cur_page < 1) {
-        return true;
-    }
+	RFPatientsTrainInfo::get()->setCurrentPage(cur_page - 1);
 
-    RFPatientsTrainInfo::get()->setCurrentPage(cur_page - 1);
+	UpdateTrainInfoPageNumber(cur_page - 1);
+	UpdateTrainInfoPage(RFPatientsTrainInfo::get()->getPageElement(cur_page - 1));
 
-    UpdateTrainInfoPageNumber(cur_page - 1);
-    UpdateTrainInfoPage(RFPatientsTrainInfo::get()->getPageElement(cur_page - 1));
-
-    return true;
+	return true;
 }
 
 bool RFMainWindow::OnPatientTrainInfoPage1(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    CControlUI *pControl = pMsg->pSender;
-    if (NULL == pControl) {
-        return true;
-    }
-    int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
-    RFPatientsTrainInfo::get()->setCurrentPage(page);
+	CControlUI* pControl = pMsg->pSender;
+	if (NULL == pControl) {
+		return true;
+	}
+	int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
+	RFPatientsTrainInfo::get()->setCurrentPage(page);
 
-    UpdateTrainInfoPageNumber(page);
-    UpdateTrainInfoPage(RFPatientsTrainInfo::get()->getPageElement(page));
+	UpdateTrainInfoPageNumber(page);
+	UpdateTrainInfoPage(RFPatientsTrainInfo::get()->getPageElement(page));
 
-    return true;
+	return true;
 }
 
 
 bool RFMainWindow::OnPatientTrainInfoPage2(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    CControlUI *pControl = pMsg->pSender;
-    if (NULL == pControl) {
-        return true;
-    }
-    int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
-    RFPatientsTrainInfo::get()->setCurrentPage(page);
+	CControlUI* pControl = pMsg->pSender;
+	if (NULL == pControl) {
+		return true;
+	}
+	int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
+	RFPatientsTrainInfo::get()->setCurrentPage(page);
 
-    UpdateTrainInfoPageNumber(page);
-    UpdateTrainInfoPage(RFPatientsTrainInfo::get()->getPageElement(page));
+	UpdateTrainInfoPageNumber(page);
+	UpdateTrainInfoPage(RFPatientsTrainInfo::get()->getPageElement(page));
 
-    return true;
+	return true;
 }
 
 
 bool RFMainWindow::OnPatientTrainInfoPage3(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
 
-    CControlUI *pControl = pMsg->pSender;
-    if (NULL == pControl) {
-        return true;
-    }
-    int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
-    RFPatientsTrainInfo::get()->setCurrentPage(page);
+	CControlUI* pControl = pMsg->pSender;
+	if (NULL == pControl) {
+		return true;
+	}
+	int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
+	RFPatientsTrainInfo::get()->setCurrentPage(page);
 
-    UpdateTrainInfoPageNumber(page);
-    UpdateTrainInfoPage(RFPatientsTrainInfo::get()->getPageElement(page));
-    return true;
+	UpdateTrainInfoPageNumber(page);
+	UpdateTrainInfoPage(RFPatientsTrainInfo::get()->getPageElement(page));
+	return true;
 }
 
 
 bool RFMainWindow::OnPatientTrainInfoPage4(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    CControlUI *pControl = pMsg->pSender;
-    if (NULL == pControl) {
-        return true;
-    }
-    int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
-    RFPatientsTrainInfo::get()->setCurrentPage(page);
+	CControlUI* pControl = pMsg->pSender;
+	if (NULL == pControl) {
+		return true;
+	}
+	int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
+	RFPatientsTrainInfo::get()->setCurrentPage(page);
 
-    UpdateTrainInfoPageNumber(page);
-    UpdateTrainInfoPage(RFPatientsTrainInfo::get()->getPageElement(page));
+	UpdateTrainInfoPageNumber(page);
+	UpdateTrainInfoPage(RFPatientsTrainInfo::get()->getPageElement(page));
 
-    return true;
+	return true;
 }
 
 bool RFMainWindow::OnPatientTrainInfoNextPage(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
+	
+	int page = RFPatientsTrainInfo::get()->m_current_page + 1;
+	std::list<PatientTrainInfo> trains = RFPatientsTrainInfo::get()->getPageElement(page);
+	if (trains.size() < 1) {
+		return true;
+	}
 
-    int page = RFPatientsTrainInfo::get()->m_current_page + 1;
-    std::list<PatientTrainInfo> trains = RFPatientsTrainInfo::get()->getPageElement(page);
-    if (trains.size() < 1) {
-        return true;
-    }
+	RFPatientsTrainInfo::get()->setCurrentPage(page);
 
-    RFPatientsTrainInfo::get()->setCurrentPage(page);
+	UpdateTrainInfoPageNumber(page);
+	UpdateTrainInfoPage(trains);
 
-    UpdateTrainInfoPageNumber(page);
-    UpdateTrainInfoPage(trains);
-
-    return true;
+	return true;
 }
 
 bool RFMainWindow::OnPatientTrainSearch(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    CLabelUI *pLable = static_cast<CLabelUI *>(m_pm.FindControl(_T("pf_search_txt")));
-    std::wstring patientname = pLable->GetText();
+	CLabelUI *pLable = static_cast<CLabelUI*>(m_pm.FindControl(_T("pf_search_txt")));
+	std::wstring patientname = pLable->GetText();
 
-    std::list<PatientTrainInfo> trains = RFPatientsTrainInfo::get()->search(patientname);
-    UpdateTrainInfoPage(trains);
-    return true;
+	std::list<PatientTrainInfo> trains = RFPatientsTrainInfo::get()->search(patientname);
+	UpdateTrainInfoPage(trains);
+	return true;
 }
 
 bool RFMainWindow::OnPatientTrainDetailSearch(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    CLabelUI *pLable = static_cast<CLabelUI *>(m_pm.FindControl(_T("traindetail_search_txt")));
-    std::wstring create_time = pLable->GetText();
-    if (!create_time.empty()) {
-        std::list<PatientTrainDetails> trains = RFPatientsTrainDetails::get()->search(create_time);
-        UpdateTrainDetailPage(trains);
-    }
-    else {
-        UpdateTrainDetailPageNumber(RFPatientsTrainDetails::get()->m_currentpage);
-        UpdateTrainDetailPage(RFPatientsTrainDetails::get()->getPageElement(RFPatientsTrainDetails::get()->m_currentpage));
-    }
-
-    return true;
+	CLabelUI *pLable = static_cast<CLabelUI*>(m_pm.FindControl(_T("traindetail_search_txt")));
+	std::wstring create_time = pLable->GetText();
+	if (!create_time.empty()) {
+		std::list<PatientTrainDetails> trains = RFPatientsTrainDetails::get()->search(create_time);
+		UpdateTrainDetailPage(trains);
+	} else {
+		UpdateTrainDetailPageNumber(RFPatientsTrainDetails::get()->m_currentpage);
+		UpdateTrainDetailPage(RFPatientsTrainDetails::get()->getPageElement(RFPatientsTrainDetails::get()->m_currentpage));
+	}
+	
+	return true;
 }
 
 bool RFMainWindow::OnPatientTrainDetailPrevPage(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    int cur_page = RFPatientsTrainDetails::get()->m_currentpage;
-    if (cur_page < 1) {
-        return true;
-    }
+	int cur_page = RFPatientsTrainDetails::get()->m_currentpage;
+	if (cur_page < 1) {
+		return true;
+	}
 
-    RFPatientsTrainDetails::get()->SetCurrentPage(cur_page - 1);
+	RFPatientsTrainDetails::get()->SetCurrentPage(cur_page - 1);
 
-    UpdateTrainDetailPageNumber(cur_page - 1);
-    UpdateTrainDetailPage(RFPatientsTrainDetails::get()->getPageElement(cur_page - 1));
+	UpdateTrainDetailPageNumber(cur_page - 1);
+	UpdateTrainDetailPage(RFPatientsTrainDetails::get()->getPageElement(cur_page - 1));
 
-    return true;
+	return true;
 }
 
 bool RFMainWindow::OnPatientTrainDetailPage1(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    CControlUI *pControl = pMsg->pSender;
-    if (NULL == pControl) {
-        return true;
-    }
-    int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
-    RFPatientsTrainDetails::get()->SetCurrentPage(page);
+	CControlUI* pControl = pMsg->pSender;
+	if (NULL == pControl) {
+		return true;
+	}
+	int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
+	RFPatientsTrainDetails::get()->SetCurrentPage(page);
 
-    UpdateTrainDetailPageNumber(page);
-    UpdateTrainDetailPage(RFPatientsTrainDetails::get()->getPageElement(page));
-    return true;
+	UpdateTrainDetailPageNumber(page);
+	UpdateTrainDetailPage(RFPatientsTrainDetails::get()->getPageElement(page));
+	return true;
 }
 
 bool RFMainWindow::OnPatientTrainDetailPage2(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    CControlUI *pControl = pMsg->pSender;
-    if (NULL == pControl) {
-        return true;
-    }
-    int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
-    RFPatientsTrainDetails::get()->SetCurrentPage(page);
+	CControlUI* pControl = pMsg->pSender;
+	if (NULL == pControl) {
+		return true;
+	}
+	int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
+	RFPatientsTrainDetails::get()->SetCurrentPage(page);
 
-    UpdateTrainDetailPageNumber(page);
-    UpdateTrainDetailPage(RFPatientsTrainDetails::get()->getPageElement(page));
-    return true;
+	UpdateTrainDetailPageNumber(page);
+	UpdateTrainDetailPage(RFPatientsTrainDetails::get()->getPageElement(page));
+	return true;
 }
 
 bool RFMainWindow::OnPatientTrainDetailPage3(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    CControlUI *pControl = pMsg->pSender;
-    if (NULL == pControl) {
-        return true;
-    }
-    int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
-    RFPatientsTrainDetails::get()->SetCurrentPage(page);
+	CControlUI* pControl = pMsg->pSender;
+	if (NULL == pControl) {
+		return true;
+	}
+	int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
+	RFPatientsTrainDetails::get()->SetCurrentPage(page);
 
-    UpdateTrainDetailPageNumber(page);
-    UpdateTrainDetailPage(RFPatientsTrainDetails::get()->getPageElement(page));
-    return true;
+	UpdateTrainDetailPageNumber(page);
+	UpdateTrainDetailPage(RFPatientsTrainDetails::get()->getPageElement(page));
+	return true;
 }
 
 bool RFMainWindow::OnPatientTrainDetailPage4(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    CControlUI *pControl = pMsg->pSender;
-    if (NULL == pControl) {
-        return true;
-    }
-    int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
-    RFPatientsTrainDetails::get()->SetCurrentPage(page);
+	CControlUI* pControl = pMsg->pSender;
+	if (NULL == pControl) {
+		return true;
+	}
+	int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
+	RFPatientsTrainDetails::get()->SetCurrentPage(page);
 
-    UpdateTrainDetailPageNumber(page);
-    UpdateTrainDetailPage(RFPatientsTrainDetails::get()->getPageElement(page));
+	UpdateTrainDetailPageNumber(page);
+	UpdateTrainDetailPage(RFPatientsTrainDetails::get()->getPageElement(page));
 
-    return true;
+	return true;
 }
 
 bool RFMainWindow::OnPatientTrainDetailNextPage(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
 
-    int page = RFPatientsTrainDetails::get()->m_currentpage + 1;
-    std::list<PatientTrainDetails> trains = RFPatientsTrainDetails::get()->getPageElement(page);
-    if (trains.size() < 1) {
-        return true;
-    }
+	int page = RFPatientsTrainDetails::get()->m_currentpage + 1;
+	std::list<PatientTrainDetails> trains = RFPatientsTrainDetails::get()->getPageElement(page);
+	if (trains.size() < 1) {
+		return true;
+	}
 
-    RFPatientsTrainDetails::get()->SetCurrentPage(page);
+	RFPatientsTrainDetails::get()->SetCurrentPage(page);
 
-    UpdateTrainDetailPageNumber(page);
-    UpdateTrainDetailPage(trains);
+	UpdateTrainDetailPageNumber(page);
+	UpdateTrainDetailPage(trains);
 
-    return true;
+	return true;
 }
 
 bool RFMainWindow::OnDetailPageDelete(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    CButtonUI *pControl = static_cast<CButtonUI *>(pMsg->pSender);
-    CEditUI *pEdit = static_cast<CEditUI *>(pControl->m_pManager->FindControl(_T("detail_patient_id")));
-    if (pEdit) {
-        DeletePatient(_wtoi(((std::wstring)pEdit->GetText()).c_str()));
-    }
+	CButtonUI* pControl = static_cast<CButtonUI*>(pMsg->pSender);
+	CEditUI* pEdit = static_cast<CEditUI*>(pControl->m_pManager->FindControl(_T("detail_patient_id")));
+	if (pEdit) {
+		DeletePatient(_wtoi(((std::wstring)pEdit->GetText()).c_str()));
+	}
 
-    return true;
+	return true;
 }
 
 bool RFMainWindow::OnDetailPageEdit(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    CButtonUI *pControl = static_cast<CButtonUI *>(pMsg->pSender);
-    CEditUI *pEdit = static_cast<CEditUI *>(pControl->m_pManager->FindControl(_T("detail_patient_id")));
-    if (pEdit) {
-        ShowPatientEdit(_wtoi(((std::wstring)pEdit->GetText()).c_str()));
-    }
+	CButtonUI* pControl = static_cast<CButtonUI*>(pMsg->pSender);
+	CEditUI* pEdit = static_cast<CEditUI*>(pControl->m_pManager->FindControl(_T("detail_patient_id")));
+	if (pEdit) {
+		ShowPatientEdit(_wtoi(((std::wstring)pEdit->GetText()).c_str()));
+	}
 
-    return true;
+	return true;
 }
 
 bool RFMainWindow::OnSavePatient(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    PatientInfo patient;
+	PatientInfo patient;
 
-    patient.hospitalid = m_login_info.hospitalid;
-    patient.doctorid = m_login_info.doctorid;
-    patient.flag = 0;
+	patient.hospitalid = m_login_info.hospitalid;
+	patient.doctorid = m_login_info.doctorid;
+	patient.flag = 0;
 
-    CEditUI *pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("bianji_patient_createtime")));
-    if (pEdit) {
-        patient.createtime = pEdit->GetText();
-    }
+	CEditUI* pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("bianji_patient_createtime")));
+	if (pEdit) {
+		patient.createtime = pEdit->GetText();
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("bianji_patient_id")));
-    if (pEdit) {
-        patient.id = _wtoi(((std::wstring)pEdit->GetText()).c_str());
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("bianji_patient_id")));
+	if (pEdit) {
+		patient.id = _wtoi(((std::wstring)pEdit->GetText()).c_str());
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("bianji_patient_name")));
-    if (pEdit) {
-        patient.name = pEdit->GetText();
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("bianji_patient_name")));
+	if (pEdit) {
+		patient.name= pEdit->GetText();
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("bianji_patient_lasttime")));
-    if (pEdit) {
-        patient.lasttreattime = pEdit->GetText();
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("bianji_patient_lasttime")));
+	if (pEdit) {
+		patient.lasttreattime= pEdit->GetText();
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("bianji_patient_sex")));
-    if (pEdit) {
-        patient.sex = pEdit->GetText();
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("bianji_patient_sex")));
+	if (pEdit) {
+		patient.sex= pEdit->GetText();
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("bianji_patient_totaltime")));
-    if (pEdit) {
-        patient.totaltreattime = pEdit->GetText();
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("bianji_patient_totaltime")));
+	if (pEdit) {
+		patient.totaltreattime= pEdit->GetText();
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("bianji_patient_age")));
-    if (pEdit) {
-        patient.age = _wtoi(((std::wstring)pEdit->GetText()).c_str());
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("bianji_patient_age")));
+	if (pEdit) {
+		patient.age= _wtoi(((std::wstring)pEdit->GetText()).c_str());
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("bianji_patient_detail")));
-    if (pEdit) {
-        patient.recoverdetail = pEdit->GetText();
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("bianji_patient_detail")));
+	if (pEdit) {
+		patient.recoverdetail= pEdit->GetText();
+	}
 
-    CRichEditUI *pRichEdit = static_cast<CRichEditUI *>(m_pm.FindControl(_T("bianji_patient_remark")));
-    if (pEdit) {
-        patient.remarks = pRichEdit->GetText();
-    }
+	CRichEditUI* pRichEdit = static_cast<CRichEditUI*>(m_pm.FindControl(_T("bianji_patient_remark")));
+	if (pEdit) {
+		patient.remarks= pRichEdit->GetText();
+	}
 
-    RFPatientsManager::get()->modify(patient);
+	RFPatientsManager::get()->modify(patient);
 
-    return true;
+	return true;
 }
 
 bool RFMainWindow::OnSavePersonInfo(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    LoginInfo doctor = GetPersonInfo();
-    RFPatientsManager::get()->modify(doctor);
+	LoginInfo doctor = GetPersonInfo();
+	RFPatientsManager::get()->modify(doctor);
 }
 
 bool RFMainWindow::OnModifyPwdInfo(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    std::wstring oldpwd;
-    CEditUI *pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("personor_old_pwd")));
-    if (pEdit) {
-        oldpwd = pEdit->GetText();
-    }
+	std::wstring oldpwd;
+	CEditUI *pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("personor_old_pwd")));
+	if (pEdit) {
+		oldpwd = pEdit->GetText();
+	}
 
-    std::wstring newpwd1;
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("personor_new_pwd")));
-    if (pEdit) {
-        newpwd1 = pEdit->GetText();
-    }
+	std::wstring newpwd1;
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("personor_new_pwd")));
+	if (pEdit) {
+		newpwd1 = pEdit->GetText();
+	}
 
-    std::wstring newpwd2;
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("personor_confirm_new_pwd")));
-    if (pEdit) {
-        newpwd2 = pEdit->GetText();
-    }
+	std::wstring newpwd2;
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("personor_confirm_new_pwd")));
+	if (pEdit) {
+		newpwd2 = pEdit->GetText();
+	}
 
-    if (m_login_info.usrpwd != oldpwd) {
-        RFModifyPwdFailedDialog(m_hWnd, 0);
-        return true;
-    }
-    if (newpwd1 != newpwd2) {
-        RFModifyPwdFailedDialog(m_hWnd, 1);
-        return true;
-    }
+	if (m_login_info.usrpwd != oldpwd) {
+		RFModifyPwdFailedDialog(m_hWnd, 0);
+		return true;
+	}
+	if (newpwd1 != newpwd2) {
+		RFModifyPwdFailedDialog(m_hWnd, 1);
+		return true;
+	}
 
-    RFModifyPwdFailedDialog(m_hWnd, 2); //修改密码成功
+	RFModifyPwdFailedDialog(m_hWnd, 2);
 
-    ModifyPWDInfo pwd;
-    pwd.loginid = m_login_info.login_id;
-    pwd.oldpwd = oldpwd;
-    pwd.pwd = newpwd1;
+	ModifyPWDInfo pwd;
+	pwd.loginid = m_login_info.login_id;
+	pwd.oldpwd = oldpwd;
+	pwd.pwd = newpwd1;
 
-    m_login_info.usrpwd = newpwd1;
-    RFPatientsManager::get()->modifyPwd(pwd); //涉及UI线程与数据库线程交互
-    return true;
+	m_login_info.usrpwd = newpwd1;
+	RFPatientsManager::get()->modifyPwd(pwd);
+	return true;
 }
 
 bool RFMainWindow::OnAddSavePatient(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    CButtonUI *manager_add_patient_save = static_cast<CButtonUI *>(m_pm.FindControl(_T("manager_add_patient_save")));
-    manager_add_patient_save->SetEnabled(false);
+	CButtonUI* manager_add_patient_save = static_cast<CButtonUI*>(m_pm.FindControl(_T("manager_add_patient_save")));
+	manager_add_patient_save->SetEnabled(false);
 
 
-    PatientInfo patient;
+	PatientInfo patient;
 
-    patient.hospitalid = m_login_info.hospitalid;
-    patient.doctorid = m_login_info.doctorid;
-    patient.flag = 0;
+	patient.hospitalid = m_login_info.hospitalid;
+	patient.doctorid = m_login_info.doctorid;
+	patient.flag = 0;
 
-    // CComboUI* pComboYear = static_cast<CComboUI*>(m_pm.FindControl(_T("add_patient_createtime_year")));
-    // CComboUI* pComboMonth = static_cast<CComboUI*>(m_pm.FindControl(_T("add_patient_createtime_month")));
-    // CComboUI* pComboDay = static_cast<CComboUI*>(m_pm.FindControl(_T("add_patient_createtime_date")));
-    // if (pComboYear && pComboMonth && pComboDay) {
-    //	patient.createtime = pComboYear->GetText() + _T("-") + pComboMonth->GetText() + _T("-") + pComboDay->GetText();
-    //}
+	//CComboUI* pComboYear = static_cast<CComboUI*>(m_pm.FindControl(_T("add_patient_createtime_year")));
+	//CComboUI* pComboMonth = static_cast<CComboUI*>(m_pm.FindControl(_T("add_patient_createtime_month")));
+	//CComboUI* pComboDay = static_cast<CComboUI*>(m_pm.FindControl(_T("add_patient_createtime_date")));
+	//if (pComboYear && pComboMonth && pComboDay) {
+	//	patient.createtime = pComboYear->GetText() + _T("-") + pComboMonth->GetText() + _T("-") + pComboDay->GetText();
+	//}
 
-    CEditUI *pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("add_patient_createtime")));
-    if (pEdit) {
-        patient.createtime = pEdit->GetText();
-    }
+	CEditUI *pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("add_patient_createtime")));
+	if (pEdit) {
+		patient.createtime = pEdit->GetText();
+	}
+	
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("add_patient_id")));
+	if (pEdit) {
+		patient.id = _wtoi(((std::wstring)pEdit->GetText()).c_str());
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("add_patient_id")));
-    if (pEdit) {
-        patient.id = _wtoi(((std::wstring)pEdit->GetText()).c_str());
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("add_patient_name")));
+	if (pEdit) {
+		patient.name= pEdit->GetText();
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("add_patient_name")));
-    if (pEdit) {
-        patient.name = pEdit->GetText();
-    }
+	//pComboYear = static_cast<CComboUI*>(m_pm.FindControl(_T("add_patient_lasttime_year")));
+	//pComboMonth = static_cast<CComboUI*>(m_pm.FindControl(_T("add_patient_lasttime_month")));
+	//pComboDay = static_cast<CComboUI*>(m_pm.FindControl(_T("add_patient_lasttime_date")));
+	//if (pComboYear && pComboMonth && pComboDay) {
+	//	patient.lasttreattime = pComboYear->GetText() + _T("-") + pComboMonth->GetText() + _T("-") + pComboDay->GetText();
+	//}
 
-    // pComboYear = static_cast<CComboUI*>(m_pm.FindControl(_T("add_patient_lasttime_year")));
-    // pComboMonth = static_cast<CComboUI*>(m_pm.FindControl(_T("add_patient_lasttime_month")));
-    // pComboDay = static_cast<CComboUI*>(m_pm.FindControl(_T("add_patient_lasttime_date")));
-    // if (pComboYear && pComboMonth && pComboDay) {
-    //	patient.lasttreattime = pComboYear->GetText() + _T("-") + pComboMonth->GetText() + _T("-") + pComboDay->GetText();
-    //}
+	COptionUI* pOption = static_cast<COptionUI*>(m_pm.FindControl(_T("add_patient_sex_man")));
+	if (pOption) {
+		patient.sex= pOption->IsSelected()?_T("女"): _T("男");
+	}
 
-    COptionUI *pOption = static_cast<COptionUI *>(m_pm.FindControl(_T("add_patient_sex_man")));
-    if (pOption) {
-        patient.sex = pOption->IsSelected() ? _T("女") : _T("男");
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("add_patient_totaltime")));
+	if (pEdit) {
+		patient.totaltreattime= pEdit->GetText();
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("add_patient_totaltime")));
-    if (pEdit) {
-        patient.totaltreattime = pEdit->GetText();
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("add_patient_age")));
+	if (pEdit) {
+		patient.age= _wtoi(((std::wstring)pEdit->GetText()).c_str());
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("add_patient_age")));
-    if (pEdit) {
-        patient.age = _wtoi(((std::wstring)pEdit->GetText()).c_str());
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("add_patient_detail")));
+	if (pEdit) {
+		patient.recoverdetail= pEdit->GetText();
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("add_patient_detail")));
-    if (pEdit) {
-        patient.recoverdetail = pEdit->GetText();
-    }
+	CRichEditUI* pRichEdit = static_cast<CRichEditUI*>(m_pm.FindControl(_T("add_patient_remark")));
+	if (pEdit) {
+		patient.remarks= pRichEdit->GetText();
+	}
 
-    CRichEditUI *pRichEdit = static_cast<CRichEditUI *>(m_pm.FindControl(_T("add_patient_remark")));
-    if (pEdit) {
-        patient.remarks = pRichEdit->GetText();
-    }
+	RFPatientsManager::get()->add(patient);
 
-    RFPatientsManager::get()->add(patient);
-
-    return true;
+	return true;
 }
+
 
 
 bool RFMainWindow::OnFilter(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("selectchanged")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("selectchanged"))
+		return true;
+	
+	COptionUI* pOption = static_cast<COptionUI*>(pMsg->pSender);
+	if (pOption->IsSelected()) {
+		m_manager_patient_header->SetVisible(false);
+		m_manager_patient_filterheader->SetVisible(true);
+	} else {
+		m_manager_patient_header->SetVisible(true);
+		m_manager_patient_filterheader->SetVisible(false);
 
-    COptionUI *pOption = static_cast<COptionUI *>(pMsg->pSender);
-    if (pOption->IsSelected()) {
-        m_manager_patient_header->SetVisible(false);
-        m_manager_patient_filterheader->SetVisible(true);
-    }
-    else {
-        m_manager_patient_header->SetVisible(true);
-        m_manager_patient_filterheader->SetVisible(false);
 
+		PatientFilterParam param;
+		param.name = _T("");
+		param.sex = _T("");
+		param.age_from = _T("");
+		param.age_to = _T("");
+		param.create_from = _T("");
+		param.create_to = _T("");
+		param.hospitalid = m_login_info.hospitalid;
+		param.doctorid = m_login_info.doctorid;
+		
+		CEditUI* pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("manager_patient_name_search_txt")));
+		if (pEdit) {
+			param.name = pEdit->GetText();
+		}
 
-        PatientFilterParam param;
-        param.name = _T("");
-        param.sex = _T("");
-        param.age_from = _T("");
-        param.age_to = _T("");
-        param.create_from = _T("");
-        param.create_to = _T("");
-        param.hospitalid = m_login_info.hospitalid;
-        param.doctorid = m_login_info.doctorid;
+		pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("manager_patient_sex_search_txt")));
+		if (pEdit) {
+			param.sex = pEdit->GetText();
+		}
 
-        CEditUI *pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("manager_patient_name_search_txt")));
-        if (pEdit) {
-            param.name = pEdit->GetText();
-        }
+		pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("manager_patient_age_search_from")));
+		if (pEdit) {
+			param.age_from = pEdit->GetText();
+		}
 
-        pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("manager_patient_sex_search_txt")));
-        if (pEdit) {
-            param.sex = pEdit->GetText();
-        }
+		pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("manager_patient_age_search_to")));
+		if (pEdit) {
+			param.age_to = pEdit->GetText();
+		}
 
-        pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("manager_patient_age_search_from")));
-        if (pEdit) {
-            param.age_from = pEdit->GetText();
-        }
+		CDateTimeUI* pDate = static_cast<CDateTimeUI*>(m_pm.FindControl(_T("manager_patient_createtime_from")));
+		if (pDate) {
+			param.create_from = pDate->GetText();
+		}
 
-        pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("manager_patient_age_search_to")));
-        if (pEdit) {
-            param.age_to = pEdit->GetText();
-        }
+		pDate = static_cast<CDateTimeUI*>(m_pm.FindControl(_T("manager_patient_createtime_to")));
+		if (pDate) {
+			param.create_to = pDate->GetText();
+		}
 
-        CDateTimeUI *pDate = static_cast<CDateTimeUI *>(m_pm.FindControl(_T("manager_patient_createtime_from")));
-        if (pDate) {
-            param.create_from = pDate->GetText();
-        }
+		RFPatientsManager::get()->filter(param);
+	}
 
-        pDate = static_cast<CDateTimeUI *>(m_pm.FindControl(_T("manager_patient_createtime_to")));
-        if (pDate) {
-            param.create_to = pDate->GetText();
-        }
-
-        RFPatientsManager::get()->filter(param);
-    }
-
-    return true;
+	return true;
 }
 
 bool RFMainWindow::OnExportFilterPatient(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    std::wstring savePath = GetSaveFilePath(m_pm.GetPaintWindow());
-    if (savePath.empty()) {
-        return true;
-    }
+	std::wstring savePath = GetSaveFilePath(m_pm.GetPaintWindow());
+	if (savePath.empty()) {
+		return true;
+	}
 
-    ExportPatientParam param;
-    std::wstring templatePath = CPaintManagerUI::GetResourcePath() + _T("patientmanager.xlsx");
-    param.path = templatePath;
-    param.savepath = savePath;
-    param.doctorid = m_login_info.doctorid;
-    param.hospitalid = m_login_info.hospitalid;
-    param.patientid = -1;
-    RFPatientsManager::get()->exportPatient(param);
+	ExportPatientParam param;
+	std::wstring templatePath = CPaintManagerUI::GetResourcePath() + _T("patientmanager.xlsx");
+	param.path = templatePath;
+	param.savepath = savePath;
+	param.doctorid = m_login_info.doctorid;
+	param.hospitalid = m_login_info.hospitalid;
+	param.patientid = -1;
+	RFPatientsManager::get()->exportPatient(param);
 
-    return true;
+	return true;
 }
 
 bool RFMainWindow::OnImportPatient(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    std::vector<std::wstring> files;
-    GetFilesFromDialog(GetHWND(), files, _T("*.xlsx|*.xls"), OFN_OVERWRITEPROMPT | OFN_EXPLORER);
+	std::vector<std::wstring> files;
+	GetFilesFromDialog(GetHWND(), files, _T("*.xlsx|*.xls"), OFN_OVERWRITEPROMPT | OFN_EXPLORER);
 
-    if (files.size() > 0) {
-        RFPatientsManager::get()->importPatient(files[0]);
-    }
-    return true;
+	if (files.size() > 0) {
+		RFPatientsManager::get()->importPatient(files[0]);
+	}
+	return true;
 }
 
 bool RFMainWindow::OnExportFilterPatientDetail(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    std::wstring savePath = GetSaveFilePath(m_pm.GetPaintWindow());
-    if (savePath.empty()) {
-        return true;
-    }
-    std::wstring templatePath = CPaintManagerUI::GetResourcePath() + _T("patientdetail.xlsx");
+	std::wstring savePath = GetSaveFilePath(m_pm.GetPaintWindow());
+	if (savePath.empty()) {
+		return true;
+	}
+	std::wstring templatePath = CPaintManagerUI::GetResourcePath() + _T("patientdetail.xlsx");
 
 
-    CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("detail_patient_id")));
-    if (NULL == pLabel) {
-        return true;
-    }
-    std::wstring patientid = pLabel->GetText();
-    RFPatientsManager::get()->exportPatient(_wtoi(patientid.c_str()), templatePath, savePath);
+	CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("detail_patient_id")));
+	if (NULL == pLabel) {
+		return true;
+	}
+	std::wstring patientid = pLabel->GetText();
+	RFPatientsManager::get()->exportPatient(_wtoi(patientid.c_str()), templatePath, savePath);
 }
 
 bool RFMainWindow::OnTrainInfoExport(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    std::wstring savePath = GetSaveFilePath(m_pm.GetPaintWindow());
-    if (savePath.empty()) {
-        return true;
-    }
-    std::wstring templatePath = CPaintManagerUI::GetResourcePath() + _T("traininfo.xlsx");
-    RFPatientsTrainInfo::get()->exportTrainInfo(templatePath, savePath);
+	std::wstring savePath = GetSaveFilePath(m_pm.GetPaintWindow());
+	if (savePath.empty()) {
+		return true;
+	}
+	std::wstring templatePath = CPaintManagerUI::GetResourcePath() + _T("traininfo.xlsx");
+	RFPatientsTrainInfo::get()->exportTrainInfo(templatePath, savePath);
 }
 
 bool RFMainWindow::OnTrainDetailExport(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    std::wstring savePath = GetSaveFilePath(m_pm.GetPaintWindow());
-    if (savePath.empty()) {
-        return true;
-    }
-    std::wstring templatePath = CPaintManagerUI::GetResourcePath() + _T("traindetail.xlsx");
-    RFPatientsTrainDetails::get()->exportTrainDetail(templatePath, savePath);
+	std::wstring savePath = GetSaveFilePath(m_pm.GetPaintWindow());
+	if (savePath.empty()) {
+		return true;
+	}
+	std::wstring templatePath = CPaintManagerUI::GetResourcePath() + _T("traindetail.xlsx");
+	RFPatientsTrainDetails::get()->exportTrainDetail(templatePath, savePath);
 }
 
 
 bool RFMainWindow::OnActiveTrain(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("active_train_page_welcom")));
-    pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+	CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("active_train_page_welcom")));
+	pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
 
-    // 检查SAA_ROM和SFE_ROM，如果没有设置的话，弹出message box提示设置
-    if (RFMainWindow::MainWindow->m_current_patient.SAA_ROM < 0.1 || RFMainWindow::MainWindow->m_current_patient.SFE_ROM < 0.1) {
-        MessageBox(NULL, _T("该患者还未设置关节运动范围，请到系统设置页面进行设置"), _T("未设置关节运动范围"), MB_OK);
-        return true;
-    }
+	// 检查SAA_ROM和SFE_ROM，如果没有设置的话，弹出message box提示设置
+	if (RFMainWindow::MainWindow->m_current_patient.SAA_ROM < 0.1 || RFMainWindow::MainWindow->m_current_patient.SFE_ROM < 0.1) {
+		MessageBox(NULL, _T("该患者还未设置关节运动范围，请到系统设置页面进行设置"), _T("未设置关节运动范围"), MB_OK);
+		return true;
+	}
 
-    // 根据SAA_ROM和SFE_ROM决定游戏运动的范围 and sensitivity for every patient
-    RFMainWindow::MainWindow->m_robot.activeCtrl->SetSAAMax(RFMainWindow::MainWindow->m_current_patient.SAA_ROM);
-    RFMainWindow::MainWindow->m_robot.activeCtrl->SetSFEMax(RFMainWindow::MainWindow->m_current_patient.SFE_ROM);
-    RFMainWindow::MainWindow->m_robot.activeCtrl->SetArmSensitivity(RFMainWindow::MainWindow->m_current_patient.Arm_Sensitivity);
-    RFMainWindow::MainWindow->m_robot.activeCtrl->SetShoulderSensitivity(RFMainWindow::MainWindow->m_current_patient.Shoulder_Sensitivity);
-    AllocConsole();
-    freopen("CONOUT$", "w", stdout);
-    std::cout << "********already change the sensitivity***********" << std::endl;
-    ShowActiveTrainPage();
-    return true;
+	// 根据SAA_ROM和SFE_ROM决定游戏运动的范围
+	RFMainWindow::MainWindow->m_robot.activeCtrl->SetSAAMax(RFMainWindow::MainWindow->m_current_patient.SAA_ROM);
+	RFMainWindow::MainWindow->m_robot.activeCtrl->SetSFEMax(RFMainWindow::MainWindow->m_current_patient.SFE_ROM);
+	RFMainWindow::MainWindow->m_robot.activeCtrl->SetArmSensitivity(RFMainWindow::MainWindow->m_current_patient.Arm_Sensitivity);
+	RFMainWindow::MainWindow->m_robot.activeCtrl->SetShoulderSensitivity(RFMainWindow::MainWindow->m_current_patient.Shoulder_Sensitivity);
+	//AllocConsole();
+    //freopen("CONOUT$", "w", stdout);
+    //std::cout << "********already change the sensitivity***********" <<std::endl;
+	ShowActiveTrainPage();
+	return true;
 }
 
 bool RFMainWindow::OnActiveTrainFromGame(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("train_main_page_welcom")));
-    pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+	CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("train_main_page_welcom")));
+	pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
 
-    m_robot.ActiveStopMove();
+	m_robot.ActiveStopMove();
 
-    OnPatientTrainFromActiveTrain(NULL);
-    // ShowActiveTrainPage();
-    return true;
+	OnPatientTrainFromActiveTrain(NULL);
+	//ShowActiveTrainPage();
+	return true;
 }
 
 bool RFMainWindow::OnPassiveTrain(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("passive_train_page_welcom")));
-    pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+	CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("passive_train_page_welcom")));
+	pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
 
-    pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("passive_patient_name")));
-    pLabel->SetText((_T("患者:") + m_current_patient.name).c_str());
+	pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("passive_patient_name")));
+	pLabel->SetText((_T("患者:") + m_current_patient.name).c_str());
 
-    ShowPassiveTrainPage();
-    return true;
+	ShowPassiveTrainPage();
+	return true;
 }
 
 bool RFMainWindow::OnPassiveTrainPlay(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
+	
+	CCheckBoxUI* pPlay = static_cast<CCheckBoxUI*>(pMsg->pSender);
+	if (!pPlay->GetCheck()) {
+		bool playbyoder = true;
+		COptionUI* pOption = static_cast<COptionUI*>(m_passive_train_page->FindSubControl(_T("passive_play10")));
+		if (pOption->IsSelected()) {
+			playbyoder = false;
+		}
+		m_passive_train_action.StartPlay(m_current_passivetraininfos, playbyoder);
 
-    CCheckBoxUI *pPlay = static_cast<CCheckBoxUI *>(pMsg->pSender);
-    if (!pPlay->GetCheck()) {
-        bool playbyoder = true;
-        COptionUI *pOption = static_cast<COptionUI *>(m_passive_train_page->FindSubControl(_T("passive_play10")));
-        if (pOption->IsSelected()) {
-            playbyoder = false;
-        }
-        m_passive_train_action.StartPlay(m_current_passivetraininfos, playbyoder);
-    }
-    else {
-        m_passive_train_action.StopPlay();
+	} else {
+		m_passive_train_action.StopPlay();
 
-        // 播放暂停音频
-        std::wstring voice_path = CPaintManagerUI::GetResourcePath() + _T("voice/pause.wav");
-        if (!voice_path.empty() && _waccess(voice_path.c_str(), 0) != -1) {
-            sndPlaySound(voice_path.c_str(), SND_ASYNC);
-        }
-    }
-
-    return true;
+		// 播放暂停音频
+		std::wstring voice_path = CPaintManagerUI::GetResourcePath() + _T("voice/pause.wav");
+		if (!voice_path.empty() && _waccess(voice_path.c_str(), 0) != -1) {
+			sndPlaySound(voice_path.c_str(), SND_ASYNC);
+		}
+	}
+	
+	return true;
 }
 
 bool RFMainWindow::OnPassiveTrainPlayNext(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
-
-    bool playbyoder = false;
-    COptionUI *pOption = static_cast<COptionUI *>(m_passive_train_page->FindSubControl(_T("passive_play10")));
-    if (pOption->IsSelected()) {
-        playbyoder = true;
-    }
-
-    m_passive_train_action.PlayNext(playbyoder);
-    return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
+	
+	bool playbyoder = false;
+	COptionUI* pOption = static_cast<COptionUI*>(m_passive_train_page->FindSubControl(_T("passive_play10")));
+	if (pOption->IsSelected()) {
+		playbyoder = true;
+	}
+	
+	m_passive_train_action.PlayNext(playbyoder);
+	return true;
 }
 
 bool RFMainWindow::OnPassiveTrainPlayPrev(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    bool playbyoder = false;
-    COptionUI *pOption = static_cast<COptionUI *>(m_passive_train_page->FindSubControl(_T("passive_play10")));
-    if (pOption->IsSelected()) {
-        playbyoder = true;
-    }
+	bool playbyoder = false;
+	COptionUI* pOption = static_cast<COptionUI*>(m_passive_train_page->FindSubControl(_T("passive_play10")));
+	if (pOption->IsSelected()) {
+		playbyoder = true;
+	}
 
-    m_passive_train_action.PlayPrev(playbyoder);
-    return true;
+	m_passive_train_action.PlayPrev(playbyoder);
+	return true;
 }
 
 bool RFMainWindow::OnPassiveTrainRecover(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    m_robot.resetPos();
+	m_robot.resetPos();
 
-    // 播放复位音频
-    std::wstring voice_path = CPaintManagerUI::GetResourcePath() + _T("voice/reset.wav");
-    if (!voice_path.empty() && _waccess(voice_path.c_str(), 0) != -1) {
-        sndPlaySound(voice_path.c_str(), SND_ASYNC);
-    }
+	// 播放复位音频
+	std::wstring voice_path = CPaintManagerUI::GetResourcePath() + _T("voice/reset.wav");
+	if (!voice_path.empty() && _waccess(voice_path.c_str(), 0) != -1) {
+		sndPlaySound(voice_path.c_str(), SND_ASYNC);
+	}
 
-    return true;
+	return true;
 }
 
 bool RFMainWindow::OnPassiveTrainPlayByOrder(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    bool playbyoder = false;
-    COptionUI *pOption = static_cast<COptionUI *>(m_passive_train_page->FindSubControl(_T("passive_list")));
-    if (pOption->IsSelected()) {
-        playbyoder = true;
-    }
-    m_passive_train_action.SetPlayOrder(playbyoder);
+	bool playbyoder = false;
+	COptionUI* pOption = static_cast<COptionUI*>(m_passive_train_page->FindSubControl(_T("passive_list")));
+	if (pOption->IsSelected()) {
+		playbyoder = true;
+	}
+	m_passive_train_action.SetPlayOrder(playbyoder);
 
-    POINT point;
-    point.x = pMsg->pSender->GetPos().left - 170 * RF_WINDOW_WIDTH / RF_DESIGN_WINDOW_WIDTH;
-    point.y = pMsg->pSender->GetPos().top - (280 * RF_WINDOW_HEIGHT) / RF_DESIGN_WINDOW_HEIGHT;
+	POINT point;
+	point.x = pMsg->pSender->GetPos().left - 170 * RF_WINDOW_WIDTH / RF_DESIGN_WINDOW_WIDTH ;
+	point.y = pMsg->pSender->GetPos().top - (280 * RF_WINDOW_HEIGHT) / RF_DESIGN_WINDOW_HEIGHT;
 
-    ::ClientToScreen(m_hWnd, &point);
+	::ClientToScreen(m_hWnd, &point);
 
-    CMenuWnd *pMenu = CMenuWnd::CreateMenu(NULL, _T("playlistmenu.xml"), point, &m_pm);
-    CListUI *pList = static_cast<CListUI *>(pMenu->m_pm.FindControl(_T("musiclist")));
-    UpdateMusicList(pList);
-    return true;
+	CMenuWnd* pMenu = CMenuWnd::CreateMenu(NULL, _T("playlistmenu.xml"), point, &m_pm);
+	CListUI *pList = static_cast<CListUI*>(pMenu->m_pm.FindControl(_T("musiclist")));
+	UpdateMusicList(pList);
+	return true;
 }
 
 bool RFMainWindow::OnPassiveTrainPlayByAuto(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    bool playbyoder = true;
-    COptionUI *pOption = static_cast<COptionUI *>(m_passive_train_page->FindSubControl(_T("passive_play10")));
-    if (pOption->IsSelected()) {
-        playbyoder = false;
-    }
-    m_passive_train_action.SetPlayOrder(playbyoder);
-    return true;
+	bool playbyoder = true;
+	COptionUI* pOption = static_cast<COptionUI*>(m_passive_train_page->FindSubControl(_T("passive_play10")));
+	if (pOption->IsSelected()) {
+		playbyoder = false;
+	}
+	m_passive_train_action.SetPlayOrder(playbyoder);
+	return true;
 }
 
 bool RFMainWindow::OnPassiveTrainVolumeSet(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
-    CControlUI *pControl = pMsg->pSender;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
+	CControlUI* pControl = pMsg->pSender;
 
-    CPopupWidget *pWidget = new CPopupWidget;
-    POINT point;
-    RECT rc = pControl->GetPos();
-    // pControl->SetTag(m_MusicPlayer.GetVolume());
-    point.x = rc.left + (rc.right - rc.left) / 2 - 10;
-    point.y = rc.top - 10;
-    pWidget->Init(_T("Volume.xml"), m_hWnd, &m_pm, point, CHANGE_VOLUME);
-    return true;
+	CPopupWidget* pWidget = new CPopupWidget;
+	POINT point;
+	RECT rc	= pControl->GetPos();
+	//pControl->SetTag(m_MusicPlayer.GetVolume());
+	point.x = rc.left + (rc.right - rc.left)/2 - 10;
+	point.y = rc.top - 10;
+	pWidget->Init(_T("Volume.xml"), m_hWnd, &m_pm, point, CHANGE_VOLUME);
+	return true;
 }
 
 bool RFMainWindow::OnAddAction(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    RFBDAddActionDialog(GetHWND());
-    return true;
+	RFBDAddActionDialog(GetHWND());
+	return true;
 }
 
 bool RFMainWindow::OnBDAddActionToPlayList(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    if (m_id_passivetrainitem.find(pMsg->pSender->GetId()) != m_id_passivetrainitem.end()) {
-        static int media_index = 0;
+	if (m_id_passivetrainitem.find(pMsg->pSender->GetId()) != m_id_passivetrainitem.end()) {
+		static int media_index = 0;
 
-        MEDIA media = m_id_passivetrainitem[pMsg->pSender->GetId()];
-        media.index = media_index++;
-        m_current_passivetraininfos.push_back(media);
-    }
-    return true;
+		MEDIA media = m_id_passivetrainitem[pMsg->pSender->GetId()];
+		media.index = media_index++;
+		m_current_passivetraininfos.push_back(media);
+	}
+	return true;
 }
 
-bool RFMainWindow::OnBDDeleteAction(void *pParam)
-{
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
-    if (m_delete_id_passivetrainitem.find(pMsg->pSender->GetId()) != m_delete_id_passivetrainitem.end()) {
-        MEDIA media = m_delete_id_passivetrainitem[pMsg->pSender->GetId()];
-        PassiveTrainInfo *pParam = new PassiveTrainInfo;
-        *pParam = media.train;
-        CTask::Assign(CTask::NotWait, Panic(), pParam, EventHandle(&RFMySQLThread::DeletePassiveTrainInfo), RFMainWindow::UIThread, RFMainWindow::DBThread);
-    }
+bool RFMainWindow::OnBDDeleteAction(void *pParam) {
+	TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
+	if (m_delete_id_passivetrainitem.find(pMsg->pSender->GetId()) != m_delete_id_passivetrainitem.end()) {
+		MEDIA media = m_delete_id_passivetrainitem[pMsg->pSender->GetId()];
+		PassiveTrainInfo *pParam = new PassiveTrainInfo;
+		*pParam = media.train;
+		CTask::Assign(CTask::NotWait, Panic(), pParam, EventHandle(&RFMySQLThread::DeletePassiveTrainInfo), RFMainWindow::UIThread, RFMainWindow::DBThread);
+	}
 }
 
-bool RFMainWindow::OnZDGGJDChart(void *pParam)
-{
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+bool RFMainWindow::OnZDGGJDChart(void *pParam) {
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    CLabelUI *traindetial_chart_zd_name = static_cast<CLabelUI *>(m_pm.FindControl(_T("traindetial_chart_zd_name")));
-    traindetial_chart_zd_name->SetText(_T("关节运动角度"));
+	CLabelUI* traindetial_chart_zd_name = static_cast<CLabelUI*>(m_pm.FindControl(_T("traindetial_chart_zd_name")));
+	traindetial_chart_zd_name->SetText(_T("关节运动角度"));
 
-    CVerticalLayoutUI *p_zd_gjjd_chart_bk = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("zd_gjjd_chart_bk")));
-    p_zd_gjjd_chart_bk->SetVisible(true);
+	CVerticalLayoutUI* p_zd_gjjd_chart_bk = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("zd_gjjd_chart_bk")));
+	p_zd_gjjd_chart_bk->SetVisible(true);
 
-    CHorizontalLayoutUI *p_zd_gjjd_chart_tuli = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(_T("zd_gjjd_chart_tuli")));
-    p_zd_gjjd_chart_tuli->SetVisible(true);
+	CHorizontalLayoutUI* p_zd_gjjd_chart_tuli = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(_T("zd_gjjd_chart_tuli")));
+	p_zd_gjjd_chart_tuli->SetVisible(true);
 
-    CVerticalLayoutUI *zd_wl_chart_bk = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("zd_wl_chart_bk")));
-    zd_wl_chart_bk->SetVisible(false);
-    return true;
+	CVerticalLayoutUI* zd_wl_chart_bk = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("zd_wl_chart_bk")));
+	zd_wl_chart_bk->SetVisible(false);
+	return true;
 }
 
 bool RFMainWindow::OnZDWLChart(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    CLabelUI *traindetial_chart_zd_name = static_cast<CLabelUI *>(m_pm.FindControl(_T("traindetial_chart_zd_name")));
-    traindetial_chart_zd_name->SetText(_T("握力"));
+	CLabelUI* traindetial_chart_zd_name = static_cast<CLabelUI*>(m_pm.FindControl(_T("traindetial_chart_zd_name")));
+	traindetial_chart_zd_name->SetText(_T("握力"));
 
-    CHorizontalLayoutUI *p_zd_gjjd_chart_tuli = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(_T("zd_gjjd_chart_tuli")));
-    p_zd_gjjd_chart_tuli->SetVisible(false);
+	CHorizontalLayoutUI* p_zd_gjjd_chart_tuli = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(_T("zd_gjjd_chart_tuli")));
+	p_zd_gjjd_chart_tuli->SetVisible(false);
 
-    CVerticalLayoutUI *p_zd_gjjd_chart_bk = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("zd_gjjd_chart_bk")));
-    p_zd_gjjd_chart_bk->SetVisible(false);
+	CVerticalLayoutUI* p_zd_gjjd_chart_bk = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("zd_gjjd_chart_bk")));
+	p_zd_gjjd_chart_bk->SetVisible(false);
 
-    CVerticalLayoutUI *zd_wl_chart_bk = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("zd_wl_chart_bk")));
-    zd_wl_chart_bk->SetVisible(true);
-    return true;
+	CVerticalLayoutUI* zd_wl_chart_bk = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("zd_wl_chart_bk")));
+	zd_wl_chart_bk->SetVisible(true);
+	return true;
 }
 
 bool RFMainWindow::OnBDZGJChart(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    CLabelUI *traindetial_chart_zd_name = static_cast<CLabelUI *>(m_pm.FindControl(_T("traindetial_chart_bd_name")));
-    traindetial_chart_zd_name->SetText(_T("肘关节力矩值"));
+	CLabelUI* traindetial_chart_zd_name = static_cast<CLabelUI*>(m_pm.FindControl(_T("traindetial_chart_bd_name")));
+	traindetial_chart_zd_name->SetText(_T("肘关节力矩值"));
 
 
-    CVerticalLayoutUI *bd_jgj_chart_bk = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("bd_jgj_chart_bk")));
-    bd_jgj_chart_bk->SetVisible(false);
+	CVerticalLayoutUI* bd_jgj_chart_bk = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("bd_jgj_chart_bk")));
+	bd_jgj_chart_bk->SetVisible(false);
 
-    CVerticalLayoutUI *bd_zgj_chart_bk = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("bd_zgj_chart_bk")));
-    bd_zgj_chart_bk->SetVisible(true);
-    return true;
+	CVerticalLayoutUI* bd_zgj_chart_bk = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("bd_zgj_chart_bk")));
+	bd_zgj_chart_bk->SetVisible(true);
+	return true;
 }
 
 bool RFMainWindow::OnBDJGJChart(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    CLabelUI *traindetial_chart_zd_name = static_cast<CLabelUI *>(m_pm.FindControl(_T("traindetial_chart_bd_name")));
-    traindetial_chart_zd_name->SetText(_T("肩关节力矩值"));
+	CLabelUI* traindetial_chart_zd_name = static_cast<CLabelUI*>(m_pm.FindControl(_T("traindetial_chart_bd_name")));
+	traindetial_chart_zd_name->SetText(_T("肩关节力矩值"));
 
 
-    CVerticalLayoutUI *bd_jgj_chart_bk = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("bd_jgj_chart_bk")));
-    bd_jgj_chart_bk->SetVisible(true);
+	CVerticalLayoutUI* bd_jgj_chart_bk = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("bd_jgj_chart_bk")));
+	bd_jgj_chart_bk->SetVisible(true);
 
-    CVerticalLayoutUI *bd_zgj_chart_bk = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("bd_zgj_chart_bk")));
-    bd_zgj_chart_bk->SetVisible(false);
-    return true;
+	CVerticalLayoutUI* bd_zgj_chart_bk = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("bd_zgj_chart_bk")));
+	bd_zgj_chart_bk->SetVisible(false);
+	return true;
 }
 
 bool RFMainWindow::OnEMGChart(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    CLabelUI *traindetial_chart_zd_name = static_cast<CLabelUI *>(m_pm.FindControl(_T("traindetial_chart_bd_name")));
-    traindetial_chart_zd_name->SetText(_T("EMG信号"));
+	CLabelUI* traindetial_chart_zd_name = static_cast<CLabelUI*>(m_pm.FindControl(_T("traindetial_chart_bd_name")));
+	traindetial_chart_zd_name->SetText(_T("EMG信号"));
 
-    CHorizontalLayoutUI *emg_chart_tuli = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(_T("emg_chart_tuli")));
-    emg_chart_tuli->SetVisible(true);
+	CHorizontalLayoutUI* emg_chart_tuli = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(_T("emg_chart_tuli")));
+	emg_chart_tuli->SetVisible(true);
 
-    CHorizontalLayoutUI *emg_gjjd_chart_tuli = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(_T("emg_gjjd_chart_tuli")));
-    emg_gjjd_chart_tuli->SetVisible(false);
+	CHorizontalLayoutUI* emg_gjjd_chart_tuli = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(_T("emg_gjjd_chart_tuli")));
+	emg_gjjd_chart_tuli->SetVisible(false);
 
-    CVerticalLayoutUI *emg_chart_bk = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("emg_chart_bk")));
-    emg_chart_bk->SetVisible(true);
+	CVerticalLayoutUI* emg_chart_bk = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("emg_chart_bk")));
+	emg_chart_bk->SetVisible(true);
 
-    CVerticalLayoutUI *emg_gjyd_chart_bk = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("emg_gjyd_chart_bk")));
-    emg_gjyd_chart_bk->SetVisible(false);
-    return true;
+	CVerticalLayoutUI* emg_gjyd_chart_bk = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("emg_gjyd_chart_bk")));
+	emg_gjyd_chart_bk->SetVisible(false);
+	return true;
 }
 
 bool RFMainWindow::OnEMGYDJDChart(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    CLabelUI *traindetial_chart_zd_name = static_cast<CLabelUI *>(m_pm.FindControl(_T("traindetial_chart_emg_name")));
-    traindetial_chart_zd_name->SetText(_T("关节运动角度"));
+	CLabelUI* traindetial_chart_zd_name = static_cast<CLabelUI*>(m_pm.FindControl(_T("traindetial_chart_emg_name")));
+	traindetial_chart_zd_name->SetText(_T("关节运动角度"));
 
-    CHorizontalLayoutUI *emg_chart_tuli = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(_T("emg_chart_tuli")));
-    emg_chart_tuli->SetVisible(false);
+	CHorizontalLayoutUI* emg_chart_tuli = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(_T("emg_chart_tuli")));
+	emg_chart_tuli->SetVisible(false);
 
-    CHorizontalLayoutUI *emg_gjjd_chart_tuli = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(_T("emg_gjjd_chart_tuli")));
-    emg_gjjd_chart_tuli->SetVisible(true);
+	CHorizontalLayoutUI* emg_gjjd_chart_tuli = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(_T("emg_gjjd_chart_tuli")));
+	emg_gjjd_chart_tuli->SetVisible(true);
 
-    CVerticalLayoutUI *emg_chart_bk = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("emg_chart_bk")));
-    emg_chart_bk->SetVisible(false);
+	CVerticalLayoutUI* emg_chart_bk = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("emg_chart_bk")));
+	emg_chart_bk->SetVisible(false);
 
-    CVerticalLayoutUI *emg_gjyd_chart_bk = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("emg_gjyd_chart_bk")));
-    emg_gjyd_chart_bk->SetVisible(true);
-    return true;
+	CVerticalLayoutUI* emg_gjyd_chart_bk = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("emg_gjyd_chart_bk")));
+	emg_gjyd_chart_bk->SetVisible(true);
+	return true;
 }
 
 bool RFMainWindow::OnTrainDataExport(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    std::wstring savePath = GetSaveFilePath(m_pm.GetPaintWindow());
-    if (savePath.empty()) {
-        return true;
-    }
-    // std::wstring templatePath = CPaintManagerUI::GetResourcePath() + _T("traindetail.xlsx");
-    RFPatientsTrainData::get()->exportTrainData(savePath);
+	std::wstring savePath = GetSaveFilePath(m_pm.GetPaintWindow());
+	if (savePath.empty()) {
+		return true;
+	}
+	//std::wstring templatePath = CPaintManagerUI::GetResourcePath() + _T("traindetail.xlsx");
+	RFPatientsTrainData::get()->exportTrainData(savePath);
 }
 
 bool RFMainWindow::OnEyeModeSetting(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    double sudu = .0f;
-    bool showvideo = false;
-    if (RFEyeModeSettingDialog(GetHWND(), sudu, showvideo)) {
-        CAVPlayerUI *pLeft = static_cast<CAVPlayerUI *>(m_pm.FindControl(_T("vlc_left_camera")));
-        if (pLeft) {
-            pLeft->m_isPlaying = showvideo;
-            pLeft->ShowVideo(showvideo);
-            pLeft->Invalidate();
-        }
+	double sudu = .0f;
+	bool showvideo = false;
+	if (RFEyeModeSettingDialog(GetHWND(), sudu, showvideo)) {
+		CAVPlayerUI* pLeft = static_cast<CAVPlayerUI*>(m_pm.FindControl(_T("vlc_left_camera")));
+		if (pLeft) {
+			pLeft->m_isPlaying = showvideo;
+			pLeft->ShowVideo(showvideo);
+			pLeft->Invalidate();
+		}
 
-        CAVPlayerUI *pRight = static_cast<CAVPlayerUI *>(m_pm.FindControl(_T("vlc_right_camera")));
-        if (pRight) {
-            pRight->m_isPlaying = showvideo;
-            pRight->ShowVideo(showvideo);
-            pRight->Invalidate();
-        }
+		CAVPlayerUI* pRight = static_cast<CAVPlayerUI*>(m_pm.FindControl(_T("vlc_right_camera")));
+		if (pRight) {
+			pRight->m_isPlaying = showvideo;
+			pRight->ShowVideo(showvideo);
+			pRight->Invalidate();
+		}
 
-        m_robot.setEyeVel(sudu);
-    }
-    return true;
+		m_robot.setEyeVel(sudu);
+	}
+	return true;
 }
 
 bool RFMainWindow::OnEyeModeStartStop(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
-    CCheckBoxUI *pStartStop = static_cast<CCheckBoxUI *>(pMsg->pSender);
-    if (!pStartStop->GetCheck()) {
-        s_eyemode_data[0].clear();
-        s_eyemode_data[1].clear();
-        s_eyemode_start = time(NULL);
-        m_robot.startEyeMove();
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
+	CCheckBoxUI* pStartStop = static_cast<CCheckBoxUI*>(pMsg->pSender);
+	if (!pStartStop->GetCheck()) {
+		s_eyemode_data[0].clear();
+		s_eyemode_data[1].clear();
+		s_eyemode_start = time(NULL);
+		m_robot.startEyeMove();
 
-        StartEyeModeGameDetect();
-    }
-    else {
-        StopEyeModeGameDetect();
+		StartEyeModeGameDetect();
+	} else {
+		StopEyeModeGameDetect();
 
-        m_robot.stopEyeMove();
-        s_eyemode_stop = time(NULL);
-        SaveEyeModeDetectData();
-        s_eyemode_data[0].clear();
-        s_eyemode_data[1].clear();
-    }
+		m_robot.stopEyeMove();
+		s_eyemode_stop = time(NULL);
+		SaveEyeModeDetectData();
+		s_eyemode_data[0].clear();
+		s_eyemode_data[1].clear();
+	}
 
-    return true;
+	return true;
 }
 
-bool RFMainWindow::OnEyeModeRecovery(void *pParam)
+bool RFMainWindow::OnEyeModeRecovery(void* pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    m_robot.resetPos();
-    return true;
+	m_robot.resetPos();
+	return true;
 }
 
 bool RFMainWindow::OnEyeModeTrainPage(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("eye_mode_welcom")));
-    pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+	CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("eye_mode_welcom")));
+	pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
 
-    m_robot.enterEyeMode();
-    ShowEyeModeTrainPage();
+	m_robot.enterEyeMode();
+	ShowEyeModeTrainPage();
 }
 
 bool RFMainWindow::OnEMGModeTrainPage(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("emg_mode_welcom")));
-    pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+	CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("emg_mode_welcom")));
+	pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
 
-    ShowEmgModeTrainPage();
+	ShowEmgModeTrainPage();
 
-    return true;
+	return true;
 }
 
 
 void OnEMGModeTimer(HWND hWnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
 {
-    if (!RFMainWindow::MainWindow) {
-        return;
-    }
+	if (!RFMainWindow::MainWindow) {
+		return;
+	}
+	
+
+	EMGLineWaveData wavedata;
+	wavedata.x = RFMainWindow::MainWindow->m_emgmode_tracetime;
+	wavedata.y = 0+(500-0)*rand()/(RAND_MAX + 1.0); 
+
+	CEMGWaveUI* pEMGWave1 = static_cast<CEMGWaveUI*>(RFMainWindow::MainWindow->m_pm.FindControl(_T("emgmode_wave1")));
+	pEMGWave1->PushData(wavedata);
+
+	CEMGWaveUI* pEMGWave2 = static_cast<CEMGWaveUI*>(RFMainWindow::MainWindow->m_pm.FindControl(_T("emgmode_wave2")));
+	pEMGWave2->PushData(wavedata);
+
+	CEMGWaveUI* pEMGWave3 = static_cast<CEMGWaveUI*>(RFMainWindow::MainWindow->m_pm.FindControl(_T("emgmode_wave3")));
+	pEMGWave3->PushData(wavedata);
+
+	CEMGWaveUI* pEMGWave4 = static_cast<CEMGWaveUI*>(RFMainWindow::MainWindow->m_pm.FindControl(_T("emgmode_wave4")));
+	pEMGWave4->PushData(wavedata);
 
 
-    EMGLineWaveData wavedata;
-    wavedata.x = RFMainWindow::MainWindow->m_emgmode_tracetime;
-    wavedata.y = 0 + (500 - 0) * rand() / (RAND_MAX + 1.0);
-
-    CEMGWaveUI *pEMGWave1 = static_cast<CEMGWaveUI *>(RFMainWindow::MainWindow->m_pm.FindControl(_T("emgmode_wave1")));
-    pEMGWave1->PushData(wavedata);
-
-    CEMGWaveUI *pEMGWave2 = static_cast<CEMGWaveUI *>(RFMainWindow::MainWindow->m_pm.FindControl(_T("emgmode_wave2")));
-    pEMGWave2->PushData(wavedata);
-
-    CEMGWaveUI *pEMGWave3 = static_cast<CEMGWaveUI *>(RFMainWindow::MainWindow->m_pm.FindControl(_T("emgmode_wave3")));
-    pEMGWave3->PushData(wavedata);
-
-    CEMGWaveUI *pEMGWave4 = static_cast<CEMGWaveUI *>(RFMainWindow::MainWindow->m_pm.FindControl(_T("emgmode_wave4")));
-    pEMGWave4->PushData(wavedata);
-
-
-    RFMainWindow::MainWindow->m_emgmode_tracetime += 200;
+	RFMainWindow::MainWindow->m_emgmode_tracetime += 200;
+	
 }
 
 bool RFMainWindow::OnEMGModeStart(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    CCheckBoxUI *pCheckBox = static_cast<CCheckBoxUI *>(pMsg->pSender);
-    if (!pCheckBox->GetCheck()) {
-        m_robot.EMGStartMove();
-        m_emgmode_tracetime = 0;
-        m_emg_createtime = time(NULL);
-        for (int i = 0; i < 4; i++) {
-            m_emgmode_data[i].clear();
-        }
-        m_emgmode_ydjd[0].clear();
-        m_emgmode_ydjd[1].clear();
-    }
-    else {
-        m_robot.EMGStopMove();
+	CCheckBoxUI *pCheckBox = static_cast<CCheckBoxUI*>(pMsg->pSender);
+	if (!pCheckBox->GetCheck()) {
+		m_robot.EMGStartMove();
+		m_emgmode_tracetime = 0;
+		m_emg_createtime = time(NULL);
+		for (int i = 0; i < 4; i++)
+		{
+			m_emgmode_data[i].clear();
+		}
+		m_emgmode_ydjd[0].clear();
+		m_emgmode_ydjd[1].clear();
 
-        SaveEMGTrainData();
-        m_emgmode_tracetime = 0;
-        m_emg_createtime = 0;
-    }
-    return true;
+	} else {
+		m_robot.EMGStopMove();
+
+		SaveEMGTrainData();
+		m_emgmode_tracetime = 0;
+		m_emg_createtime = 0;
+	}
+	return true;
 }
 
 bool RFMainWindow::OnEMGModeRecovery(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    if (m_robot.EMGIsMove()) {
-        m_robot.EMGStopMove();
-    }
+	if (m_robot.EMGIsMove()) {
+		m_robot.EMGStopMove();
+	}
 
-    for (int i = 0; i < 4; i++) {
-        m_emgmode_data[i].clear();
-    }
-    m_emgmode_ydjd[0].clear();
-    m_emgmode_ydjd[1].clear();
-    m_emgmode_tracetime = 0;
-    CEMGWaveUI *pEMGWave1 = static_cast<CEMGWaveUI *>(RFMainWindow::MainWindow->m_pm.FindControl(_T("emgmode_wave1")));
-    pEMGWave1->ClearData();
+	for (int i = 0; i < 4; i++)
+	{
+		m_emgmode_data[i].clear();
+	}
+	m_emgmode_ydjd[0].clear();
+	m_emgmode_ydjd[1].clear();
+	m_emgmode_tracetime = 0;
+	CEMGWaveUI* pEMGWave1 = static_cast<CEMGWaveUI*>(RFMainWindow::MainWindow->m_pm.FindControl(_T("emgmode_wave1")));
+	pEMGWave1->ClearData();
 
-    CEMGWaveUI *pEMGWave2 = static_cast<CEMGWaveUI *>(RFMainWindow::MainWindow->m_pm.FindControl(_T("emgmode_wave2")));
-    pEMGWave2->ClearData();
+	CEMGWaveUI* pEMGWave2 = static_cast<CEMGWaveUI*>(RFMainWindow::MainWindow->m_pm.FindControl(_T("emgmode_wave2")));
+	pEMGWave2->ClearData();
 
-    CEMGWaveUI *pEMGWave3 = static_cast<CEMGWaveUI *>(RFMainWindow::MainWindow->m_pm.FindControl(_T("emgmode_wave3")));
-    pEMGWave3->ClearData();
+	CEMGWaveUI* pEMGWave3 = static_cast<CEMGWaveUI*>(RFMainWindow::MainWindow->m_pm.FindControl(_T("emgmode_wave3")));
+	pEMGWave3->ClearData();
 
-    CEMGWaveUI *pEMGWave4 = static_cast<CEMGWaveUI *>(RFMainWindow::MainWindow->m_pm.FindControl(_T("emgmode_wave4")));
-    pEMGWave4->ClearData();
+	CEMGWaveUI* pEMGWave4 = static_cast<CEMGWaveUI*>(RFMainWindow::MainWindow->m_pm.FindControl(_T("emgmode_wave4")));
+	pEMGWave4->ClearData();
 
-    m_robot.resetPos();
-    return true;
+	m_robot.resetPos();
+	return true;
 }
 
 bool RFMainWindow::OnActiveGamePlaneBattle(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    //隐藏当前的页面
-    CVerticalLayoutUI *active_train_page_main = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("active_train_page_main")));
-    active_train_page_main->SetVisible(false);
-    CLabelUI *pLabelUI = static_cast<CLabelUI *>(m_pm.FindControl(_T("gamename")));
-    pLabelUI->SetText(_T("飞机大战"));
+	//隐藏当前的页面
+	CVerticalLayoutUI* active_train_page_main = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("active_train_page_main")));
+	active_train_page_main->SetVisible(false);
+	CLabelUI* pLabelUI = static_cast<CLabelUI*>(m_pm.FindControl(_T("gamename")));
+	pLabelUI->SetText(_T("飞机大战"));
 
-    //这里我们不要跳到这个list，而是直接调用OnGame4
-    OnGame2(NULL);
-    return true;
-    // CVerticalLayoutUI* active_train_page_list = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("active_train_page_list")));
-    // active_train_page_list->SetVisible(true);
+	//这里我们不要跳到这个list，而是直接调用OnGame4
+	OnGame2(NULL);
+	return true;
+	//CVerticalLayoutUI* active_train_page_list = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("active_train_page_list")));
+	//active_train_page_list->SetVisible(true);
 }
 
 bool RFMainWindow::OnActiveGameCleanWindow(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("active_train_game4_welcom")));
-    pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+	CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("active_train_game4_welcom")));
+	pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
 
-    CLabelUI *pLabelUI = static_cast<CLabelUI *>(m_pm.FindControl(_T("gamename")));
-    pLabelUI->SetText(_T("擦玻璃"));
+	CLabelUI* pLabelUI = static_cast<CLabelUI*>(m_pm.FindControl(_T("gamename")));
+	pLabelUI->SetText(_T("擦玻璃"));
 
-    CWkeWebkitUI *game4 = static_cast<CWkeWebkitUI *>(m_pm.FindControl(_T("game4")));
-    if (game4) {
-        CDuiString respath = CPaintManagerUI::GetResourcePath() + _T("/clean_window/index.html");
-        game4->SetFile((std::wstring)respath);
-    }
+	CWkeWebkitUI* game4 = static_cast<CWkeWebkitUI*>(m_pm.FindControl(_T("game4")));
+	if (game4) {
+		CDuiString respath = CPaintManagerUI::GetResourcePath() + _T("/clean_window/index.html");
+		game4->SetFile((std::wstring)respath);
+	}
 
-    CButtonUI *game4_start = static_cast<CButtonUI *>(m_pm.FindControl(_T("game4_start")));
-    game4_start->SetVisible(true);
+	CButtonUI* game4_start = static_cast<CButtonUI*>(m_pm.FindControl(_T("game4_start")));
+	game4_start->SetVisible(true);
 
-    ShowActiveGameWebkit();
-    return true;
+	ShowActiveGameWebkit();
+	return true;
 }
 
 bool RFMainWindow::OnActiveGameFryEgg(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("active_train_game4_welcom")));
-    pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+	CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("active_train_game4_welcom")));
+	pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
 
-    CLabelUI *pLabelUI = static_cast<CLabelUI *>(m_pm.FindControl(_T("gamename")));
-    pLabelUI->SetText(_T("煎鸡蛋"));
+	CLabelUI* pLabelUI = static_cast<CLabelUI*>(m_pm.FindControl(_T("gamename")));
+	pLabelUI->SetText(_T("煎鸡蛋"));
 
-    CWkeWebkitUI *game4 = static_cast<CWkeWebkitUI *>(m_pm.FindControl(_T("game4")));
-    if (game4) {
-        CDuiString respath = CPaintManagerUI::GetResourcePath() + _T("/fry_egg/index.html");
-        game4->SetFile((std::wstring)respath);
-    }
+	CWkeWebkitUI* game4 = static_cast<CWkeWebkitUI*>(m_pm.FindControl(_T("game4")));
+	if (game4) {
+		CDuiString respath = CPaintManagerUI::GetResourcePath() + _T("/fry_egg/index.html");
+		game4->SetFile((std::wstring)respath);
+	}
 
-    CButtonUI *game4_start = static_cast<CButtonUI *>(m_pm.FindControl(_T("game4_start")));
-    game4_start->SetVisible(true);
-    ShowActiveGameWebkit();
-    return true;
+	CButtonUI* game4_start = static_cast<CButtonUI*>(m_pm.FindControl(_T("game4_start")));
+	game4_start->SetVisible(true);
+	ShowActiveGameWebkit();
+	return true;
 }
 
 bool RFMainWindow::OnGame4(void *pParam)
 {
-    // TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
-    // if (pMsg->sType != _T("click"))
-    //	return true;
-    CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("active_train_game4_welcom")));
-    pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+	//TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	//if (pMsg->sType != _T("click"))
+	//	return true;
+	CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("active_train_game4_welcom")));
+	pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+	
+	CWkeWebkitUI* game4 = static_cast<CWkeWebkitUI*>(m_pm.FindControl(_T("game4")));
+	if (game4) {
+		CDuiString respath = CPaintManagerUI::GetResourcePath() + _T("/Plane/index.html");
+		game4->SetFile((std::wstring)respath);
+	}
 
-    CWkeWebkitUI *game4 = static_cast<CWkeWebkitUI *>(m_pm.FindControl(_T("game4")));
-    if (game4) {
-        CDuiString respath = CPaintManagerUI::GetResourcePath() + _T("/Plane/index.html");
-        game4->SetFile((std::wstring)respath);
-    }
+	CButtonUI* game4_start = static_cast<CButtonUI*>(m_pm.FindControl(_T("game4_start")));
+	game4_start->SetVisible(false);
+	ShowActiveGameWebkit();
+	
 
-    CButtonUI *game4_start = static_cast<CButtonUI *>(m_pm.FindControl(_T("game4_start")));
-    game4_start->SetVisible(false);
-    ShowActiveGameWebkit();
-
-
-    return true;
+	return true;
 }
 
 bool RFMainWindow::OnGame3(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("active_train_game4_welcom")));
-    pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+	CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("active_train_game4_welcom")));
+	pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
 
-    CWkeWebkitUI *game4 = static_cast<CWkeWebkitUI *>(m_pm.FindControl(_T("game4")));
-    if (game4) {
-        CDuiString respath = CPaintManagerUI::GetResourcePath() + _T("/Plane1/index.html");
-        game4->SetFile((std::wstring)respath);
-    }
+	CWkeWebkitUI* game4 = static_cast<CWkeWebkitUI*>(m_pm.FindControl(_T("game4")));
+	if (game4) {
+		CDuiString respath = CPaintManagerUI::GetResourcePath() + _T("/Plane1/index.html");
+		game4->SetFile((std::wstring)respath);
+	}
 
-    CButtonUI *game4_start = static_cast<CButtonUI *>(m_pm.FindControl(_T("game4_start")));
-    game4_start->SetVisible(true);
-    ShowActiveGameWebkit();
+	CButtonUI* game4_start = static_cast<CButtonUI*>(m_pm.FindControl(_T("game4_start")));
+	game4_start->SetVisible(true);
+	ShowActiveGameWebkit();
 
 
-    return true;
+	return true;
 }
 
 bool RFMainWindow::OnGame2(void *pParam)
 {
-    // TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
-    // if (pMsg->sType != _T("click"))
-    //	return true;
+	//TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	//if (pMsg->sType != _T("click"))
+	//	return true;
 
-    CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("active_train_game4_welcom")));
-    pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+	CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("active_train_game4_welcom")));
+	pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
 
-    CWkeWebkitUI *game_webkit = static_cast<CWkeWebkitUI *>(m_pm.FindControl(_T("game4")));
-    if (game_webkit) {
-        CDuiString respath = CPaintManagerUI::GetResourcePath() + _T("/Plane2/index.html");
-        game_webkit->SetFile((std::wstring)respath);
-    }
+	CWkeWebkitUI* game_webkit = static_cast<CWkeWebkitUI*>(m_pm.FindControl(_T("game4")));
+	if (game_webkit) {
+		CDuiString respath = CPaintManagerUI::GetResourcePath() + _T("/Plane2/index.html");
+		game_webkit->SetFile((std::wstring)respath);
+	}
 
-    CButtonUI *game4_start = static_cast<CButtonUI *>(m_pm.FindControl(_T("game4_start")));
-    game4_start->SetVisible(true);
-    ShowActiveGameWebkit();
+	CButtonUI* game4_start = static_cast<CButtonUI*>(m_pm.FindControl(_T("game4_start")));
+	game4_start->SetVisible(true);
+	ShowActiveGameWebkit();
 
 
-    return true;
+	return true;
 }
 
 bool RFMainWindow::OnGame4Start(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    CCheckBoxUI *pCheckBox = static_cast<CCheckBoxUI *>(pMsg->pSender); // what is sender function
-    std::wstring voice_path;
-    int paitent_id = m_current_patient.id;
-    spdlog::info("current patient id : {}", m_current_patient.id);
-    /**
-     * To-Do
-     * pass the ID of current patient to record sensor data (encoder ,torque and so on )
-     *
-     * */
+	CCheckBoxUI *pCheckBox = static_cast<CCheckBoxUI*>(pMsg->pSender);
+	std::wstring voice_path;
 
+	if (!pCheckBox->GetCheck()) {
+		m_robot.ActiveStartMove();
 
-    if (!pCheckBox->GetCheck()) {
-        m_robot.ActiveStartMove(paitent_id); // so in this how can we conencted the current patient with it ???
-        // m_robot.ExportJointData(paitent_id);
-        // HANDLE data_handle = (HANDLE)_beginthreadex(NULL, 0, ExportJointData(paitent_id), this, 0, NULL);
-        // 主动开始时播放游戏背景音，播放完后自动循环
-        // 首先判断游戏的type，根据不同的游戏type播放不一样的背景音乐
-        std::wstring bg_name;
-        CWkeWebkitUI *game_webkit = static_cast<CWkeWebkitUI *>(RFMainWindow::MainWindow->m_pm.FindControl(_T("game4")));
-        std::wstring game_type = game_webkit->RunJS(_T("getGameType()"));
-        if (game_type == RF_GAME_NAME_PLANE_GAOJI) {
-            bg_name = _T("voice/active_game_plane_battle_bg.wav");
-        }
-        else if (game_type == RF_GAME_NAME_CLEAN_WINDOW) {
-            bg_name = _T("voice/active_game_clean_window_bg.wav");
-        }
-        else if (game_type == RF_GAME_NAME_FRY_EGG) {
-            bg_name = _T("voice/active_game_fry_egg_bg.wav");
-        }
+		// 主动开始时播放游戏背景音，播放完后自动循环
+		// 首先判断游戏的type，根据不同的游戏type播放不一样的背景音乐
+		std::wstring bg_name;
+		CWkeWebkitUI *game_webkit = static_cast<CWkeWebkitUI *>(RFMainWindow::MainWindow->m_pm.FindControl(_T("game4")));
+		std::wstring game_type = game_webkit->RunJS(_T("getGameType()"));
+		if (game_type == RF_GAME_NAME_PLANE_GAOJI) {
+			bg_name = _T("voice/active_game_plane_battle_bg.wav");
+		} else if (game_type == RF_GAME_NAME_CLEAN_WINDOW) {
+			bg_name = _T("voice/active_game_clean_window_bg.wav");
+		} else if (game_type == RF_GAME_NAME_FRY_EGG) {
+			bg_name = _T("voice/active_game_fry_egg_bg.wav");
+		}
 
-        voice_path = std::wstring(CPaintManagerUI::GetResourcePath().GetData()) + bg_name;
-        if (!voice_path.empty() && _waccess(voice_path.c_str(), 0) != -1) {
-            sndPlaySound(voice_path.c_str(), SND_LOOP | SND_ASYNC);
-        }
-    }
-    else {
-        m_robot.ActiveStopMove();
+		voice_path = std::wstring(CPaintManagerUI::GetResourcePath().GetData()) + bg_name;
+		if (!voice_path.empty() && _waccess(voice_path.c_str(), 0) != -1) {
+			sndPlaySound(voice_path.c_str(), SND_LOOP | SND_ASYNC);
+		}
+	} else {
+		m_robot.ActiveStopMove();
 
-        // 播放暂停音乐，并停止主动声音
-        voice_path = CPaintManagerUI::GetResourcePath() + _T("voice/pause.wav");
-        if (!voice_path.empty() && _waccess(voice_path.c_str(), 0) != -1) {
-            sndPlaySound(voice_path.c_str(), SND_ASYNC);
-        }
-    }
+		// 播放暂停音乐，并停止主动声音
+		voice_path = CPaintManagerUI::GetResourcePath() + _T("voice/pause.wav");
+		if (!voice_path.empty() && _waccess(voice_path.c_str(), 0) != -1) {
+			sndPlaySound(voice_path.c_str(), SND_ASYNC);
+		}
+	}
 
-    return true;
+	return true;
 }
 
 bool RFMainWindow::OnGame4Recovery(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    // 播放复位音乐，并停止主动声音
-    std::wstring voice_path = CPaintManagerUI::GetResourcePath() + _T("voice/reset.wav");
-    if (!voice_path.empty() && _waccess(voice_path.c_str(), 0) != -1) {
-        sndPlaySound(voice_path.c_str(), SND_ASYNC);
-    }
+	// 播放复位音乐，并停止主动声音
+	std::wstring voice_path = CPaintManagerUI::GetResourcePath() + _T("voice/reset.wav");
+	if (!voice_path.empty() && _waccess(voice_path.c_str(), 0) != -1) {
+		sndPlaySound(voice_path.c_str(), SND_ASYNC);
+	}
 
-    m_robot.ActiveStopMove();
-    m_robot.resetPos();
-    return true;
+	m_robot.ActiveStopMove();
+	m_robot.resetPos();
+	return true;
 }
 
 
 bool RFMainWindow::OnMusicItemDelete(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
-    if (!pMsg->pSender || !pMsg->pSender->GetParent() || !pMsg->pSender->GetParent()->GetParent()) {
-        return true;
-    }
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
+	if (!pMsg->pSender || !pMsg->pSender->GetParent() || !pMsg->pSender->GetParent()->GetParent()) {
+		return true;
+	}
 
+	
+	CListContainerElementUI *pListContainerElement = static_cast<CListContainerElementUI*>(pMsg->pSender->GetParent()->GetParent());
+	if (pListContainerElement && pListContainerElement) {
+		CListUI* pList = static_cast<CListUI*>(pListContainerElement->GetOwner());
+		int index = pList->GetItemIndex(pListContainerElement);
+		if (index < 0) {
+			return true;
+		}
 
-    CListContainerElementUI *pListContainerElement = static_cast<CListContainerElementUI *>(pMsg->pSender->GetParent()->GetParent());
-    if (pListContainerElement && pListContainerElement) {
-        CListUI *pList = static_cast<CListUI *>(pListContainerElement->GetOwner());
-        int index = pList->GetItemIndex(pListContainerElement);
-        if (index < 0) {
-            return true;
-        }
+		CLabelUI* pLabel = static_cast<CLabelUI*>(pListContainerElement->FindSubControl(_T("music_cell01")));
+		int pos = _wtoi(pLabel->GetText().GetData());
+		int i = 0;	
+		std::list<MEDIA>::iterator begin = m_current_passivetraininfos.begin();
+		for (; begin != m_current_passivetraininfos.end(); begin++) {
+			if (i == pos) {
+				m_current_passivetraininfos.erase(begin);
+				break;
+			}
 
-        CLabelUI *pLabel = static_cast<CLabelUI *>(pListContainerElement->FindSubControl(_T("music_cell01")));
-        int pos = _wtoi(pLabel->GetText().GetData());
-        int i = 0;
-        std::list<MEDIA>::iterator begin = m_current_passivetraininfos.begin();
-        for (; begin != m_current_passivetraininfos.end(); begin++) {
-            if (i == pos) {
-                m_current_passivetraininfos.erase(begin);
-                break;
-            }
+			i++;
+		}
 
-            i++;
-        }
-
-        pList->Remove(pListContainerElement);
-    }
-
-    return true;
+		pList->Remove(pListContainerElement);
+	}
+	
+	return true;
 }
-bool RFMainWindow::OnPressureSwitchChicked(void *pParam)
-{
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
 
-    CCheckBoxUI *pCheckBox = static_cast<CCheckBoxUI *>(pMsg->pSender);
-    if (!pCheckBox->GetCheck()) {
-        m_robot.SetPressureSensorOff();
-    }
-    else {
-        // 点击这里之后，图标变成ON，这个时候压力传感器是启用的
-        m_robot.SetPressureSensorOn();
-    }
-    return true;
+bool RFMainWindow::OnGripStrengthClicked(void *pParam) {
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
+
+	CCheckBoxUI *pCheckBox = static_cast<CCheckBoxUI*>(pMsg->pSender);
+	if (!pCheckBox->GetCheck()) {
+		m_grip_strength_enable = true;
+	} else {
+		// 点击这里之后，图标变成OFF，这个时候握力传感器是启用的
+		m_grip_strength_enable = false;
+	}
+	return true;
+
+}
+
+bool RFMainWindow::OnPressureSwitchChicked(void *pParam) {
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
+
+	CCheckBoxUI *pCheckBox = static_cast<CCheckBoxUI*>(pMsg->pSender);
+	if (!pCheckBox->GetCheck()) {
+		m_robot.SetPressureSensorOff();
+	}
+	else {
+		// 点击这里之后，图标变成ON，这个时候压力传感器是启用的
+		m_robot.SetPressureSensorOn();
+	}
+	return true;
 }
 
 bool RFMainWindow::OnEvaluation1(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
 
-    CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("evaluation_history_welcom")));
-    pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+	CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("evaluation_history_welcom")));
+	pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+	
+	CControlUI* pImage = static_cast<CControlUI*>(m_pm.FindControl(_T("evaluation_history_image")));
+	pImage->SetBkImage(_T("pg_fma_img.png"));
 
-    CControlUI *pImage = static_cast<CControlUI *>(m_pm.FindControl(_T("evaluation_history_image")));
-    pImage->SetBkImage(_T("pg_fma_img.png"));
+	CLabelUI* pName = static_cast<CLabelUI*>(m_pm.FindControl(_T("evaluation_history_name")));
+	pName->SetText(_T("FMA评测"));
 
-    CLabelUI *pName = static_cast<CLabelUI *>(m_pm.FindControl(_T("evaluation_history_name")));
-    pName->SetText(_T("FMA评测"));
+	CLabelUI* pScore = static_cast<CLabelUI*>(m_pm.FindControl(_T("evaluation_history_score")));
 
-    CLabelUI *pScore = static_cast<CLabelUI *>(m_pm.FindControl(_T("evaluation_history_score")));
-
-    m_evalution_type = 1;
-    std::list<EvaluationData> datas;
-    RFEvaluationData::get()->Load(1);
-    RFEvaluationData::get()->setCurPage(0);
-    UpdateEvaluationNumber(0);
-    UpdateEvaluationPage(datas);
-    ShowEvaluationHistoryPage();
-    return true;
+	m_evalution_type = 1;
+	std::list<EvaluationData> datas;
+	RFEvaluationData::get()->Load(1);
+	RFEvaluationData::get()->setCurPage(0);
+	UpdateEvaluationNumber(0);
+	UpdateEvaluationPage(datas);
+	ShowEvaluationHistoryPage();
+	return true;
 }
 
 bool RFMainWindow::OnEvaluation2(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
-    CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("evaluation_history_welcom")));
-    pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
+	CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("evaluation_history_welcom")));
+	pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
 
-    CControlUI *pImage = static_cast<CControlUI *>(m_pm.FindControl(_T("evaluation_history_image")));
-    pImage->SetBkImage(_T("pg_mas_img.png"));
+	CControlUI* pImage = static_cast<CControlUI*>(m_pm.FindControl(_T("evaluation_history_image")));
+	pImage->SetBkImage(_T("pg_mas_img.png"));
 
-    CLabelUI *pName = static_cast<CLabelUI *>(m_pm.FindControl(_T("evaluation_history_name")));
-    pName->SetText(_T("MAS评测"));
+	CLabelUI* pName = static_cast<CLabelUI*>(m_pm.FindControl(_T("evaluation_history_name")));
+	pName->SetText(_T("MAS评测"));
 
-    CLabelUI *pScore = static_cast<CLabelUI *>(m_pm.FindControl(_T("evaluation_history_score")));
+	CLabelUI* pScore = static_cast<CLabelUI*>(m_pm.FindControl(_T("evaluation_history_score")));
 
-    m_evalution_type = 2;
-    std::list<EvaluationData> datas;
-    RFEvaluationData::get()->Load(2);
-    RFEvaluationData::get()->setCurPage(0);
-    UpdateEvaluationNumber(0);
-    UpdateEvaluationPage(datas);
-    ShowEvaluationHistoryPage();
-    return true;
+	m_evalution_type = 2;
+	std::list<EvaluationData> datas;
+	RFEvaluationData::get()->Load(2);
+	RFEvaluationData::get()->setCurPage(0);
+	UpdateEvaluationNumber(0);
+	UpdateEvaluationPage(datas);
+	ShowEvaluationHistoryPage();
+	return true;
 }
 
 bool RFMainWindow::OnEvaluation3(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return true;
-    CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("evaluation_history_welcom")));
-    pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return true;
+	CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("evaluation_history_welcom")));
+	pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
 
-    CControlUI *pImage = static_cast<CControlUI *>(m_pm.FindControl(_T("evaluation_history_image")));
-    pImage->SetBkImage(_T("pg_yd_img.png"));
+	CControlUI* pImage = static_cast<CControlUI*>(m_pm.FindControl(_T("evaluation_history_image")));
+	pImage->SetBkImage(_T("pg_yd_img.png"));
 
-    CLabelUI *pName = static_cast<CLabelUI *>(m_pm.FindControl(_T("evaluation_history_name")));
-    pName->SetText(_T("运动功能评测"));
+	CLabelUI* pName = static_cast<CLabelUI*>(m_pm.FindControl(_T("evaluation_history_name")));
+	pName->SetText(_T("运动功能评测"));
 
-    CLabelUI *pScore = static_cast<CLabelUI *>(m_pm.FindControl(_T("evaluation_history_score")));
+	CLabelUI* pScore = static_cast<CLabelUI*>(m_pm.FindControl(_T("evaluation_history_score")));
 
-    m_evalution_type = 3;
-    std::list<EvaluationData> datas;
-    RFEvaluationData::get()->Load(3);
-    RFEvaluationData::get()->setCurPage(0);
-    UpdateEvaluationNumber(0);
-    UpdateEvaluationPage(datas);
-    ShowEvaluationHistoryPage();
-    return true;
+	m_evalution_type = 3;
+	std::list<EvaluationData> datas;
+	RFEvaluationData::get()->Load(3);
+	RFEvaluationData::get()->setCurPage(0);
+	UpdateEvaluationNumber(0);
+	UpdateEvaluationPage(datas);
+	ShowEvaluationHistoryPage();
+	return true;
 }
 
 int RFMainWindow::OnSearchOK(EventArg *pArg)
 {
-    RFMySQLThread *pCurrentThread = pArg->GetSender<RFMySQLThread *>();
-    CTask *pTask = pArg->GetAttach<CTask *>();
+	RFMySQLThread *pCurrentThread = pArg->GetSender<RFMySQLThread*>();
+	CTask *pTask = pArg->GetAttach<CTask*>();
 
-    LoadPatientResult *pResult = pTask->GetContext<LoadPatientResult *>();
-    if (pResult) {
-        if (RFMainWindow::MainWindow->m_patient_select_page->IsVisible()) {
-            RFMainWindow::MainWindow->UpdatePatientPage(pResult->patients);
-        }
-        else {
-            RFMainWindow::MainWindow->UpdateManagePatientPage(pResult->patients);
-        }
-    }
+	LoadPatientResult *pResult = pTask->GetContext<LoadPatientResult*>();
+	if (pResult) {
+		if (RFMainWindow::MainWindow->m_patient_select_page->IsVisible()) {
+			RFMainWindow::MainWindow->UpdatePatientPage(pResult->patients);
+		} else {
+			RFMainWindow::MainWindow->UpdateManagePatientPage(pResult->patients);
+		}
+	}
 
-    if (pResult) {
-        delete pResult;
-        pResult = NULL;
-    }
+	if (pResult) {
+		delete pResult;
+		pResult = NULL;
+	}
 
-    return 1;
+	return 1;
 }
 
-int RFMainWindow::OnFilterOK(EventArg *pArg)
+int RFMainWindow::OnFilterOK(EventArg* pArg)
 {
-    RFMySQLThread *pCurrentThread = pArg->GetSender<RFMySQLThread *>();
-    CTask *pTask = pArg->GetAttach<CTask *>();
-    if (NULL == pTask) {
-        return 1;
-    }
+	RFMySQLThread *pCurrentThread = pArg->GetSender<RFMySQLThread*>();
+	CTask *pTask = pArg->GetAttach<CTask*>();
+	if (NULL == pTask)
+	{
+		return 1;
+	}
 
-    LoadPatientResult *pResult = pTask->GetContext<LoadPatientResult *>();
-    if (pResult) {
-        RFPatientsManager::get()->setPage(0);
-        RFPatientsManager::get()->m_patients = pResult->patients;
-        if (RFMainWindow::MainWindow->m_patient_select_page->IsVisible()) {
-            RFMainWindow::MainWindow->UpdatePageNumber(0);
-            RFMainWindow::MainWindow->UpdatePatientPage(pResult->patients);
-        }
-        else {
-            RFMainWindow::MainWindow->UpdateManagePageNumber(0);
-            RFMainWindow::MainWindow->UpdateManagePatientPage(pResult->patients);
-        }
-    }
+	LoadPatientResult *pResult = pTask->GetContext<LoadPatientResult*>();
+	if (pResult) {
+		RFPatientsManager::get()->setPage(0);
+		RFPatientsManager::get()->m_patients = pResult->patients;
+		if (RFMainWindow::MainWindow->m_patient_select_page->IsVisible()) {
+			RFMainWindow::MainWindow->UpdatePageNumber(0);
+			RFMainWindow::MainWindow->UpdatePatientPage(pResult->patients);
+		} else {
+			RFMainWindow::MainWindow->UpdateManagePageNumber(0);
+			RFMainWindow::MainWindow->UpdateManagePatientPage(pResult->patients);
+		}
+	}
 
-    if (pResult) {
-        delete pResult;
-        pResult = NULL;
-    }
+	if (pResult) {
+		delete pResult;
+		pResult = NULL;
+	}
 
-    return 1;
+	return 1;
 }
 
 
-bool RFMainWindow::OnReturnMainPage(void *pParam)
+bool RFMainWindow::OnReturnMainPage(void* pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
 
-    ShowMainPage();
-    return true;
+	ShowMainPage();
+	return true;
 }
 
-bool RFMainWindow::OnSystemSetReturn(void *pParam)
-{
-    // 获取saa_edit里面的值
-    CEditUI *saa_edit = static_cast<CEditUI *>(m_pm.FindControl(_T("saa_rom_edit")));
-    CDuiString text = saa_edit->GetText();
-    double saa = _wtof(text);
+bool RFMainWindow::OnSystemSetReturn(void *pParam) {
+	// 获取saa_edit里面的值
+	CEditUI* saa_edit = static_cast<CEditUI*>(m_pm.FindControl(_T("saa_rom_edit")));
+	CDuiString text = saa_edit->GetText();
+	double saa = _wtof(text);
 
-    // 获取sfe_edit里面的值
-    CEditUI *sfe_edit = static_cast<CEditUI *>(m_pm.FindControl(_T("sfe_rom_edit")));
-    text = sfe_edit->GetText();
-    double sfe = _wtof(text);
+	// 获取sfe_edit里面的值
+	CEditUI* sfe_edit = static_cast<CEditUI*>(m_pm.FindControl(_T("sfe_rom_edit")));
+	text = sfe_edit->GetText();
+	double sfe = _wtof(text);
 
-    // get control_arm_sensitivity
-    CEditUI *arm_sensitivity = static_cast<CEditUI *>(m_pm.FindControl(_T("control_arm_sensitivity")));
-    text = arm_sensitivity->GetText();
-    double arm_sensitivity_value = _wtof(text);
-    // get control_shoulder_sensitivity
-    CEditUI *shoulder_sensitivity = static_cast<CEditUI *>(m_pm.FindControl(_T("control_shoulder_sensitivity")));
-    text = shoulder_sensitivity->GetText();
-    double shoulder_sensitivity_value = _wtof(text);
-    // check the range of sensitivity
-    if (arm_sensitivity_value > 10 || arm_sensitivity_value < -10) {
-        MessageBox(NULL, _T("the arm sensitivity should be in range [-10,10]"), _T("Set sensitivity error!"), MB_OK);
-        return 0;
-    }
-    if (shoulder_sensitivity_value > 10 || shoulder_sensitivity_value < -10) {
-        MessageBox(NULL, _T("the shoulder sensitivity should be in range [-10,10]"), _T("Set sensitivity error!"), MB_OK);
-        return 0;
-    }
+	// 检查值是否合法
+	if (saa < 0.1 || sfe < 0.1) {
+		MessageBox(NULL, _T("肩部运动范围需要大于0.1"), _T("肩部运动范围设置有误"), MB_OK);
+		return 0;
+	}
 
-    // 检查值是否合法
-    if (saa < 0.1 || sfe < 0.1) {
-        MessageBox(NULL, _T("肩部运动范围需要大于0.1"), _T("肩部运动范围设置有误"), MB_OK);
-        return 0;
-    }
-
-    // 改变当前patient的saa_rom和sfe_rom
-    char sql[128];
-    sprintf(sql, "UPDATE patient SET SAA_ROM=%f, SFE_ROM=%f where id=%d", saa, sfe, RFMainWindow::MainWindow->m_current_patient.id);
-    RFMYSQLStmt stmt;
-    if (stmt.Prepare(RFMainWindow::DBThread->m_db, sql) > 0) {
-        stmt.Finalize();
-    }
-    RFMainWindow::MainWindow->m_current_patient.SAA_ROM = saa;
-    RFMainWindow::MainWindow->m_current_patient.SFE_ROM = sfe;
-    RFMainWindow::MainWindow->m_current_patient.Arm_Sensitivity = arm_sensitivity_value;
-    RFMainWindow::MainWindow->m_current_patient.Shoulder_Sensitivity = shoulder_sensitivity_value;
+	CEditUI *arm_sensitivity = static_cast<CEditUI *>(m_pm.FindControl(_T("control_arm_sensitivity")));
+	text = arm_sensitivity->GetText();
+	double arm_sensitivity_value = _wtof(text);
+	// get control_shoulder_sensitivity
+	CEditUI *shoulder_sensitivity = static_cast<CEditUI *>(m_pm.FindControl(_T("control_shoulder_sensitivity")));
+	text = shoulder_sensitivity->GetText();
+	double shoulder_sensitivity_value = _wtof(text);
+	// check the range of sensitivity
+	if (arm_sensitivity_value > 10 || arm_sensitivity_value < -10) {
+	    MessageBox(NULL, _T("the arm sensitivity should be in range [-10,10]"), _T("Set sensitivity error!"), MB_OK);
+	    return 0;
+	    }
+	if (shoulder_sensitivity_value > 10 || shoulder_sensitivity_value < -10) {
+	    MessageBox(NULL, _T("the shoulder sensitivity should be in range [-10,10]"), _T("Set sensitivity error!"), MB_OK);
+	    return 0;
+	    }
 
 
-    return OnReturnMainPage(pParam);
+	// 改变当前patient的saa_rom和sfe_rom
+	char sql[128];
+	sprintf(sql, "UPDATE patient SET SAA_ROM=%f, SFE_ROM=%f where id=%d", saa, sfe, RFMainWindow::MainWindow->m_current_patient.id);
+	RFMYSQLStmt stmt;
+	if (stmt.Prepare(RFMainWindow::DBThread->m_db, sql) > 0) {
+		stmt.Finalize();
+	}
+	RFMainWindow::MainWindow->m_current_patient.SAA_ROM = saa;
+	RFMainWindow::MainWindow->m_current_patient.SFE_ROM = sfe;
+	RFMainWindow::MainWindow->m_current_patient.Arm_Sensitivity = arm_sensitivity_value;
+	RFMainWindow::MainWindow->m_current_patient.Shoulder_Sensitivity = shoulder_sensitivity_value;
+
+	return OnReturnMainPage(pParam);
 }
 
-bool RFMainWindow::OnEVLastPage(void *pParam)
+bool RFMainWindow::OnEVLastPage(void* pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
 
-    CButtonUI *pControl = static_cast<CButtonUI *>(pMsg->pSender);
-    int cur_page = RFEvaluationData::get()->m_current_page;
-    if (cur_page < 1) {
-        return true;
-    }
+	CButtonUI* pControl = static_cast<CButtonUI*>(pMsg->pSender);
+	int cur_page = RFEvaluationData::get()->m_current_page;
+	if (cur_page < 1) {
+		return true;
+	}
 
-    int page = cur_page - 1;
-    // if (RFEvaluationData::get()->GetElementNumber(page) > 0) {
-    RFEvaluationData::get()->setCurPage(page);
-    UpdateEvaluationNumber(page);
-    UpdateEvaluationPage(RFEvaluationData::get()->Get(page));
-    //}
+	int page = cur_page - 1;
+	//if (RFEvaluationData::get()->GetElementNumber(page) > 0) {
+		RFEvaluationData::get()->setCurPage(page);
+		UpdateEvaluationNumber(page);
+		UpdateEvaluationPage(RFEvaluationData::get()->Get(page));
+	//}
 
-    return true;
+	return true;
 }
 
 bool RFMainWindow::OnEVPage1(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
 
-    CButtonUI *pControl = static_cast<CButtonUI *>(pMsg->pSender);
+	CButtonUI* pControl = static_cast<CButtonUI*>(pMsg->pSender);
 
-    int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
-
-    // if (RFEvaluationData::get()->GetElementNumber(page) > 0) {
-    RFEvaluationData::get()->setCurPage(page);
-    UpdateEvaluationNumber(page);
-    UpdateEvaluationPage(RFEvaluationData::get()->Get(page));
-    //}
-    return true;
+	int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
+	
+	//if (RFEvaluationData::get()->GetElementNumber(page) > 0) {
+		RFEvaluationData::get()->setCurPage(page);
+		UpdateEvaluationNumber(page);
+		UpdateEvaluationPage(RFEvaluationData::get()->Get(page));
+	//}
+	return true;
 }
 
 bool RFMainWindow::OnEVPage2(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
 
-    CButtonUI *pControl = static_cast<CButtonUI *>(pMsg->pSender);
+	CButtonUI* pControl = static_cast<CButtonUI*>(pMsg->pSender);
 
-    int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
-
-    // if (RFEvaluationData::get()->GetElementNumber(page) > 0) {
-    RFEvaluationData::get()->setCurPage(page);
-    UpdateEvaluationNumber(page);
-    UpdateEvaluationPage(RFEvaluationData::get()->Get(page));
-    //}
-    return true;
+	int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
+	
+	//if (RFEvaluationData::get()->GetElementNumber(page) > 0) {
+		RFEvaluationData::get()->setCurPage(page);
+		UpdateEvaluationNumber(page);
+		UpdateEvaluationPage(RFEvaluationData::get()->Get(page));
+	//}
+	return true;
 }
 
 bool RFMainWindow::OnEVPage3(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
 
-    CButtonUI *pControl = static_cast<CButtonUI *>(pMsg->pSender);
+	CButtonUI* pControl = static_cast<CButtonUI*>(pMsg->pSender);
 
-    int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
-
-    // if (RFEvaluationData::get()->GetElementNumber(page) > 0) {
-    RFEvaluationData::get()->setCurPage(page);
-    UpdateEvaluationNumber(page);
-    UpdateEvaluationPage(RFEvaluationData::get()->Get(page));
-    //}
-    return true;
+	int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
+	
+	//if (RFEvaluationData::get()->GetElementNumber(page) > 0) {
+		RFEvaluationData::get()->setCurPage(page);
+		UpdateEvaluationNumber(page);
+		UpdateEvaluationPage(RFEvaluationData::get()->Get(page));
+	//}
+	return true;
 }
 
 bool RFMainWindow::OnEVPage4(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
 
-    CButtonUI *pControl = static_cast<CButtonUI *>(pMsg->pSender);
+	CButtonUI* pControl = static_cast<CButtonUI*>(pMsg->pSender);
 
-    int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
-
-    // if (RFEvaluationData::get()->GetElementNumber(page) > 0) {
-    RFEvaluationData::get()->setCurPage(page);
-    UpdateEvaluationNumber(page);
-    UpdateEvaluationPage(RFEvaluationData::get()->Get(page));
-    //}
-    return true;
+	int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
+	
+	//if (RFEvaluationData::get()->GetElementNumber(page) > 0) {
+		RFEvaluationData::get()->setCurPage(page);
+		UpdateEvaluationNumber(page);
+		UpdateEvaluationPage(RFEvaluationData::get()->Get(page));
+	//}
+	return true;
 }
 
 bool RFMainWindow::OnEVNextPage(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
 
-    int cur_page = RFEvaluationData::get()->m_current_page;
+	int cur_page = RFEvaluationData::get()->m_current_page;
 
-    int page = cur_page + 1;
-    // if (RFEvaluationData::get()->GetElementNumber(page) > 0) {
-    RFEvaluationData::get()->setCurPage(page);
-    UpdateEvaluationNumber(page);
-    UpdateEvaluationPage(RFEvaluationData::get()->Get(page));
-    //}
-    return true;
+	int page = cur_page + 1;
+	//if (RFEvaluationData::get()->GetElementNumber(page) > 0) {
+		RFEvaluationData::get()->setCurPage(page);
+		UpdateEvaluationNumber(page);
+		UpdateEvaluationPage(RFEvaluationData::get()->Get(page));
+	//}
+	return true;
 }
 
 
-bool RFMainWindow::OnReturnEvaluationPage(void *pParam)
+bool RFMainWindow::OnReturnEvaluationPage(void* pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
 
-    ShowEvaluationPage();
-    return true;
+	ShowEvaluationPage();
+	return true;
 }
 
 bool RFMainWindow::OnReturnEvaluationHistoryPage(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
 
-    if (m_evalution_type == 1) {
-        OnEvaluation1(pParam);
-    }
-    else if (m_evalution_type == 2) {
-        OnEvaluation2(pParam);
-    }
-    else {
-        OnEvaluation3(pParam);
-        m_robot.ActiveStopMove();
-        m_robot.SetDamping(0.3);
-    }
-
-    return true;
+	if (m_evalution_type == 1) {
+		OnEvaluation1(pParam);
+	} else if (m_evalution_type == 2){
+		OnEvaluation2(pParam);
+	} else {
+		OnEvaluation3(pParam);
+		m_robot.ActiveStopMove();
+		m_robot.SetDamping(0.3);
+	}
+	
+	return true;
 }
 
 bool RFMainWindow::OnEVAdd(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
 
-    if (m_evalution_type == 1) {
-        CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("evaluation_add_welcom")));
-        pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+	if (m_evalution_type == 1) {
+		CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("evaluation_add_welcom")));
+		pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
 
-        pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("evaluation_add_name")));
-        pLabel->SetText(_T("建立FMA评测"));
+		pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("evaluation_add_name")));
+		pLabel->SetText(_T("建立FMA评测"));
 
-        m_fma.Reset();
-        m_mas.Reset();
-        UpdateEVIndex();
-        UpdateEVQuestion();
-        UpdateEVAnswer();
-        ShowEvaluationAddPage();
-    }
-    else if (m_evalution_type == 2) {
-        CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("evaluation_add_welcom")));
-        pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+		m_fma.Reset();
+		m_mas.Reset();
+		UpdateEVIndex();
+		UpdateEVQuestion();
+		UpdateEVAnswer();
+		ShowEvaluationAddPage();
+	} else if (m_evalution_type == 2) {
+		CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("evaluation_add_welcom")));
+		pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
 
-        pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("evaluation_add_name")));
-        pLabel->SetText(_T("建立MAS评测"));
-        m_fma.Reset();
-        m_mas.Reset();
-        UpdateEVIndex();
-        UpdateEVQuestion();
-        UpdateEVAnswer();
-        ShowEvaluationAddPage();
-    }
-    else if (m_evalution_type == 3) {
-        CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("evaluation_ydgn_add_welcom")));
-        pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+		pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("evaluation_add_name")));
+		pLabel->SetText(_T("建立MAS评测"));
+		m_fma.Reset();
+		m_mas.Reset();
+		UpdateEVIndex();
+		UpdateEVQuestion();
+		UpdateEVAnswer();
+		ShowEvaluationAddPage();
+	} else if (m_evalution_type == 3) {
+		CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("evaluation_ydgn_add_welcom")));
+		pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
 
-        m_fma.Reset();
-        m_mas.Reset();
-        ShowEvaluationYDGNAddPage();
-    }
+		m_fma.Reset();
+		m_mas.Reset();
+		ShowEvaluationYDGNAddPage();
+	}
 
-    return true;
+	return true;
 }
 
 bool RFMainWindow::OnEVAddPrev(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
 
-    UpdateEVAnswerToData();
-    if (m_evalution_type == 1) {
-        m_fma.Prev();
-    }
-    else if (m_evalution_type == 2) {
-        m_mas.Prev();
-    }
+	UpdateEVAnswerToData();
+	if (m_evalution_type == 1) {
+		m_fma.Prev();
+	} else if (m_evalution_type == 2) {
+		m_mas.Prev();
+	}
 
-    UpdateEVIndex();
-    UpdateEVQuestion();
-    UpdateEVAnswer();
-    UpdateEVAnswerToUI();
-    return true;
+	UpdateEVIndex();
+	UpdateEVQuestion();
+	UpdateEVAnswer();
+	UpdateEVAnswerToUI();
+	return true;
 }
 
 bool RFMainWindow::OnEVAddSubmit(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
 
-    UpdateEVAnswerToData();
-    SaveEVAnserToDB();
+	UpdateEVAnswerToData();
+	SaveEVAnserToDB();
 
-    OnReturnEvaluationHistoryPage(pParam);
-    return true;
+	OnReturnEvaluationHistoryPage(pParam);
+	return true;
 }
 
 bool RFMainWindow::OnEVAddNext(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
 
-    UpdateEVAnswerToData();
-    if (m_evalution_type == 1) {
-        m_fma.Next();
-    }
-    else if (m_evalution_type == 2) {
-        m_mas.Next();
-    }
+	UpdateEVAnswerToData();
+	if (m_evalution_type == 1) {
+		m_fma.Next();
+	} else if (m_evalution_type == 2) {
+		m_mas.Next();
+	}
 
-    UpdateEVIndex();
-    UpdateEVQuestion();
-    UpdateEVAnswer();
-    UpdateEVAnswerToUI();
-    return true;
+	UpdateEVIndex();
+	UpdateEVQuestion();
+	UpdateEVAnswer();
+	UpdateEVAnswerToUI();
+	return true;
 }
 
 void RFMainWindow::ShowEVDetail(std::wstring evid)
 {
-    if (m_evalution_type == 1 || m_evalution_type == 2) {
-        int id = _wtoi(evid.c_str());
+	if (m_evalution_type == 1 || m_evalution_type == 2) {
+		int id = _wtoi(evid.c_str());
 
-        CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("evaluation_detail_welcom")));
-        pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+		CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("evaluation_detail_welcom")));
+		pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
 
-        RFEvaluationDetailData::get()->Load(id);
+		RFEvaluationDetailData::get()->Load(id);
 
-        ShowEvaluationDetailPage();
+		ShowEvaluationDetailPage();
 
-        RFEvaluationDetailData::get()->setCurPage(0);
-        UpdateEvaluationDetailNumber(0);
-        UpdateEvaluationDetailPage(RFEvaluationDetailData::get()->Get(0));
-        UpdateEvaluationDetailScore(RFEvaluationDetailData::get()->m_score);
-    }
-    else {
-        int id = _wtoi(evid.c_str());
+		RFEvaluationDetailData::get()->setCurPage(0);
+		UpdateEvaluationDetailNumber(0);
+		UpdateEvaluationDetailPage(RFEvaluationDetailData::get()->Get(0));
+		UpdateEvaluationDetailScore(RFEvaluationDetailData::get()->m_score);
+	} else {
+		int id = _wtoi(evid.c_str());
 
-        CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("evaluation_ydgn_detail_welcom")));
-        pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+		CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("evaluation_ydgn_detail_welcom")));
+		pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
 
-        RFEvaluationDetailData::get()->Load(id);
-        ShowEvaluationYDGNDetailPage();
+		RFEvaluationDetailData::get()->Load(id);
+		ShowEvaluationYDGNDetailPage();
 
-        int i = 0;
-        std::list<EvaluationRecordData>::iterator begin = RFEvaluationDetailData::get()->m_datas.begin();
-        for (; begin != RFEvaluationDetailData::get()->m_datas.end(); begin++) {
-            wchar_t name[128] = _T("");
-            wsprintf(name, _T("evd_ydgn_cell%d1"), i);
-            CTextUI *pTxt = static_cast<CTextUI *>(m_pm.FindControl(name));
-            if (pTxt) {
-                pTxt->SetText(begin->item.c_str());
-            }
+		int i = 0;
+		std::list<EvaluationRecordData>::iterator begin = RFEvaluationDetailData::get()->m_datas.begin();
+		for (; begin != RFEvaluationDetailData::get()->m_datas.end(); begin++) {
+			wchar_t name[128] = _T("");
+			wsprintf(name, _T("evd_ydgn_cell%d1"), i);
+			CTextUI* pTxt = static_cast<CTextUI*>(m_pm.FindControl(name));
+			if (pTxt) {
+				pTxt->SetText(begin->item.c_str());
+			}
+			
+			wsprintf(name, _T("evd_ydgn_cell%d2"), i);
+			pTxt = static_cast<CTextUI*>(m_pm.FindControl(name));
+			if (pTxt) {
+				pTxt->SetText(begin->result.c_str());
+			}
 
-            wsprintf(name, _T("evd_ydgn_cell%d2"), i);
-            pTxt = static_cast<CTextUI *>(m_pm.FindControl(name));
-            if (pTxt) {
-                pTxt->SetText(begin->result.c_str());
-            }
+			i++;
+		}
 
-            i++;
-        }
+		wchar_t score[128];
 
-        wchar_t score[128];
+		ZeroMemory(score,sizeof(TCHAR) * 20);
+		_stprintf_s(score,128,_T("综合得分：%.2f°"), m_evydgn.score);
 
-        ZeroMemory(score, sizeof(TCHAR) * 20);
-        _stprintf_s(score, 128, _T("综合得分：%.2f°"), m_evydgn.score);
-
-        pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("evaluation_ydgn_detail_score")));
-        pLabel->SetText(score);
-    }
+		pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("evaluation_ydgn_detail_score")));
+		pLabel->SetText(score);
+	}
 }
 
 
-bool RFMainWindow::OnEVDLastPage(void *pParam)
+bool RFMainWindow::OnEVDLastPage(void* pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
 
-    CButtonUI *pControl = static_cast<CButtonUI *>(pMsg->pSender);
-    int cur_page = RFEvaluationDetailData::get()->m_current_page;
-    if (cur_page < 1) {
-        return true;
-    }
+	CButtonUI* pControl = static_cast<CButtonUI*>(pMsg->pSender);
+	int cur_page = RFEvaluationDetailData::get()->m_current_page;
+	if (cur_page < 1) {
+		return true;
+	}
 
-    int page = cur_page - 1;
-    RFEvaluationDetailData::get()->setCurPage(page);
-    UpdateEvaluationDetailNumber(page);
-    UpdateEvaluationDetailPage(RFEvaluationDetailData::get()->Get(page));
-    return true;
+	int page = cur_page - 1;
+	RFEvaluationDetailData::get()->setCurPage(page);
+	UpdateEvaluationDetailNumber(page);
+	UpdateEvaluationDetailPage(RFEvaluationDetailData::get()->Get(page));
+	return true;
 }
 
 bool RFMainWindow::OnEVDPage1(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
 
-    CButtonUI *pControl = static_cast<CButtonUI *>(pMsg->pSender);
+	CButtonUI* pControl = static_cast<CButtonUI*>(pMsg->pSender);
 
-    int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
+	int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
 
-    // if (RFEvaluationData::get()->GetElementNumber(page) > 0) {
-    RFEvaluationDetailData::get()->setCurPage(page);
-    UpdateEvaluationDetailNumber(page);
-    UpdateEvaluationDetailPage(RFEvaluationDetailData::get()->Get(page));
-    //}
-    return true;
+	//if (RFEvaluationData::get()->GetElementNumber(page) > 0) {
+	RFEvaluationDetailData::get()->setCurPage(page);
+	UpdateEvaluationDetailNumber(page);
+	UpdateEvaluationDetailPage(RFEvaluationDetailData::get()->Get(page));
+	//}
+	return true;
 }
 
 bool RFMainWindow::OnEVDPage2(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
 
-    CButtonUI *pControl = static_cast<CButtonUI *>(pMsg->pSender);
+	CButtonUI* pControl = static_cast<CButtonUI*>(pMsg->pSender);
 
-    int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
+	int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
 
-    // if (RFEvaluationData::get()->GetElementNumber(page) > 0) {
-    RFEvaluationDetailData::get()->setCurPage(page);
-    UpdateEvaluationDetailNumber(page);
-    UpdateEvaluationDetailPage(RFEvaluationDetailData::get()->Get(page));
-    //}
-    return true;
+	//if (RFEvaluationData::get()->GetElementNumber(page) > 0) {
+	RFEvaluationDetailData::get()->setCurPage(page);
+	UpdateEvaluationDetailNumber(page);
+	UpdateEvaluationDetailPage(RFEvaluationDetailData::get()->Get(page));
+	//}
+	return true;
 }
 
 bool RFMainWindow::OnEVDPage3(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
 
-    CButtonUI *pControl = static_cast<CButtonUI *>(pMsg->pSender);
+	CButtonUI* pControl = static_cast<CButtonUI*>(pMsg->pSender);
 
-    int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
+	int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
 
-    // if (RFEvaluationData::get()->GetElementNumber(page) > 0) {
-    RFEvaluationDetailData::get()->setCurPage(page);
-    UpdateEvaluationDetailNumber(page);
-    UpdateEvaluationDetailPage(RFEvaluationDetailData::get()->Get(page));
-    //}
-    return true;
+	//if (RFEvaluationData::get()->GetElementNumber(page) > 0) {
+	RFEvaluationDetailData::get()->setCurPage(page);
+	UpdateEvaluationDetailNumber(page);
+	UpdateEvaluationDetailPage(RFEvaluationDetailData::get()->Get(page));
+	//}
+	return true;
 }
 
 bool RFMainWindow::OnEVDPage4(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
 
-    CButtonUI *pControl = static_cast<CButtonUI *>(pMsg->pSender);
+	CButtonUI* pControl = static_cast<CButtonUI*>(pMsg->pSender);
 
-    int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
+	int page = _wtoi(((std::wstring)pControl->GetText()).c_str()) - 1;
 
-    // if (RFEvaluationData::get()->GetElementNumber(page) > 0) {
-    RFEvaluationDetailData::get()->setCurPage(page);
-    UpdateEvaluationDetailNumber(page);
-    UpdateEvaluationDetailPage(RFEvaluationDetailData::get()->Get(page));
-    //}
-    return true;
+	//if (RFEvaluationData::get()->GetElementNumber(page) > 0) {
+	RFEvaluationDetailData::get()->setCurPage(page);
+	UpdateEvaluationDetailNumber(page);
+	UpdateEvaluationDetailPage(RFEvaluationDetailData::get()->Get(page));
+	//}
+	return true;
 }
 
 bool RFMainWindow::OnEVDNextPage(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
 
-    int cur_page = RFEvaluationDetailData::get()->m_current_page;
+	int cur_page = RFEvaluationDetailData::get()->m_current_page;
 
-    int page = cur_page + 1;
-    // if (RFEvaluationData::get()->GetElementNumber(page) > 0) {
-    RFEvaluationDetailData::get()->setCurPage(page);
-    UpdateEvaluationDetailNumber(page);
-    UpdateEvaluationDetailPage(RFEvaluationDetailData::get()->Get(page));
-    //}
-    return true;
+	int page = cur_page + 1;
+	//if (RFEvaluationData::get()->GetElementNumber(page) > 0) {
+	RFEvaluationDetailData::get()->setCurPage(page);
+	UpdateEvaluationDetailNumber(page);
+	UpdateEvaluationDetailPage(RFEvaluationDetailData::get()->Get(page));
+	//}
+	return true;
 }
 
-//评估用的，暂时用不上
-// bool RFMainWindow::OnEVStart(void *pParam)
-// {
-//     TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-//     if (pMsg->sType != _T("click")) return false;
+bool RFMainWindow::OnEVStart(void *pParam)
+{
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
 
-//     m_robot.ActiveStopMove();
-//     m_robot.ActiveStartMove();
+	m_robot.ActiveStopMove();
+	m_robot.ActiveStartMove();
 
-//     StartEVDetect();
-//     return true;
-// }
+	StartEVDetect();
+	return true;
+}
 
 bool RFMainWindow::OnEVStop(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
 
-    StopEVDetect();
-    m_robot.ActiveStopMove();
+	StopEVDetect();
+	m_robot.ActiveStopMove();
 
-    wchar_t temp[128];
-    ZeroMemory(temp, sizeof(TCHAR) * 20);
-    _stprintf_s(temp, 128, _T("得分：%.2f"), m_evydgn.score);
+	wchar_t temp[128];
+	ZeroMemory(temp,sizeof(TCHAR) * 20);
+	_stprintf_s(temp,128,_T("得分：%.2f"), m_evydgn.score);
 
-    CLabelUI *plbl = static_cast<CLabelUI *>(m_pm.FindControl(_T("evaluation_ydgn_score")));
-    plbl->SetText(temp);
-    return true;
+	CLabelUI* plbl = static_cast<CLabelUI*>(m_pm.FindControl(_T("evaluation_ydgn_score")));
+	plbl->SetText(temp);
+	return true;
 }
 
 bool RFMainWindow::OnEVBegin1(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
 
-    CCheckBoxUI *pCb = static_cast<CCheckBoxUI *>(pMsg->pSender);
-    if (!pCb) {
-        return true;
-    }
-    if (!pCb->GetCheck()) {
-        double angle[2];
-        ControlCard::GetInstance().GetEncoderData(angle);
-        m_evydgn.zb1 = angle[0];
+	CCheckBoxUI* pCb = static_cast<CCheckBoxUI*>(pMsg->pSender);
+	if (!pCb) {return true;}
+	if (!pCb->GetCheck()) {
+		double angle[2];
+		ControlCard::GetInstance().GetEncoderData(angle);
+		m_evydgn.zb1 = angle[0];
 
-        TCHAR szStartAngle[20];
-        ZeroMemory(szStartAngle, sizeof(TCHAR) * 20);
-        _stprintf_s(szStartAngle, 20, _T("%.2f°"), angle[0]);
+		TCHAR szStartAngle[20];
+		ZeroMemory(szStartAngle,sizeof(TCHAR) * 20);
+		_stprintf_s(szStartAngle,20,_T("%.2f°"),angle[0]);
+		
+		CLabelUI * plbl = static_cast<CLabelUI*>(m_pm.FindControl(_T("evaluation_angle01")));
+		plbl->SetText(szStartAngle);
+	} else {
+		double angle[2];
+		ControlCard::GetInstance().GetEncoderData(angle);
+		m_evydgn.zb2 = angle[0];
+		m_evydgn.zb = m_evydgn.zb2 - m_evydgn.zb1;
+		
+		TCHAR szStartAngle[20];
+		ZeroMemory(szStartAngle,sizeof(TCHAR) * 20);
+		_stprintf_s(szStartAngle,20,_T("%.2f°"),angle[0]);
 
-        CLabelUI *plbl = static_cast<CLabelUI *>(m_pm.FindControl(_T("evaluation_angle01")));
-        plbl->SetText(szStartAngle);
-    }
-    else {
-        double angle[2];
-        ControlCard::GetInstance().GetEncoderData(angle);
-        m_evydgn.zb2 = angle[0];
-        m_evydgn.zb = m_evydgn.zb2 - m_evydgn.zb1;
+		CLabelUI * plbl = static_cast<CLabelUI*>(m_pm.FindControl(_T("evaluation_angle02")));
+		plbl->SetText(szStartAngle);
+	}
 
-        TCHAR szStartAngle[20];
-        ZeroMemory(szStartAngle, sizeof(TCHAR) * 20);
-        _stprintf_s(szStartAngle, 20, _T("%.2f°"), angle[0]);
-
-        CLabelUI *plbl = static_cast<CLabelUI *>(m_pm.FindControl(_T("evaluation_angle02")));
-        plbl->SetText(szStartAngle);
-    }
-
-    return true;
+	return true;
 }
 
 bool RFMainWindow::OnEVBegin2(void *pParam)
 {
-    TNotifyUI *pMsg = static_cast<TNotifyUI *>(pParam);
-    if (pMsg->sType != _T("click")) return false;
+	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
+	if (pMsg->sType != _T("click"))
+		return false;
 
 
-    CCheckBoxUI *pCb = static_cast<CCheckBoxUI *>(pMsg->pSender);
-    if (!pCb) {
-        return true;
-    }
+	CCheckBoxUI* pCb = static_cast<CCheckBoxUI*>(pMsg->pSender);
+	if (!pCb) {return true;}
 
-    if (!pCb->GetCheck()) {
-        double angle[2];
-        ControlCard::GetInstance().GetEncoderData(angle);
-        m_evydgn.jb1 = angle[1];
+	if (!pCb->GetCheck()) {
+		double angle[2];
+		ControlCard::GetInstance().GetEncoderData(angle);
+		m_evydgn.jb1 = angle[1];
 
-        TCHAR szStartAngle[20];
-        ZeroMemory(szStartAngle, sizeof(TCHAR) * 20);
-        _stprintf_s(szStartAngle, 20, _T("%.2f°"), angle[1]);
+		TCHAR szStartAngle[20];
+		ZeroMemory(szStartAngle,sizeof(TCHAR) * 20);
+		_stprintf_s(szStartAngle,20,_T("%.2f°"),angle[1]);
 
-        CLabelUI *plbl = static_cast<CLabelUI *>(m_pm.FindControl(_T("evaluation_angle11")));
-        plbl->SetText(szStartAngle);
-    }
-    else {
-        double angle[2];
-        ControlCard::GetInstance().GetEncoderData(angle);
-        m_evydgn.jb2 = angle[1];
-        m_evydgn.jb = m_evydgn.jb2 - m_evydgn.jb1;
+		CLabelUI * plbl = static_cast<CLabelUI*>(m_pm.FindControl(_T("evaluation_angle11")));
+		plbl->SetText(szStartAngle);
+	} else {
+		double angle[2];
+		ControlCard::GetInstance().GetEncoderData(angle);
+		m_evydgn.jb2 = angle[1];
+		m_evydgn.jb = m_evydgn.jb2 - m_evydgn.jb1;
 
-        TCHAR szStartAngle[20];
-        ZeroMemory(szStartAngle, sizeof(TCHAR) * 20);
-        _stprintf_s(szStartAngle, 20, _T("%.2f°"), angle[1]);
+		TCHAR szStartAngle[20];
+		ZeroMemory(szStartAngle,sizeof(TCHAR) * 20);
+		_stprintf_s(szStartAngle,20,_T("%.2f°"),angle[1]);
 
-        CLabelUI *plbl = static_cast<CLabelUI *>(m_pm.FindControl(_T("evaluation_angle12")));
-        plbl->SetText(szStartAngle);
-    }
+		CLabelUI * plbl = static_cast<CLabelUI*>(m_pm.FindControl(_T("evaluation_angle12")));
+		plbl->SetText(szStartAngle);
+	}
 
-    return true;
+	return true;
 }
 
 
 void RFMainWindow::ShowLoginPage()
 {
-    m_main_page->SetVisible(false);
-    m_patient_select_page->SetVisible(false);
-    m_patient_manager_page->SetVisible(false);
-    m_patient_detail_page->SetVisible(false);
-    m_login_success_page->SetVisible(false);
-    m_login_input_page->SetVisible(true);
-    m_login_page->SetVisible(true);
-    m_patient_edit_page->SetVisible(false);
-    m_about_page->SetVisible(false);
-    m_patient_add_page->SetVisible(false);
-    m_personor_info_edit_page->SetVisible(false);
-    m_train_main_page->SetVisible(false);
-    m_active_train_page->SetVisible(false);
-    m_patient_train_info->SetVisible(false);
-    m_patient_train_detail->SetVisible(false);
-    m_passive_train_page->SetVisible(false);
-    m_eyemode_page->SetVisible(false);
-    m_emgmode_page->SetVisible(false);
-    m_traindetail_chart->SetVisible(false);
-    m_active_train_game4_page->SetVisible(false);
-    m_evaluation_page->SetVisible(false);
-    m_evaluation_history_page->SetVisible(false);
-    m_evaluation_add_page->SetVisible(false);
-    m_evaluation_detail_page->SetVisible(false);
-    m_evaluation_ydgn_add_page->SetVisible(false);
-    m_evaluation_ydgn_detail_page->SetVisible(false);
-    m_systemset_info_edit_page->SetVisible(false);
-    m_current_passivetraininfos.clear();
-    m_systemset_info_edit_page->SetVisible(false);
+	m_main_page->SetVisible(false);
+	m_patient_select_page->SetVisible(false);
+	m_patient_manager_page->SetVisible(false);
+	m_patient_detail_page->SetVisible(false);
+	m_login_success_page->SetVisible(false);
+	m_login_input_page->SetVisible(true);
+	m_login_page->SetVisible(true);
+	m_patient_edit_page->SetVisible(false);
+	m_about_page->SetVisible(false);
+	m_patient_add_page->SetVisible(false);
+	m_personor_info_edit_page->SetVisible(false);
+	m_train_main_page->SetVisible(false);
+	m_active_train_page->SetVisible(false);
+	m_patient_train_info->SetVisible(false);
+	m_patient_train_detail->SetVisible(false);
+	m_passive_train_page->SetVisible(false);
+	m_eyemode_page->SetVisible(false);
+	m_emgmode_page->SetVisible(false);
+	m_traindetail_chart->SetVisible(false);
+	m_active_train_game4_page->SetVisible(false);
+	m_evaluation_page->SetVisible(false);
+	m_evaluation_history_page->SetVisible(false);
+	m_evaluation_add_page->SetVisible(false);
+	m_evaluation_detail_page->SetVisible(false);
+	m_evaluation_ydgn_add_page->SetVisible(false);
+	m_evaluation_ydgn_detail_page->SetVisible(false);
+	m_systemset_info_edit_page->SetVisible(false);
+	m_current_passivetraininfos.clear();
+	m_systemset_info_edit_page->SetVisible(false);
 
-    StopActiveGameDetect();
+	StopActiveGameDetect();
 }
 
 void RFMainWindow::ShowLoginSuccessPage()
 {
-    m_main_page->SetVisible(false);
-    m_patient_select_page->SetVisible(false);
-    m_patient_manager_page->SetVisible(false);
-    m_patient_detail_page->SetVisible(false);
-    m_login_success_page->SetVisible(true);
-    m_login_input_page->SetVisible(false);
-    m_login_page->SetVisible(true);
-    m_patient_edit_page->SetVisible(false);
-    m_about_page->SetVisible(false);
-    m_patient_add_page->SetVisible(false);
-    m_personor_info_edit_page->SetVisible(false);
-    m_train_main_page->SetVisible(false);
-    m_active_train_page->SetVisible(false);
-    m_patient_train_info->SetVisible(false);
-    m_patient_train_detail->SetVisible(false);
-    m_passive_train_page->SetVisible(false);
-    m_eyemode_page->SetVisible(false);
-    m_emgmode_page->SetVisible(false);
-    m_traindetail_chart->SetVisible(false);
-    m_active_train_game4_page->SetVisible(false);
-    m_evaluation_page->SetVisible(false);
-    m_evaluation_history_page->SetVisible(false);
-    m_evaluation_add_page->SetVisible(false);
-    m_evaluation_detail_page->SetVisible(false);
-    m_evaluation_ydgn_add_page->SetVisible(false);
-    m_evaluation_ydgn_detail_page->SetVisible(false);
-    m_systemset_info_edit_page->SetVisible(false);
+	m_main_page->SetVisible(false);
+	m_patient_select_page->SetVisible(false);
+	m_patient_manager_page->SetVisible(false);
+	m_patient_detail_page->SetVisible(false);
+	m_login_success_page->SetVisible(true);
+	m_login_input_page->SetVisible(false);
+	m_login_page->SetVisible(true);
+	m_patient_edit_page->SetVisible(false);
+	m_about_page->SetVisible(false);
+	m_patient_add_page->SetVisible(false);
+	m_personor_info_edit_page->SetVisible(false);
+	m_train_main_page->SetVisible(false);
+	m_active_train_page->SetVisible(false);
+	m_patient_train_info->SetVisible(false);
+	m_patient_train_detail->SetVisible(false);
+	m_passive_train_page->SetVisible(false);
+	m_eyemode_page->SetVisible(false);
+	m_emgmode_page->SetVisible(false);
+	m_traindetail_chart->SetVisible(false);
+	m_active_train_game4_page->SetVisible(false);
+	m_evaluation_page->SetVisible(false);
+	m_evaluation_history_page->SetVisible(false);
+	m_evaluation_add_page->SetVisible(false);
+	m_evaluation_detail_page->SetVisible(false);
+	m_evaluation_ydgn_add_page->SetVisible(false);
+	m_evaluation_ydgn_detail_page->SetVisible(false);
+	m_systemset_info_edit_page->SetVisible(false);
 
-    m_current_passivetraininfos.clear();
+	m_current_passivetraininfos.clear();
 
 
-    StopActiveGameDetect();
+	StopActiveGameDetect();
 }
 
 void RFMainWindow::ShowMainPage()
 {
-    m_patient_select_page->SetVisible(false);
-    m_patient_manager_page->SetVisible(false);
-    m_patient_detail_page->SetVisible(false);
-    m_login_success_page->SetVisible(false);
-    m_login_input_page->SetVisible(false);
-    m_login_page->SetVisible(false);
-    m_main_page->SetVisible(true);
-    m_patient_edit_page->SetVisible(false);
-    m_about_page->SetVisible(false);
-    m_patient_add_page->SetVisible(false);
-    m_personor_info_edit_page->SetVisible(false);
-    m_train_main_page->SetVisible(false);
-    m_active_train_page->SetVisible(false);
-    m_patient_train_info->SetVisible(false);
-    m_patient_train_detail->SetVisible(false);
-    m_passive_train_page->SetVisible(false);
-    m_eyemode_page->SetVisible(false);
-    m_emgmode_page->SetVisible(false);
-    m_traindetail_chart->SetVisible(false);
-    m_active_train_game4_page->SetVisible(false);
-    m_evaluation_page->SetVisible(false);
-    m_evaluation_history_page->SetVisible(false);
-    m_evaluation_add_page->SetVisible(false);
-    m_evaluation_detail_page->SetVisible(false);
-    m_evaluation_ydgn_add_page->SetVisible(false);
-    m_evaluation_ydgn_detail_page->SetVisible(false);
-    m_systemset_info_edit_page->SetVisible(false);
+	m_patient_select_page->SetVisible(false);
+	m_patient_manager_page->SetVisible(false);
+	m_patient_detail_page->SetVisible(false);
+	m_login_success_page->SetVisible(false);
+	m_login_input_page->SetVisible(false);
+	m_login_page->SetVisible(false);
+	m_main_page->SetVisible(true);
+	m_patient_edit_page->SetVisible(false);
+	m_about_page->SetVisible(false);
+	m_patient_add_page->SetVisible(false);
+	m_personor_info_edit_page->SetVisible(false);
+	m_train_main_page->SetVisible(false);
+	m_active_train_page->SetVisible(false);
+	m_patient_train_info->SetVisible(false);
+	m_patient_train_detail->SetVisible(false);
+	m_passive_train_page->SetVisible(false);
+	m_eyemode_page->SetVisible(false);
+	m_emgmode_page->SetVisible(false);
+	m_traindetail_chart->SetVisible(false);
+	m_active_train_game4_page->SetVisible(false);
+	m_evaluation_page->SetVisible(false);
+	m_evaluation_history_page->SetVisible(false);
+	m_evaluation_add_page->SetVisible(false);
+	m_evaluation_detail_page->SetVisible(false);
+	m_evaluation_ydgn_add_page->SetVisible(false);
+	m_evaluation_ydgn_detail_page->SetVisible(false);
+	m_systemset_info_edit_page->SetVisible(false);
 
-    StopActiveGameDetect();
+	StopActiveGameDetect();
 
-    m_current_passivetraininfos.clear();
+	m_current_passivetraininfos.clear();
 
-    if (m_current_patient.id > 0) {
-        std::wstring current_patient = _T("已选择患者 【") + m_current_patient.name + _T("】");
-        m_main_tip->SetText(current_patient.c_str());
-    }
-    else {
-        std::wstring current_patient = _T("请先选择一名患者之后，再继续其他操作");
-        m_main_tip->SetText(current_patient.c_str());
-    }
+	if (m_current_patient.id > 0) {
+		std::wstring current_patient = _T("已选择患者 【") + m_current_patient.name + _T("】");
+		m_main_tip->SetText(current_patient.c_str());
+	} else {
+		std::wstring current_patient = _T("请先选择一名患者之后，再继续其他操作");
+		m_main_tip->SetText(current_patient.c_str());
+	}
 }
 
 void RFMainWindow::ShowSelectPatientPage()
 {
-    m_main_page->SetVisible(false);
-    m_login_success_page->SetVisible(false);
-    m_login_input_page->SetVisible(false);
-    m_login_page->SetVisible(false);
-    m_patient_manager_page->SetVisible(false);
-    m_patient_detail_page->SetVisible(false);
-    m_patient_select_page->SetVisible(true);
-    m_patient_edit_page->SetVisible(false);
-    m_about_page->SetVisible(false);
-    m_patient_add_page->SetVisible(false);
-    m_personor_info_edit_page->SetVisible(false);
-    m_train_main_page->SetVisible(false);
-    m_active_train_page->SetVisible(false);
-    m_patient_train_info->SetVisible(false);
-    m_patient_train_detail->SetVisible(false);
-    m_passive_train_page->SetVisible(false);
-    m_eyemode_page->SetVisible(false);
-    m_emgmode_page->SetVisible(false);
-    m_traindetail_chart->SetVisible(false);
-    m_active_train_game4_page->SetVisible(false);
-    m_evaluation_page->SetVisible(false);
-    m_evaluation_history_page->SetVisible(false);
-    m_evaluation_add_page->SetVisible(false);
-    m_evaluation_detail_page->SetVisible(false);
-    m_evaluation_ydgn_add_page->SetVisible(false);
-    m_evaluation_ydgn_detail_page->SetVisible(false);
-    m_systemset_info_edit_page->SetVisible(false);
+	m_main_page->SetVisible(false);
+	m_login_success_page->SetVisible(false);
+	m_login_input_page->SetVisible(false);
+	m_login_page->SetVisible(false);
+	m_patient_manager_page->SetVisible(false);
+	m_patient_detail_page->SetVisible(false);
+	m_patient_select_page->SetVisible(true);
+	m_patient_edit_page->SetVisible(false);
+	m_about_page->SetVisible(false);
+	m_patient_add_page->SetVisible(false);
+	m_personor_info_edit_page->SetVisible(false);
+	m_train_main_page->SetVisible(false);
+	m_active_train_page->SetVisible(false);
+	m_patient_train_info->SetVisible(false);
+	m_patient_train_detail->SetVisible(false);
+	m_passive_train_page->SetVisible(false);
+	m_eyemode_page->SetVisible(false);
+	m_emgmode_page->SetVisible(false);
+	m_traindetail_chart->SetVisible(false);
+	m_active_train_game4_page->SetVisible(false);
+	m_evaluation_page->SetVisible(false);
+	m_evaluation_history_page->SetVisible(false);
+	m_evaluation_add_page->SetVisible(false);
+	m_evaluation_detail_page->SetVisible(false);
+	m_evaluation_ydgn_add_page->SetVisible(false);
+	m_evaluation_ydgn_detail_page->SetVisible(false);
+	m_systemset_info_edit_page->SetVisible(false);
 
-    StopActiveGameDetect();
+	StopActiveGameDetect();
 
-    m_current_passivetraininfos.clear();
+	m_current_passivetraininfos.clear();
 }
 
 void RFMainWindow::ShowManagerPatientPage()
 {
-    m_main_page->SetVisible(false);
-    m_login_success_page->SetVisible(false);
-    m_login_input_page->SetVisible(false);
-    m_login_page->SetVisible(false);
-    m_patient_select_page->SetVisible(false);
-    m_patient_detail_page->SetVisible(false);
-    m_patient_manager_page->SetVisible(true);
-    CButtonUI *manager_add_patient_save = static_cast<CButtonUI *>(m_pm.FindControl(_T("manager_add_patient_save")));
-    manager_add_patient_save->SetEnabled(true);
+	m_main_page->SetVisible(false);
+	m_login_success_page->SetVisible(false);
+	m_login_input_page->SetVisible(false);
+	m_login_page->SetVisible(false);
+	m_patient_select_page->SetVisible(false);
+	m_patient_detail_page->SetVisible(false);
+	m_patient_manager_page->SetVisible(true);
+	CButtonUI* manager_add_patient_save = static_cast<CButtonUI*>(m_pm.FindControl(_T("manager_add_patient_save")));
+	manager_add_patient_save->SetEnabled(true);
 
-    m_patient_edit_page->SetVisible(false);
-    m_about_page->SetVisible(false);
-    m_patient_add_page->SetVisible(false);
-    m_personor_info_edit_page->SetVisible(false);
-    m_train_main_page->SetVisible(false);
-    m_active_train_page->SetVisible(false);
-    m_patient_train_info->SetVisible(false);
-    m_patient_train_detail->SetVisible(false);
-    m_passive_train_page->SetVisible(false);
-    m_eyemode_page->SetVisible(false);
-    m_emgmode_page->SetVisible(false);
-    m_traindetail_chart->SetVisible(false);
-    m_active_train_game4_page->SetVisible(false);
-    m_evaluation_page->SetVisible(false);
-    m_evaluation_history_page->SetVisible(false);
-    m_evaluation_add_page->SetVisible(false);
-    m_evaluation_detail_page->SetVisible(false);
-    m_evaluation_ydgn_add_page->SetVisible(false);
-    m_evaluation_ydgn_detail_page->SetVisible(false);
-    m_systemset_info_edit_page->SetVisible(false);
+	m_patient_edit_page->SetVisible(false);
+	m_about_page->SetVisible(false);
+	m_patient_add_page->SetVisible(false);
+	m_personor_info_edit_page->SetVisible(false);
+	m_train_main_page->SetVisible(false);
+	m_active_train_page->SetVisible(false);
+	m_patient_train_info->SetVisible(false);
+	m_patient_train_detail->SetVisible(false);
+	m_passive_train_page->SetVisible(false);
+	m_eyemode_page->SetVisible(false);
+	m_emgmode_page->SetVisible(false);
+	m_traindetail_chart->SetVisible(false);
+	m_active_train_game4_page->SetVisible(false);
+	m_evaluation_page->SetVisible(false);
+	m_evaluation_history_page->SetVisible(false);
+	m_evaluation_add_page->SetVisible(false);
+	m_evaluation_detail_page->SetVisible(false);
+	m_evaluation_ydgn_add_page->SetVisible(false);
+	m_evaluation_ydgn_detail_page->SetVisible(false);
+	m_systemset_info_edit_page->SetVisible(false);
 
-    StopActiveGameDetect();
+	StopActiveGameDetect();
 
-    m_current_passivetraininfos.clear();
+	m_current_passivetraininfos.clear();
 }
 
 void RFMainWindow::ShowTrainPage()
 {
-    m_main_page->SetVisible(false);
-    m_login_success_page->SetVisible(false);
-    m_login_input_page->SetVisible(false);
-    m_login_page->SetVisible(false);
-    m_patient_select_page->SetVisible(false);
-    m_patient_detail_page->SetVisible(false);
-    m_patient_manager_page->SetVisible(false);
-    m_patient_edit_page->SetVisible(false);
-    m_about_page->SetVisible(false);
-    m_patient_add_page->SetVisible(false);
-    m_personor_info_edit_page->SetVisible(false);
-    m_train_main_page->SetVisible(true);
-    m_active_train_page->SetVisible(false);
-    m_patient_train_info->SetVisible(false);
-    m_patient_train_detail->SetVisible(false);
-    m_passive_train_page->SetVisible(false);
-    m_eyemode_page->SetVisible(false);
-    m_emgmode_page->SetVisible(false);
-    m_traindetail_chart->SetVisible(false);
-    m_active_train_game4_page->SetVisible(false);
-    m_evaluation_page->SetVisible(false);
-    m_evaluation_history_page->SetVisible(false);
-    m_evaluation_add_page->SetVisible(false);
-    m_evaluation_detail_page->SetVisible(false);
-    m_evaluation_ydgn_add_page->SetVisible(false);
-    m_evaluation_ydgn_detail_page->SetVisible(false);
-    m_systemset_info_edit_page->SetVisible(false);
+	m_main_page->SetVisible(false);
+	m_login_success_page->SetVisible(false);
+	m_login_input_page->SetVisible(false);
+	m_login_page->SetVisible(false);
+	m_patient_select_page->SetVisible(false);
+	m_patient_detail_page->SetVisible(false);
+	m_patient_manager_page->SetVisible(false);
+	m_patient_edit_page->SetVisible(false);
+	m_about_page->SetVisible(false);
+	m_patient_add_page->SetVisible(false);
+	m_personor_info_edit_page->SetVisible(false);
+	m_train_main_page->SetVisible(true);
+	m_active_train_page->SetVisible(false);
+	m_patient_train_info->SetVisible(false);
+	m_patient_train_detail->SetVisible(false);
+	m_passive_train_page->SetVisible(false);
+	m_eyemode_page->SetVisible(false);
+	m_emgmode_page->SetVisible(false);
+	m_traindetail_chart->SetVisible(false);
+	m_active_train_game4_page->SetVisible(false);
+	m_evaluation_page->SetVisible(false);
+	m_evaluation_history_page->SetVisible(false);
+	m_evaluation_add_page->SetVisible(false);
+	m_evaluation_detail_page->SetVisible(false);
+	m_evaluation_ydgn_add_page->SetVisible(false);
+	m_evaluation_ydgn_detail_page->SetVisible(false);
+	m_systemset_info_edit_page->SetVisible(false);
 
-    StopActiveGameDetect();
+	StopActiveGameDetect();
 
-    m_current_passivetraininfos.clear();
+	m_current_passivetraininfos.clear();
 }
 
 void RFMainWindow::ShowActiveTrainPage()
 {
-    m_main_page->SetVisible(false);
-    m_login_success_page->SetVisible(false);
-    m_login_input_page->SetVisible(false);
-    m_login_page->SetVisible(false);
-    m_patient_select_page->SetVisible(false);
-    m_patient_detail_page->SetVisible(false);
-    m_patient_manager_page->SetVisible(false);
-    m_patient_edit_page->SetVisible(false);
-    m_about_page->SetVisible(false);
-    m_patient_add_page->SetVisible(false);
-    m_personor_info_edit_page->SetVisible(false);
-    m_train_main_page->SetVisible(false);
-    m_active_train_page->SetVisible(true);
-    m_patient_train_info->SetVisible(false);
-    m_patient_train_detail->SetVisible(false);
-    m_passive_train_page->SetVisible(false);
-    m_eyemode_page->SetVisible(false);
-    m_emgmode_page->SetVisible(false);
-    m_traindetail_chart->SetVisible(false);
-    m_active_train_game4_page->SetVisible(false);
-    m_evaluation_page->SetVisible(false);
-    m_evaluation_history_page->SetVisible(false);
-    m_evaluation_add_page->SetVisible(false);
-    m_evaluation_detail_page->SetVisible(false);
-    m_evaluation_ydgn_add_page->SetVisible(false);
-    m_evaluation_ydgn_detail_page->SetVisible(false);
-    m_systemset_info_edit_page->SetVisible(false);
+	m_main_page->SetVisible(false);
+	m_login_success_page->SetVisible(false);
+	m_login_input_page->SetVisible(false);
+	m_login_page->SetVisible(false);
+	m_patient_select_page->SetVisible(false);
+	m_patient_detail_page->SetVisible(false);
+	m_patient_manager_page->SetVisible(false);
+	m_patient_edit_page->SetVisible(false);
+	m_about_page->SetVisible(false);
+	m_patient_add_page->SetVisible(false);
+	m_personor_info_edit_page->SetVisible(false);
+	m_train_main_page->SetVisible(false);
+	m_active_train_page->SetVisible(true);
+	m_patient_train_info->SetVisible(false);
+	m_patient_train_detail->SetVisible(false);
+	m_passive_train_page->SetVisible(false);
+	m_eyemode_page->SetVisible(false);
+	m_emgmode_page->SetVisible(false);
+	m_traindetail_chart->SetVisible(false);
+	m_active_train_game4_page->SetVisible(false);
+	m_evaluation_page->SetVisible(false);
+	m_evaluation_history_page->SetVisible(false);
+	m_evaluation_add_page->SetVisible(false);
+	m_evaluation_detail_page->SetVisible(false);
+	m_evaluation_ydgn_add_page->SetVisible(false);
+	m_evaluation_ydgn_detail_page->SetVisible(false);
+	m_systemset_info_edit_page->SetVisible(false);
 
-    CVerticalLayoutUI *active_train_page_main = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("active_train_page_main")));
-    active_train_page_main->SetVisible(true);
-
-    StopActiveGameDetect();
-    m_current_passivetraininfos.clear();
+	CVerticalLayoutUI* active_train_page_main = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("active_train_page_main")));
+	active_train_page_main->SetVisible(true);
+	
+	StopActiveGameDetect();
+	m_current_passivetraininfos.clear();
 }
 
 void RFMainWindow::ShowPassiveTrainPage()
 {
-    CListUI *pListUI = static_cast<CListUI *>(m_passive_train_page->FindSubControl(_T("passive_train_content_list")));
-    pListUI->RemoveAll();
-    m_id_media.clear();
-    m_id_passivetrainitem.clear();
-    m_delete_id_passivetrainitem.clear();
-    std::list<PassiveTrainInfo>::iterator begin = RFPassiveTrain::get()->m_passivetraininfos.begin();
-    for (; begin != RFPassiveTrain::get()->m_passivetraininfos.end(); begin++) {
-        AddPassiveTrainItem(pListUI, *begin);
-    }
+	CListUI* pListUI = static_cast<CListUI*>(m_passive_train_page->FindSubControl(_T("passive_train_content_list")));
+	pListUI->RemoveAll();
+	m_id_media.clear();
+	m_id_passivetrainitem.clear();
+	m_delete_id_passivetrainitem.clear();
+	std::list<PassiveTrainInfo>::iterator begin = RFPassiveTrain::get()->m_passivetraininfos.begin();
+	for (; begin != RFPassiveTrain::get()->m_passivetraininfos.end(); begin++) {
+		AddPassiveTrainItem(pListUI, *begin);
+	}
 
-    m_main_page->SetVisible(false);
-    m_login_success_page->SetVisible(false);
-    m_login_input_page->SetVisible(false);
-    m_login_page->SetVisible(false);
-    m_patient_select_page->SetVisible(false);
-    m_patient_detail_page->SetVisible(false);
-    m_patient_manager_page->SetVisible(false);
-    m_patient_edit_page->SetVisible(false);
-    m_about_page->SetVisible(false);
-    m_patient_add_page->SetVisible(false);
-    m_personor_info_edit_page->SetVisible(false);
-    m_train_main_page->SetVisible(false);
-    m_active_train_page->SetVisible(false);
-    m_patient_train_info->SetVisible(false);
-    m_patient_train_detail->SetVisible(false);
-    m_passive_train_page->SetVisible(true);
-    m_eyemode_page->SetVisible(false);
-    m_emgmode_page->SetVisible(false);
-    m_traindetail_chart->SetVisible(false);
-    m_active_train_game4_page->SetVisible(false);
-    m_evaluation_page->SetVisible(false);
-    m_evaluation_history_page->SetVisible(false);
-    m_evaluation_add_page->SetVisible(false);
-    m_evaluation_detail_page->SetVisible(false);
-    m_evaluation_ydgn_add_page->SetVisible(false);
-    m_evaluation_ydgn_detail_page->SetVisible(false);
-    m_systemset_info_edit_page->SetVisible(false);
+	m_main_page->SetVisible(false);
+	m_login_success_page->SetVisible(false);
+	m_login_input_page->SetVisible(false);
+	m_login_page->SetVisible(false);
+	m_patient_select_page->SetVisible(false);
+	m_patient_detail_page->SetVisible(false);
+	m_patient_manager_page->SetVisible(false);
+	m_patient_edit_page->SetVisible(false);
+	m_about_page->SetVisible(false);
+	m_patient_add_page->SetVisible(false);
+	m_personor_info_edit_page->SetVisible(false);
+	m_train_main_page->SetVisible(false);
+	m_active_train_page->SetVisible(false);
+	m_patient_train_info->SetVisible(false);
+	m_patient_train_detail->SetVisible(false);
+	m_passive_train_page->SetVisible(true);
+	m_eyemode_page->SetVisible(false);
+	m_emgmode_page->SetVisible(false);
+	m_traindetail_chart->SetVisible(false);
+	m_active_train_game4_page->SetVisible(false);
+	m_evaluation_page->SetVisible(false);
+	m_evaluation_history_page->SetVisible(false);
+	m_evaluation_add_page->SetVisible(false);
+	m_evaluation_detail_page->SetVisible(false);
+	m_evaluation_ydgn_add_page->SetVisible(false);
+	m_evaluation_ydgn_detail_page->SetVisible(false);
+	m_systemset_info_edit_page->SetVisible(false);
 
-    StopActiveGameDetect();
+	StopActiveGameDetect();
 
-    m_current_passivetraininfos.clear();
+	m_current_passivetraininfos.clear();
 }
 
 void RFMainWindow::ShowPatientDetail(int page, int index)
 {
-    m_main_page->SetVisible(false);
-    m_login_success_page->SetVisible(false);
-    m_login_input_page->SetVisible(false);
-    m_login_page->SetVisible(false);
-    m_patient_select_page->SetVisible(false);
-    m_patient_detail_page->SetVisible(true);
-    m_patient_manager_page->SetVisible(false);
-    m_patient_edit_page->SetVisible(false);
-    m_about_page->SetVisible(false);
-    m_patient_add_page->SetVisible(false);
-    m_personor_info_edit_page->SetVisible(false);
-    m_train_main_page->SetVisible(false);
-    m_active_train_page->SetVisible(false);
-    m_patient_train_info->SetVisible(false);
-    m_patient_train_detail->SetVisible(false);
-    m_passive_train_page->SetVisible(false);
-    m_eyemode_page->SetVisible(false);
-    m_emgmode_page->SetVisible(false);
-    m_traindetail_chart->SetVisible(false);
-    m_active_train_game4_page->SetVisible(false);
-    m_evaluation_page->SetVisible(false);
-    m_evaluation_history_page->SetVisible(false);
-    m_evaluation_add_page->SetVisible(false);
-    m_evaluation_detail_page->SetVisible(false);
-    m_evaluation_ydgn_add_page->SetVisible(false);
-    m_evaluation_ydgn_detail_page->SetVisible(false);
-    m_systemset_info_edit_page->SetVisible(false);
+	m_main_page->SetVisible(false);
+	m_login_success_page->SetVisible(false);
+	m_login_input_page->SetVisible(false);
+	m_login_page->SetVisible(false);
+	m_patient_select_page->SetVisible(false);
+	m_patient_detail_page->SetVisible(true);
+	m_patient_manager_page->SetVisible(false);
+	m_patient_edit_page->SetVisible(false);
+	m_about_page->SetVisible(false);
+	m_patient_add_page->SetVisible(false);
+	m_personor_info_edit_page->SetVisible(false);
+	m_train_main_page->SetVisible(false);
+	m_active_train_page->SetVisible(false);
+	m_patient_train_info->SetVisible(false);
+	m_patient_train_detail->SetVisible(false);
+	m_passive_train_page->SetVisible(false);
+	m_eyemode_page->SetVisible(false);
+	m_emgmode_page->SetVisible(false);
+	m_traindetail_chart->SetVisible(false);
+	m_active_train_game4_page->SetVisible(false);
+	m_evaluation_page->SetVisible(false);
+	m_evaluation_history_page->SetVisible(false);
+	m_evaluation_add_page->SetVisible(false);
+	m_evaluation_detail_page->SetVisible(false);
+	m_evaluation_ydgn_add_page->SetVisible(false);
+	m_evaluation_ydgn_detail_page->SetVisible(false);
+	m_systemset_info_edit_page->SetVisible(false);
 
-    StopActiveGameDetect();
+	StopActiveGameDetect();
 
-    m_current_passivetraininfos.clear();
+	m_current_passivetraininfos.clear();
 
-    CLabelUI *pWelecome = static_cast<CLabelUI *>(m_pm.FindControl(_T("manager_patient_detail_welcom")));
-    pWelecome->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+	CLabelUI* pWelecome = static_cast<CLabelUI*>(m_pm.FindControl(_T("manager_patient_detail_welcom")));
+	pWelecome->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
 
-    PatientInfo patient = RFPatientsManager::get()->getPatient(page, index);
+	PatientInfo patient = RFPatientsManager::get()->getPatient(page, index);
+	
+	wchar_t field[64] = _T("");
+	CEditUI* pLabel = static_cast<CEditUI*>(m_patient_detail_page->FindSubControl(_T("detail_patient_id")));
+	if (pLabel) {
+		memset(field, 0, 64);
+		wsprintf(field, _T("%d"), patient.id);
+		pLabel->SetText(field);
+	}
 
-    wchar_t field[64] = _T("");
-    CEditUI *pLabel = static_cast<CEditUI *>(m_patient_detail_page->FindSubControl(_T("detail_patient_id")));
-    if (pLabel) {
-        memset(field, 0, 64);
-        wsprintf(field, _T("%d"), patient.id);
-        pLabel->SetText(field);
-    }
+	pLabel = static_cast<CEditUI*>(m_patient_detail_page->FindSubControl(_T("detail_patient_createtime")));
+	if (pLabel) {
+		pLabel->SetText(patient.createtime.c_str());
+	}
 
-    pLabel = static_cast<CEditUI *>(m_patient_detail_page->FindSubControl(_T("detail_patient_createtime")));
-    if (pLabel) {
-        pLabel->SetText(patient.createtime.c_str());
-    }
+	pLabel = static_cast<CEditUI*>(m_patient_detail_page->FindSubControl(_T("detail_patient_name")));
+	if (pLabel) {
+		pLabel->SetText(patient.name.c_str());
+	}
 
-    pLabel = static_cast<CEditUI *>(m_patient_detail_page->FindSubControl(_T("detail_patient_name")));
-    if (pLabel) {
-        pLabel->SetText(patient.name.c_str());
-    }
+	pLabel = static_cast<CEditUI*>(m_patient_detail_page->FindSubControl(_T("detail_patient_lasttime")));
+	if (pLabel) {
+		pLabel->SetText(patient.lasttreattime.c_str());
+	}
 
-    pLabel = static_cast<CEditUI *>(m_patient_detail_page->FindSubControl(_T("detail_patient_lasttime")));
-    if (pLabel) {
-        pLabel->SetText(patient.lasttreattime.c_str());
-    }
+	pLabel = static_cast<CEditUI*>(m_patient_detail_page->FindSubControl(_T("detail_patient_sex")));
+	if (pLabel) {
+		pLabel->SetText(patient.sex.c_str());
+	}
 
-    pLabel = static_cast<CEditUI *>(m_patient_detail_page->FindSubControl(_T("detail_patient_sex")));
-    if (pLabel) {
-        pLabel->SetText(patient.sex.c_str());
-    }
+	pLabel = static_cast<CEditUI*>(m_patient_detail_page->FindSubControl(_T("detail_patient_totaltime")));
+	if (pLabel) {
+		pLabel->SetText(patient.totaltreattime.c_str());
+	}
 
-    pLabel = static_cast<CEditUI *>(m_patient_detail_page->FindSubControl(_T("detail_patient_totaltime")));
-    if (pLabel) {
-        pLabel->SetText(patient.totaltreattime.c_str());
-    }
+	pLabel = static_cast<CEditUI*>(m_patient_detail_page->FindSubControl(_T("detail_patient_age")));
+	if (pLabel) {
+		memset(field, 0, 64);
+		wsprintf(field, _T("%d"), patient.age);
+		pLabel->SetText(field);
+	}
 
-    pLabel = static_cast<CEditUI *>(m_patient_detail_page->FindSubControl(_T("detail_patient_age")));
-    if (pLabel) {
-        memset(field, 0, 64);
-        wsprintf(field, _T("%d"), patient.age);
-        pLabel->SetText(field);
-    }
+	pLabel = static_cast<CEditUI*>(m_patient_detail_page->FindSubControl(_T("detail_patient_detail")));
+	if (pLabel) {
+		pLabel->SetText(patient.recoverdetail.c_str());
+	}
 
-    pLabel = static_cast<CEditUI *>(m_patient_detail_page->FindSubControl(_T("detail_patient_detail")));
-    if (pLabel) {
-        pLabel->SetText(patient.recoverdetail.c_str());
-    }
-
-    CRichEditUI *pEdit = static_cast<CRichEditUI *>(m_patient_detail_page->FindSubControl(_T("detail_patient_remark")));
-    if (pEdit) {
-        pEdit->SetText(patient.remarks.c_str());
-    }
+	CRichEditUI* pEdit = static_cast<CRichEditUI*>(m_patient_detail_page->FindSubControl(_T("detail_patient_remark")));
+	if (pEdit) {
+		pEdit->SetText(patient.remarks.c_str());
+	}
 }
 
 void RFMainWindow::ShowPatientEdit(int patientid)
 {
-    m_main_page->SetVisible(false);
-    m_login_success_page->SetVisible(false);
-    m_login_input_page->SetVisible(false);
-    m_login_page->SetVisible(false);
-    m_patient_select_page->SetVisible(false);
-    m_patient_detail_page->SetVisible(false);
-    m_patient_manager_page->SetVisible(false);
-    m_patient_edit_page->SetVisible(true);
-    m_about_page->SetVisible(false);
-    m_patient_add_page->SetVisible(false);
-    m_personor_info_edit_page->SetVisible(false);
-    m_train_main_page->SetVisible(false);
-    m_active_train_page->SetVisible(false);
-    m_patient_train_info->SetVisible(false);
-    m_patient_train_detail->SetVisible(false);
-    m_passive_train_page->SetVisible(false);
-    m_eyemode_page->SetVisible(false);
-    m_emgmode_page->SetVisible(false);
-    m_traindetail_chart->SetVisible(false);
-    m_active_train_game4_page->SetVisible(false);
-    m_evaluation_page->SetVisible(false);
-    m_evaluation_history_page->SetVisible(false);
-    m_evaluation_add_page->SetVisible(false);
-    m_evaluation_detail_page->SetVisible(false);
-    m_evaluation_ydgn_add_page->SetVisible(false);
-    m_evaluation_ydgn_detail_page->SetVisible(false);
-    m_systemset_info_edit_page->SetVisible(false);
+	m_main_page->SetVisible(false);
+	m_login_success_page->SetVisible(false);
+	m_login_input_page->SetVisible(false);
+	m_login_page->SetVisible(false);
+	m_patient_select_page->SetVisible(false);
+	m_patient_detail_page->SetVisible(false);
+	m_patient_manager_page->SetVisible(false);
+	m_patient_edit_page->SetVisible(true);
+	m_about_page->SetVisible(false);
+	m_patient_add_page->SetVisible(false);
+	m_personor_info_edit_page->SetVisible(false);
+	m_train_main_page->SetVisible(false);
+	m_active_train_page->SetVisible(false);
+	m_patient_train_info->SetVisible(false);
+	m_patient_train_detail->SetVisible(false);
+	m_passive_train_page->SetVisible(false);
+	m_eyemode_page->SetVisible(false);
+	m_emgmode_page->SetVisible(false);
+	m_traindetail_chart->SetVisible(false);
+	m_active_train_game4_page->SetVisible(false);
+	m_evaluation_page->SetVisible(false);
+	m_evaluation_history_page->SetVisible(false);
+	m_evaluation_add_page->SetVisible(false);
+	m_evaluation_detail_page->SetVisible(false);
+	m_evaluation_ydgn_add_page->SetVisible(false);
+	m_evaluation_ydgn_detail_page->SetVisible(false);
+	m_systemset_info_edit_page->SetVisible(false);
 
-    StopActiveGameDetect();
+	StopActiveGameDetect();
 
-    m_current_passivetraininfos.clear();
+	m_current_passivetraininfos.clear();
 
-    CLabelUI *pWelecome = static_cast<CLabelUI *>(m_pm.FindControl(_T("manager_patient_bianji_welcom")));
-    pWelecome->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+	CLabelUI* pWelecome = static_cast<CLabelUI*>(m_pm.FindControl(_T("manager_patient_bianji_welcom")));
+	pWelecome->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
 
-    PatientInfo patient = RFPatientsManager::get()->getPatient(patientid);
+	PatientInfo patient = RFPatientsManager::get()->getPatient(patientid);
 
-    wchar_t field[64] = _T("");
-    CEditUI *pLabel = static_cast<CEditUI *>(m_patient_edit_page->FindSubControl(_T("bianji_patient_id")));
-    if (pLabel) {
-        memset(field, 0, 64);
-        wsprintf(field, _T("%d"), patient.id);
-        pLabel->SetText(field);
-    }
+	wchar_t field[64] = _T("");
+	CEditUI* pLabel = static_cast<CEditUI*>(m_patient_edit_page->FindSubControl(_T("bianji_patient_id")));
+	if (pLabel) {
+		memset(field, 0, 64);
+		wsprintf(field, _T("%d"), patient.id);
+		pLabel->SetText(field);
+	}
 
-    pLabel = static_cast<CEditUI *>(m_patient_edit_page->FindSubControl(_T("bianji_patient_createtime")));
-    if (pLabel) {
-        pLabel->SetText(patient.createtime.c_str());
-    }
+	pLabel = static_cast<CEditUI*>(m_patient_edit_page->FindSubControl(_T("bianji_patient_createtime")));
+	if (pLabel) {
+		pLabel->SetText(patient.createtime.c_str());
+	}
 
-    pLabel = static_cast<CEditUI *>(m_patient_edit_page->FindSubControl(_T("bianji_patient_name")));
-    if (pLabel) {
-        pLabel->SetText(patient.name.c_str());
-    }
+	pLabel = static_cast<CEditUI*>(m_patient_edit_page->FindSubControl(_T("bianji_patient_name")));
+	if (pLabel) {
+		pLabel->SetText(patient.name.c_str());
+	}
 
-    pLabel = static_cast<CEditUI *>(m_patient_edit_page->FindSubControl(_T("bianji_patient_lasttime")));
-    if (pLabel) {
-        pLabel->SetText(patient.lasttreattime.c_str());
-    }
+	pLabel = static_cast<CEditUI*>(m_patient_edit_page->FindSubControl(_T("bianji_patient_lasttime")));
+	if (pLabel) {
+		pLabel->SetText(patient.lasttreattime.c_str());
+	}
 
-    pLabel = static_cast<CEditUI *>(m_patient_edit_page->FindSubControl(_T("bianji_patient_sex")));
-    if (pLabel) {
-        pLabel->SetText(patient.sex.c_str());
-    }
+	pLabel = static_cast<CEditUI*>(m_patient_edit_page->FindSubControl(_T("bianji_patient_sex")));
+	if (pLabel) {
+		pLabel->SetText(patient.sex.c_str());
+	}
 
-    pLabel = static_cast<CEditUI *>(m_patient_edit_page->FindSubControl(_T("bianji_patient_totaltime")));
-    if (pLabel) {
-        pLabel->SetText(patient.totaltreattime.c_str());
-    }
+	pLabel = static_cast<CEditUI*>(m_patient_edit_page->FindSubControl(_T("bianji_patient_totaltime")));
+	if (pLabel) {
+		pLabel->SetText(patient.totaltreattime.c_str());
+	}
 
-    pLabel = static_cast<CEditUI *>(m_patient_edit_page->FindSubControl(_T("bianji_patient_age")));
-    if (pLabel) {
-        memset(field, 0, 64);
-        wsprintf(field, _T("%d"), patient.age);
-        pLabel->SetText(field);
-    }
+	pLabel = static_cast<CEditUI*>(m_patient_edit_page->FindSubControl(_T("bianji_patient_age")));
+	if (pLabel) {
+		memset(field, 0, 64);
+		wsprintf(field, _T("%d"), patient.age);
+		pLabel->SetText(field);
+	}
 
-    pLabel = static_cast<CEditUI *>(m_patient_edit_page->FindSubControl(_T("bianji_patient_detail")));
-    if (pLabel) {
-        pLabel->SetText(patient.recoverdetail.c_str());
-    }
+	pLabel = static_cast<CEditUI*>(m_patient_edit_page->FindSubControl(_T("bianji_patient_detail")));
+	if (pLabel) {
+		pLabel->SetText(patient.recoverdetail.c_str());
+	}
 
-    CRichEditUI *pEdit = static_cast<CRichEditUI *>(m_patient_edit_page->FindSubControl(_T("bianji_patient_remark")));
-    if (pEdit) {
-        pEdit->SetText(patient.remarks.c_str());
-    }
+	CRichEditUI* pEdit = static_cast<CRichEditUI*>(m_patient_edit_page->FindSubControl(_T("bianji_patient_remark")));
+	if (pEdit) {
+		pEdit->SetText(patient.remarks.c_str());
+	}
 }
 
 void RFMainWindow::ShowPatientEdit(int page, int index)
 {
-    m_main_page->SetVisible(false);
-    m_login_success_page->SetVisible(false);
-    m_login_input_page->SetVisible(false);
-    m_login_page->SetVisible(false);
-    m_patient_select_page->SetVisible(false);
-    m_patient_detail_page->SetVisible(false);
-    m_patient_manager_page->SetVisible(false);
-    m_patient_edit_page->SetVisible(true);
-    m_about_page->SetVisible(false);
-    m_patient_add_page->SetVisible(false);
-    m_personor_info_edit_page->SetVisible(false);
-    m_train_main_page->SetVisible(false);
-    m_active_train_page->SetVisible(false);
-    m_patient_train_info->SetVisible(false);
-    m_patient_train_detail->SetVisible(false);
-    m_passive_train_page->SetVisible(false);
-    m_eyemode_page->SetVisible(false);
-    m_emgmode_page->SetVisible(false);
-    m_traindetail_chart->SetVisible(false);
-    m_active_train_game4_page->SetVisible(false);
-    m_evaluation_page->SetVisible(false);
-    m_evaluation_history_page->SetVisible(false);
-    m_evaluation_add_page->SetVisible(false);
-    m_evaluation_detail_page->SetVisible(false);
-    m_evaluation_ydgn_add_page->SetVisible(false);
-    m_evaluation_ydgn_detail_page->SetVisible(false);
-    m_systemset_info_edit_page->SetVisible(false);
+	m_main_page->SetVisible(false);
+	m_login_success_page->SetVisible(false);
+	m_login_input_page->SetVisible(false);
+	m_login_page->SetVisible(false);
+	m_patient_select_page->SetVisible(false);
+	m_patient_detail_page->SetVisible(false);
+	m_patient_manager_page->SetVisible(false);
+	m_patient_edit_page->SetVisible(true);
+	m_about_page->SetVisible(false);
+	m_patient_add_page->SetVisible(false);
+	m_personor_info_edit_page->SetVisible(false);
+	m_train_main_page->SetVisible(false);
+	m_active_train_page->SetVisible(false);
+	m_patient_train_info->SetVisible(false);
+	m_patient_train_detail->SetVisible(false);
+	m_passive_train_page->SetVisible(false);
+	m_eyemode_page->SetVisible(false);
+	m_emgmode_page->SetVisible(false);
+	m_traindetail_chart->SetVisible(false);
+	m_active_train_game4_page->SetVisible(false);
+	m_evaluation_page->SetVisible(false);
+	m_evaluation_history_page->SetVisible(false);
+	m_evaluation_add_page->SetVisible(false);
+	m_evaluation_detail_page->SetVisible(false);
+	m_evaluation_ydgn_add_page->SetVisible(false);
+	m_evaluation_ydgn_detail_page->SetVisible(false);
+	m_systemset_info_edit_page->SetVisible(false);
 
-    StopActiveGameDetect();
+	StopActiveGameDetect();
 
-    m_current_passivetraininfos.clear();
+	m_current_passivetraininfos.clear();
 
-    CLabelUI *pWelecome = static_cast<CLabelUI *>(m_pm.FindControl(_T("manager_patient_bianji_welcom")));
-    pWelecome->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+	CLabelUI* pWelecome = static_cast<CLabelUI*>(m_pm.FindControl(_T("manager_patient_bianji_welcom")));
+	pWelecome->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
 
-    PatientInfo patient = RFPatientsManager::get()->getPatient(page, index);
+	PatientInfo patient = RFPatientsManager::get()->getPatient(page, index);
 
-    wchar_t field[64] = _T("");
-    CEditUI *pLabel = static_cast<CEditUI *>(m_patient_edit_page->FindSubControl(_T("bianji_patient_id")));
-    if (pLabel) {
-        memset(field, 0, 64);
-        wsprintf(field, _T("%d"), patient.id);
-        pLabel->SetText(field);
-    }
+	wchar_t field[64] = _T("");
+	CEditUI* pLabel = static_cast<CEditUI*>(m_patient_edit_page->FindSubControl(_T("bianji_patient_id")));
+	if (pLabel) {
+		memset(field, 0, 64);
+		wsprintf(field, _T("%d"), patient.id);
+		pLabel->SetText(field);
+	}
 
-    pLabel = static_cast<CEditUI *>(m_patient_edit_page->FindSubControl(_T("bianji_patient_createtime")));
-    if (pLabel) {
-        pLabel->SetText(patient.createtime.c_str());
-    }
+	pLabel = static_cast<CEditUI*>(m_patient_edit_page->FindSubControl(_T("bianji_patient_createtime")));
+	if (pLabel) {
+		pLabel->SetText(patient.createtime.c_str());
+	}
 
-    pLabel = static_cast<CEditUI *>(m_patient_edit_page->FindSubControl(_T("bianji_patient_name")));
-    if (pLabel) {
-        pLabel->SetText(patient.name.c_str());
-    }
+	pLabel = static_cast<CEditUI*>(m_patient_edit_page->FindSubControl(_T("bianji_patient_name")));
+	if (pLabel) {
+		pLabel->SetText(patient.name.c_str());
+	}
 
-    pLabel = static_cast<CEditUI *>(m_patient_edit_page->FindSubControl(_T("bianji_patient_lasttime")));
-    if (pLabel) {
-        pLabel->SetText(patient.lasttreattime.c_str());
-    }
+	pLabel = static_cast<CEditUI*>(m_patient_edit_page->FindSubControl(_T("bianji_patient_lasttime")));
+	if (pLabel) {
+		pLabel->SetText(patient.lasttreattime.c_str());
+	}
 
-    pLabel = static_cast<CEditUI *>(m_patient_edit_page->FindSubControl(_T("bianji_patient_sex")));
-    if (pLabel) {
-        pLabel->SetText(patient.sex.c_str());
-    }
+	pLabel = static_cast<CEditUI*>(m_patient_edit_page->FindSubControl(_T("bianji_patient_sex")));
+	if (pLabel) {
+		pLabel->SetText(patient.sex.c_str());
+	}
 
-    pLabel = static_cast<CEditUI *>(m_patient_edit_page->FindSubControl(_T("bianji_patient_totaltime")));
-    if (pLabel) {
-        pLabel->SetText(patient.totaltreattime.c_str());
-    }
+	pLabel = static_cast<CEditUI*>(m_patient_edit_page->FindSubControl(_T("bianji_patient_totaltime")));
+	if (pLabel) {
+		pLabel->SetText(patient.totaltreattime.c_str());
+	}
 
-    pLabel = static_cast<CEditUI *>(m_patient_edit_page->FindSubControl(_T("bianji_patient_age")));
-    if (pLabel) {
-        memset(field, 0, 64);
-        wsprintf(field, _T("%d"), patient.age);
-        pLabel->SetText(field);
-    }
+	pLabel = static_cast<CEditUI*>(m_patient_edit_page->FindSubControl(_T("bianji_patient_age")));
+	if (pLabel) {
+		memset(field, 0, 64);
+		wsprintf(field, _T("%d"), patient.age);
+		pLabel->SetText(field);
+	}
 
-    pLabel = static_cast<CEditUI *>(m_patient_edit_page->FindSubControl(_T("bianji_patient_detail")));
-    if (pLabel) {
-        pLabel->SetText(patient.recoverdetail.c_str());
-    }
+	pLabel = static_cast<CEditUI*>(m_patient_edit_page->FindSubControl(_T("bianji_patient_detail")));
+	if (pLabel) {
+		pLabel->SetText(patient.recoverdetail.c_str());
+	}
 
-    CRichEditUI *pEdit = static_cast<CRichEditUI *>(m_patient_edit_page->FindSubControl(_T("bianji_patient_remark")));
-    if (pEdit) {
-        pEdit->SetText(patient.remarks.c_str());
-    }
+	CRichEditUI* pEdit = static_cast<CRichEditUI*>(m_patient_edit_page->FindSubControl(_T("bianji_patient_remark")));
+	if (pEdit) {
+		pEdit->SetText(patient.remarks.c_str());
+	}
 }
 
 
 void RFMainWindow::ShowPatientAdd(std::wstring patientid)
 {
-    m_main_page->SetVisible(false);
-    m_login_success_page->SetVisible(false);
-    m_login_input_page->SetVisible(false);
-    m_login_page->SetVisible(false);
-    m_patient_select_page->SetVisible(false);
-    m_patient_detail_page->SetVisible(false);
-    m_patient_manager_page->SetVisible(false);
-    m_patient_edit_page->SetVisible(false);
-    m_patient_add_page->SetVisible(true);
-    m_about_page->SetVisible(false);
-    m_personor_info_edit_page->SetVisible(false);
-    m_train_main_page->SetVisible(false);
-    m_active_train_page->SetVisible(false);
-    m_patient_train_info->SetVisible(false);
-    m_patient_train_detail->SetVisible(false);
-    m_passive_train_page->SetVisible(false);
-    m_eyemode_page->SetVisible(false);
-    m_emgmode_page->SetVisible(false);
-    m_traindetail_chart->SetVisible(false);
-    m_active_train_game4_page->SetVisible(false);
-    m_evaluation_page->SetVisible(false);
-    m_evaluation_history_page->SetVisible(false);
-    m_evaluation_add_page->SetVisible(false);
-    m_evaluation_detail_page->SetVisible(false);
-    m_evaluation_ydgn_add_page->SetVisible(false);
-    m_evaluation_ydgn_detail_page->SetVisible(false);
-    m_systemset_info_edit_page->SetVisible(false);
+	m_main_page->SetVisible(false);
+	m_login_success_page->SetVisible(false);
+	m_login_input_page->SetVisible(false);
+	m_login_page->SetVisible(false);
+	m_patient_select_page->SetVisible(false);
+	m_patient_detail_page->SetVisible(false);
+	m_patient_manager_page->SetVisible(false);
+	m_patient_edit_page->SetVisible(false);
+	m_patient_add_page->SetVisible(true);
+	m_about_page->SetVisible(false);
+	m_personor_info_edit_page->SetVisible(false);
+	m_train_main_page->SetVisible(false);
+	m_active_train_page->SetVisible(false);
+	m_patient_train_info->SetVisible(false);
+	m_patient_train_detail->SetVisible(false);
+	m_passive_train_page->SetVisible(false);
+	m_eyemode_page->SetVisible(false);
+	m_emgmode_page->SetVisible(false);
+	m_traindetail_chart->SetVisible(false);
+	m_active_train_game4_page->SetVisible(false);
+	m_evaluation_page->SetVisible(false);
+	m_evaluation_history_page->SetVisible(false);
+	m_evaluation_add_page->SetVisible(false);
+	m_evaluation_detail_page->SetVisible(false);
+	m_evaluation_ydgn_add_page->SetVisible(false);
+	m_evaluation_ydgn_detail_page->SetVisible(false);
+	m_systemset_info_edit_page->SetVisible(false);
 
-    StopActiveGameDetect();
+	StopActiveGameDetect();
 
-    m_current_passivetraininfos.clear();
+	m_current_passivetraininfos.clear();
 
-    CLabelUI *pWelecome = static_cast<CLabelUI *>(m_pm.FindControl(_T("manager_patient_add_welcom")));
-    pWelecome->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+	CLabelUI* pWelecome = static_cast<CLabelUI*>(m_pm.FindControl(_T("manager_patient_add_welcom")));
+	pWelecome->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
 
-    wchar_t field[64] = _T("");
-    CEditUI *pLabel = static_cast<CEditUI *>(m_patient_add_page->FindSubControl(_T("add_patient_id")));
-    if (pLabel) {
+	wchar_t field[64] = _T("");
+	CEditUI* pLabel = static_cast<CEditUI*>(m_patient_add_page->FindSubControl(_T("add_patient_id")));
+	if (pLabel) {
 
-        pLabel->SetText(patientid.c_str());
-    }
+		pLabel->SetText(patientid.c_str());
+	}
 
-    pLabel = static_cast<CEditUI *>(m_patient_add_page->FindSubControl(_T("add_patient_name")));
-    if (pLabel) {
-        pLabel->SetText(_T(""));
-    }
+	pLabel = static_cast<CEditUI*>(m_patient_add_page->FindSubControl(_T("add_patient_name")));
+	if (pLabel) {
+		pLabel->SetText(_T(""));
+	}
 
-    pLabel = static_cast<CEditUI *>(m_patient_add_page->FindSubControl(_T("add_patient_createtime")));
-    if (pLabel) {
-        pLabel->SetText(RFToDateString(time(NULL)).c_str());
-    }
+	pLabel = static_cast<CEditUI*>(m_patient_add_page->FindSubControl(_T("add_patient_createtime")));
+	if (pLabel) {
+		pLabel->SetText(RFToDateString(time(NULL)).c_str());
+	}
 
-    pLabel = static_cast<CEditUI *>(m_patient_add_page->FindSubControl(_T("add_patient_totaltime")));
-    if (pLabel) {
-        pLabel->SetText(_T(""));
-    }
+	pLabel = static_cast<CEditUI*>(m_patient_add_page->FindSubControl(_T("add_patient_totaltime")));
+	if (pLabel) {
+		pLabel->SetText(_T(""));
+	}
 
-    pLabel = static_cast<CEditUI *>(m_patient_add_page->FindSubControl(_T("add_patient_age")));
-    if (pLabel) {
-        pLabel->SetText(_T(""));
-    }
+	pLabel = static_cast<CEditUI*>(m_patient_add_page->FindSubControl(_T("add_patient_age")));
+	if (pLabel) {
+		pLabel->SetText(_T(""));
+	}
 
-    pLabel = static_cast<CEditUI *>(m_patient_add_page->FindSubControl(_T("add_patient_detail")));
-    if (pLabel) {
-        pLabel->SetText(_T(""));
-    }
+	pLabel = static_cast<CEditUI*>(m_patient_add_page->FindSubControl(_T("add_patient_detail")));
+	if (pLabel) {
+		pLabel->SetText(_T(""));
+	}
 
-    CRichEditUI *pEdit = static_cast<CRichEditUI *>(m_patient_add_page->FindSubControl(_T("add_patient_remark")));
-    if (pEdit) {
-        pEdit->SetText(_T(""));
-    }
+	CRichEditUI* pEdit = static_cast<CRichEditUI*>(m_patient_add_page->FindSubControl(_T("add_patient_remark")));
+	if (pEdit) {
+		pEdit->SetText(_T(""));
+	}
 }
 
 void RFMainWindow::ShowAboutPage()
 {
-    m_main_page->SetVisible(false);
-    m_patient_select_page->SetVisible(false);
-    m_patient_manager_page->SetVisible(false);
-    m_patient_detail_page->SetVisible(false);
-    m_login_success_page->SetVisible(false);
-    m_login_input_page->SetVisible(false);
-    m_login_page->SetVisible(false);
-    m_patient_edit_page->SetVisible(false);
-    m_about_page->SetVisible(true);
-    m_patient_add_page->SetVisible(false);
-    m_personor_info_edit_page->SetVisible(false);
-    m_train_main_page->SetVisible(false);
-    m_active_train_page->SetVisible(false);
-    m_patient_train_info->SetVisible(false);
-    m_patient_train_detail->SetVisible(false);
-    m_passive_train_page->SetVisible(false);
-    m_eyemode_page->SetVisible(false);
-    m_emgmode_page->SetVisible(false);
-    m_traindetail_chart->SetVisible(false);
-    m_active_train_game4_page->SetVisible(false);
-    m_evaluation_page->SetVisible(false);
-    m_evaluation_history_page->SetVisible(false);
-    m_evaluation_add_page->SetVisible(false);
-    m_evaluation_detail_page->SetVisible(false);
-    m_evaluation_ydgn_add_page->SetVisible(false);
-    m_evaluation_ydgn_detail_page->SetVisible(false);
-    m_systemset_info_edit_page->SetVisible(false);
+	m_main_page->SetVisible(false);
+	m_patient_select_page->SetVisible(false);
+	m_patient_manager_page->SetVisible(false);
+	m_patient_detail_page->SetVisible(false);
+	m_login_success_page->SetVisible(false);
+	m_login_input_page->SetVisible(false);
+	m_login_page->SetVisible(false);
+	m_patient_edit_page->SetVisible(false);
+	m_about_page->SetVisible(true);
+	m_patient_add_page->SetVisible(false);
+	m_personor_info_edit_page->SetVisible(false);
+	m_train_main_page->SetVisible(false);
+	m_active_train_page->SetVisible(false);
+	m_patient_train_info->SetVisible(false);
+	m_patient_train_detail->SetVisible(false);
+	m_passive_train_page->SetVisible(false);
+	m_eyemode_page->SetVisible(false);
+	m_emgmode_page->SetVisible(false);
+	m_traindetail_chart->SetVisible(false);
+	m_active_train_game4_page->SetVisible(false);
+	m_evaluation_page->SetVisible(false);
+	m_evaluation_history_page->SetVisible(false);
+	m_evaluation_add_page->SetVisible(false);
+	m_evaluation_detail_page->SetVisible(false);
+	m_evaluation_ydgn_add_page->SetVisible(false);
+	m_evaluation_ydgn_detail_page->SetVisible(false);
+	m_systemset_info_edit_page->SetVisible(false);
 
-    StopActiveGameDetect();
+	StopActiveGameDetect();
 
-    m_current_passivetraininfos.clear();
+	m_current_passivetraininfos.clear();
 
-    CLabelUI *pWelecome = static_cast<CLabelUI *>(m_pm.FindControl(_T("about_welcom")));
-    pWelecome->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+	CLabelUI* pWelecome = static_cast<CLabelUI*>(m_pm.FindControl(_T("about_welcom")));
+	pWelecome->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+
 }
 
 void RFMainWindow::ShowPersonorPage()
 {
-    m_main_page->SetVisible(false);
-    m_patient_select_page->SetVisible(false);
-    m_patient_manager_page->SetVisible(false);
-    m_patient_detail_page->SetVisible(false);
-    m_login_success_page->SetVisible(false);
-    m_login_input_page->SetVisible(false);
-    m_login_page->SetVisible(false);
-    m_patient_edit_page->SetVisible(false);
-    m_about_page->SetVisible(false);
-    m_patient_add_page->SetVisible(false);
-    m_personor_info_edit_page->SetVisible(true);
-    m_train_main_page->SetVisible(false);
-    m_active_train_page->SetVisible(false);
-    m_patient_train_info->SetVisible(false);
-    m_patient_train_detail->SetVisible(false);
-    m_passive_train_page->SetVisible(false);
-    m_eyemode_page->SetVisible(false);
-    m_emgmode_page->SetVisible(false);
-    m_traindetail_chart->SetVisible(false);
-    m_active_train_game4_page->SetVisible(false);
-    m_evaluation_page->SetVisible(false);
-    m_evaluation_history_page->SetVisible(false);
-    m_evaluation_add_page->SetVisible(false);
-    m_evaluation_detail_page->SetVisible(false);
-    m_evaluation_ydgn_add_page->SetVisible(false);
-    m_evaluation_ydgn_detail_page->SetVisible(false);
-    m_systemset_info_edit_page->SetVisible(false);
+	m_main_page->SetVisible(false);
+	m_patient_select_page->SetVisible(false);
+	m_patient_manager_page->SetVisible(false);
+	m_patient_detail_page->SetVisible(false);
+	m_login_success_page->SetVisible(false);
+	m_login_input_page->SetVisible(false);
+	m_login_page->SetVisible(false);
+	m_patient_edit_page->SetVisible(false);
+	m_about_page->SetVisible(false);
+	m_patient_add_page->SetVisible(false);
+	m_personor_info_edit_page->SetVisible(true);
+	m_train_main_page->SetVisible(false);
+	m_active_train_page->SetVisible(false);
+	m_patient_train_info->SetVisible(false);
+	m_patient_train_detail->SetVisible(false);
+	m_passive_train_page->SetVisible(false);
+	m_eyemode_page->SetVisible(false);
+	m_emgmode_page->SetVisible(false);
+	m_traindetail_chart->SetVisible(false);
+	m_active_train_game4_page->SetVisible(false);
+	m_evaluation_page->SetVisible(false);
+	m_evaluation_history_page->SetVisible(false);
+	m_evaluation_add_page->SetVisible(false);
+	m_evaluation_detail_page->SetVisible(false);
+	m_evaluation_ydgn_add_page->SetVisible(false);
+	m_evaluation_ydgn_detail_page->SetVisible(false);
+	m_systemset_info_edit_page->SetVisible(false);
 
-    StopActiveGameDetect();
+	StopActiveGameDetect();
 
-    m_current_passivetraininfos.clear();
+	m_current_passivetraininfos.clear();
 
-    CLabelUI *pWelecome = static_cast<CLabelUI *>(m_pm.FindControl(_T("personor_welcom")));
-    pWelecome->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+	CLabelUI* pWelecome = static_cast<CLabelUI*>(m_pm.FindControl(_T("personor_welcom")));
+	pWelecome->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
 
-    UpdatePersonInfo();
+	UpdatePersonInfo();
 }
 
 void RFMainWindow::ShowSetSystemPage()
 {
-    m_main_page->SetVisible(false);
-    m_patient_select_page->SetVisible(false);
-    m_patient_manager_page->SetVisible(false);
-    m_patient_detail_page->SetVisible(false);
-    m_login_success_page->SetVisible(false);
-    m_login_input_page->SetVisible(false);
-    m_login_page->SetVisible(false);
-    m_patient_edit_page->SetVisible(false);
-    m_about_page->SetVisible(false);
-    m_patient_add_page->SetVisible(false);
-    m_personor_info_edit_page->SetVisible(false);
-    m_train_main_page->SetVisible(false);
-    m_active_train_page->SetVisible(false);
-    m_patient_train_info->SetVisible(false);
-    m_patient_train_detail->SetVisible(false);
-    m_passive_train_page->SetVisible(false);
-    m_eyemode_page->SetVisible(false);
-    m_emgmode_page->SetVisible(false);
-    m_traindetail_chart->SetVisible(false);
-    m_active_train_game4_page->SetVisible(false);
-    m_evaluation_page->SetVisible(false);
-    m_evaluation_history_page->SetVisible(false);
-    m_evaluation_add_page->SetVisible(false);
-    m_evaluation_detail_page->SetVisible(false);
-    m_evaluation_ydgn_add_page->SetVisible(false);
-    m_evaluation_ydgn_detail_page->SetVisible(false);
-    m_systemset_info_edit_page->SetVisible(true);
+	m_main_page->SetVisible(false);
+	m_patient_select_page->SetVisible(false);
+	m_patient_manager_page->SetVisible(false);
+	m_patient_detail_page->SetVisible(false);
+	m_login_success_page->SetVisible(false);
+	m_login_input_page->SetVisible(false);
+	m_login_page->SetVisible(false);
+	m_patient_edit_page->SetVisible(false);
+	m_about_page->SetVisible(false);
+	m_patient_add_page->SetVisible(false);
+	m_personor_info_edit_page->SetVisible(false);
+	m_train_main_page->SetVisible(false);
+	m_active_train_page->SetVisible(false);
+	m_patient_train_info->SetVisible(false);
+	m_patient_train_detail->SetVisible(false);
+	m_passive_train_page->SetVisible(false);
+	m_eyemode_page->SetVisible(false);
+	m_emgmode_page->SetVisible(false);
+	m_traindetail_chart->SetVisible(false);
+	m_active_train_game4_page->SetVisible(false);
+	m_evaluation_page->SetVisible(false);
+	m_evaluation_history_page->SetVisible(false);
+	m_evaluation_add_page->SetVisible(false);
+	m_evaluation_detail_page->SetVisible(false);
+	m_evaluation_ydgn_add_page->SetVisible(false);
+	m_evaluation_ydgn_detail_page->SetVisible(false);
+	m_systemset_info_edit_page->SetVisible(true);
 
-    StopActiveGameDetect();
+	StopActiveGameDetect();
 
-    m_current_passivetraininfos.clear();
+	m_current_passivetraininfos.clear();
 
-    CLabelUI *pWelecome = static_cast<CLabelUI *>(m_pm.FindControl(_T("systemset_welcom")));
-    pWelecome->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+	CLabelUI* pWelecome = static_cast<CLabelUI*>(m_pm.FindControl(_T("systemset_welcom")));
+	pWelecome->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
 
-    // 根据patient id得到最新的SAA_ROM和SFE_ROM
-    char sql[1024] = "";
-    sprintf(sql, "select saa_rom, sfe_rom from patient where id=%d and flag=0", m_current_patient.id);
-    RFMYSQLStmt stmt;
-    if (stmt.Prepare(RFMainWindow::DBThread->m_db, sql) > 0) {
-        if (stmt.Step() > 0) {
-            m_current_patient.SAA_ROM = stmt.GetDouble(0);
-            m_current_patient.SFE_ROM = stmt.GetDouble(1);
-        }
-    }
-    stmt.Finalize();
+	// 根据patient id得到最新的SAA_ROM和SFE_ROM
+	char sql[1024] = "";
+	sprintf(sql, "select saa_rom, sfe_rom from patient where id=%d and flag=0", m_current_patient.id);
+	RFMYSQLStmt stmt;
+	if (stmt.Prepare(RFMainWindow::DBThread->m_db, sql) > 0) {
+		if (stmt.Step() > 0) {
+			m_current_patient.SAA_ROM = stmt.GetDouble(0);
+			m_current_patient.SFE_ROM = stmt.GetDouble(1);
+		}
+	}
+	stmt.Finalize();
 
-    // 找到SAA和SFE对应的Edit
-    CEditUI *saa_edit = static_cast<CEditUI *>(m_pm.FindControl(_T("saa_rom_edit")));
-    std::wstring saa = std::to_wstring(RFMainWindow::MainWindow->m_current_patient.SAA_ROM);
-    saa_edit->SetText(saa.c_str());
-    CEditUI *sfe_edit = static_cast<CEditUI *>(m_pm.FindControl(_T("sfe_rom_edit")));
-    std::wstring sfe = std::to_wstring(RFMainWindow::MainWindow->m_current_patient.SFE_ROM);
-    sfe_edit->SetText(sfe.c_str());
+	// 找到SAA和SFE对应的Edit
+	CEditUI *saa_edit = static_cast<CEditUI *>(m_pm.FindControl(_T("saa_rom_edit")));
+	std::wstring saa = std::to_wstring(RFMainWindow::MainWindow->m_current_patient.SAA_ROM);
+	saa_edit->SetText(saa.c_str());
+	CEditUI *sfe_edit = static_cast<CEditUI *>(m_pm.FindControl(_T("sfe_rom_edit")));
+	std::wstring sfe = std::to_wstring(RFMainWindow::MainWindow->m_current_patient.SFE_ROM);
+	sfe_edit->SetText(sfe.c_str());
 
 
-    UpdatePersonInfo();
+	UpdatePersonInfo();
 }
 
 void RFMainWindow::ShowPatientTrainInformation()
 {
-    m_main_page->SetVisible(false);
-    m_patient_select_page->SetVisible(false);
-    m_patient_manager_page->SetVisible(false);
-    m_patient_detail_page->SetVisible(false);
-    m_login_success_page->SetVisible(false);
-    m_login_input_page->SetVisible(false);
-    m_login_page->SetVisible(false);
-    m_patient_edit_page->SetVisible(false);
-    m_about_page->SetVisible(false);
-    m_patient_add_page->SetVisible(false);
-    m_personor_info_edit_page->SetVisible(false);
-    m_train_main_page->SetVisible(false);
-    m_active_train_page->SetVisible(false);
-    m_patient_train_info->SetVisible(true);
-    m_patient_train_detail->SetVisible(false);
-    m_passive_train_page->SetVisible(false);
-    m_eyemode_page->SetVisible(false);
-    m_emgmode_page->SetVisible(false);
-    m_traindetail_chart->SetVisible(false);
-    m_active_train_game4_page->SetVisible(false);
-    m_evaluation_page->SetVisible(false);
-    m_evaluation_history_page->SetVisible(false);
-    m_evaluation_add_page->SetVisible(false);
-    m_evaluation_detail_page->SetVisible(false);
-    m_evaluation_ydgn_add_page->SetVisible(false);
-    m_evaluation_ydgn_detail_page->SetVisible(false);
-    m_systemset_info_edit_page->SetVisible(false);
+	m_main_page->SetVisible(false);
+	m_patient_select_page->SetVisible(false);
+	m_patient_manager_page->SetVisible(false);
+	m_patient_detail_page->SetVisible(false);
+	m_login_success_page->SetVisible(false);
+	m_login_input_page->SetVisible(false);
+	m_login_page->SetVisible(false);
+	m_patient_edit_page->SetVisible(false);
+	m_about_page->SetVisible(false);
+	m_patient_add_page->SetVisible(false);
+	m_personor_info_edit_page->SetVisible(false);
+	m_train_main_page->SetVisible(false);
+	m_active_train_page->SetVisible(false);
+	m_patient_train_info->SetVisible(true);
+	m_patient_train_detail->SetVisible(false);
+	m_passive_train_page->SetVisible(false);
+	m_eyemode_page->SetVisible(false);
+	m_emgmode_page->SetVisible(false);
+	m_traindetail_chart->SetVisible(false);
+	m_active_train_game4_page->SetVisible(false);
+	m_evaluation_page->SetVisible(false);
+	m_evaluation_history_page->SetVisible(false);
+	m_evaluation_add_page->SetVisible(false);
+	m_evaluation_detail_page->SetVisible(false);
+	m_evaluation_ydgn_add_page->SetVisible(false);
+	m_evaluation_ydgn_detail_page->SetVisible(false);
+	m_systemset_info_edit_page->SetVisible(false);
 
-    StopActiveGameDetect();
+	StopActiveGameDetect();
 
-    m_current_passivetraininfos.clear();
+	m_current_passivetraininfos.clear();
 }
 
 void RFMainWindow::ShowPatientTrainDetail(std::wstring patientid)
 {
-    m_current_patient_id_detail = patientid;
+	m_current_patient_id_detail = patientid;
 
-    m_main_page->SetVisible(false);
-    m_patient_select_page->SetVisible(false);
-    m_patient_manager_page->SetVisible(false);
-    m_patient_detail_page->SetVisible(false);
-    m_login_success_page->SetVisible(false);
-    m_login_input_page->SetVisible(false);
-    m_login_page->SetVisible(false);
-    m_patient_edit_page->SetVisible(false);
-    m_about_page->SetVisible(false);
-    m_patient_add_page->SetVisible(false);
-    m_personor_info_edit_page->SetVisible(false);
-    m_train_main_page->SetVisible(false);
-    m_active_train_page->SetVisible(false);
-    m_patient_train_info->SetVisible(false);
-    m_patient_train_detail->SetVisible(true);
-    m_passive_train_page->SetVisible(false);
-    m_eyemode_page->SetVisible(false);
-    m_emgmode_page->SetVisible(false);
-    m_traindetail_chart->SetVisible(false);
-    m_active_train_game4_page->SetVisible(false);
-    m_evaluation_page->SetVisible(false);
-    m_evaluation_history_page->SetVisible(false);
-    m_evaluation_add_page->SetVisible(false);
-    m_evaluation_detail_page->SetVisible(false);
-    m_evaluation_ydgn_add_page->SetVisible(false);
-    m_evaluation_ydgn_detail_page->SetVisible(false);
-    m_systemset_info_edit_page->SetVisible(false);
+	m_main_page->SetVisible(false);
+	m_patient_select_page->SetVisible(false);
+	m_patient_manager_page->SetVisible(false);
+	m_patient_detail_page->SetVisible(false);
+	m_login_success_page->SetVisible(false);
+	m_login_input_page->SetVisible(false);
+	m_login_page->SetVisible(false);
+	m_patient_edit_page->SetVisible(false);
+	m_about_page->SetVisible(false);
+	m_patient_add_page->SetVisible(false);
+	m_personor_info_edit_page->SetVisible(false);
+	m_train_main_page->SetVisible(false);
+	m_active_train_page->SetVisible(false);
+	m_patient_train_info->SetVisible(false);
+	m_patient_train_detail->SetVisible(true);
+	m_passive_train_page->SetVisible(false);
+	m_eyemode_page->SetVisible(false);
+	m_emgmode_page->SetVisible(false);
+	m_traindetail_chart->SetVisible(false);
+	m_active_train_game4_page->SetVisible(false);
+	m_evaluation_page->SetVisible(false);
+	m_evaluation_history_page->SetVisible(false);
+	m_evaluation_add_page->SetVisible(false);
+	m_evaluation_detail_page->SetVisible(false);
+	m_evaluation_ydgn_add_page->SetVisible(false);
+	m_evaluation_ydgn_detail_page->SetVisible(false);
+	m_systemset_info_edit_page->SetVisible(false);
 
-    StopActiveGameDetect();
+	StopActiveGameDetect();
 
-    m_current_passivetraininfos.clear();
+	m_current_passivetraininfos.clear();
 
-    CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("patient_traindetail_welcom")));
-    pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+	CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("patient_traindetail_welcom")));
+	pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
 
-    RFPatientsTrainDetails::get()->SetCurrentPatientID(_wtoi(patientid.c_str()));
+	RFPatientsTrainDetails::get()->SetCurrentPatientID(_wtoi(patientid.c_str()));
 
-    UpdateTrainDetailPage(RFPatientsTrainInfo::get()->getTrainInfo(patientid));
-    UpdateTrainDetailPage(RFPatientsTrainDetails::get()->getPageElement(RFPatientsTrainDetails::get()->m_currentpage));
-    UpdateTrainDetailPageNumber(RFPatientsTrainDetails::get()->m_currentpage);
+	UpdateTrainDetailPage(RFPatientsTrainInfo::get()->getTrainInfo(patientid));
+	UpdateTrainDetailPage(RFPatientsTrainDetails::get()->getPageElement(RFPatientsTrainDetails::get()->m_currentpage));
+	UpdateTrainDetailPageNumber(RFPatientsTrainDetails::get()->m_currentpage);
 }
 
 void RFMainWindow::ShowEyeModeTrainPage()
 {
-    m_main_page->SetVisible(false);
-    m_patient_select_page->SetVisible(false);
-    m_patient_manager_page->SetVisible(false);
-    m_patient_detail_page->SetVisible(false);
-    m_login_success_page->SetVisible(false);
-    m_login_input_page->SetVisible(false);
-    m_login_page->SetVisible(false);
-    m_patient_edit_page->SetVisible(false);
-    m_about_page->SetVisible(false);
-    m_patient_add_page->SetVisible(false);
-    m_personor_info_edit_page->SetVisible(false);
-    m_train_main_page->SetVisible(false);
-    m_active_train_page->SetVisible(false);
-    m_patient_train_info->SetVisible(false);
-    m_patient_train_detail->SetVisible(false);
-    m_passive_train_page->SetVisible(false);
-    m_eyemode_page->SetVisible(true);
-    m_emgmode_page->SetVisible(false);
-    m_traindetail_chart->SetVisible(false);
-    m_active_train_game4_page->SetVisible(false);
-    m_evaluation_page->SetVisible(false);
-    m_evaluation_history_page->SetVisible(false);
-    m_evaluation_add_page->SetVisible(false);
-    m_evaluation_detail_page->SetVisible(false);
-    m_evaluation_ydgn_add_page->SetVisible(false);
-    m_evaluation_ydgn_detail_page->SetVisible(false);
-    m_systemset_info_edit_page->SetVisible(false);
+	m_main_page->SetVisible(false);
+	m_patient_select_page->SetVisible(false);
+	m_patient_manager_page->SetVisible(false);
+	m_patient_detail_page->SetVisible(false);
+	m_login_success_page->SetVisible(false);
+	m_login_input_page->SetVisible(false);
+	m_login_page->SetVisible(false);
+	m_patient_edit_page->SetVisible(false);
+	m_about_page->SetVisible(false);
+	m_patient_add_page->SetVisible(false);
+	m_personor_info_edit_page->SetVisible(false);
+	m_train_main_page->SetVisible(false);
+	m_active_train_page->SetVisible(false);
+	m_patient_train_info->SetVisible(false);
+	m_patient_train_detail->SetVisible(false);
+	m_passive_train_page->SetVisible(false);
+	m_eyemode_page->SetVisible(true);
+	m_emgmode_page->SetVisible(false);
+	m_traindetail_chart->SetVisible(false);
+	m_active_train_game4_page->SetVisible(false);
+	m_evaluation_page->SetVisible(false);
+	m_evaluation_history_page->SetVisible(false);
+	m_evaluation_add_page->SetVisible(false);
+	m_evaluation_detail_page->SetVisible(false);
+	m_evaluation_ydgn_add_page->SetVisible(false);
+	m_evaluation_ydgn_detail_page->SetVisible(false);
+	m_systemset_info_edit_page->SetVisible(false);
 
-    RFDialog::m_eyemode_close = true;
-    StopActiveGameDetect();
+	RFDialog::m_eyemode_close = true;
+	StopActiveGameDetect();
 
-    m_current_passivetraininfos.clear();
+	m_current_passivetraininfos.clear();
 
 
-    // CAVPlayerUI* pAVPlayer = static_cast<CAVPlayerUI*>(m_pm.FindControl(_T("vlc_left_camera")));
-    // if (pAVPlayer) {
-    //	std::list<std::wstring> cameras = pAVPlayer->EnumCameras();
-    //	if (cameras.size() > 0) {
-    //		pAVPlayer->Play(0);
-    //	}
-    //}
+	//CAVPlayerUI* pAVPlayer = static_cast<CAVPlayerUI*>(m_pm.FindControl(_T("vlc_left_camera")));
+	//if (pAVPlayer) {
+	//	std::list<std::wstring> cameras = pAVPlayer->EnumCameras();
+	//	if (cameras.size() > 0) {
+	//		pAVPlayer->Play(0);
+	//	}
+	//}
 
-    // pAVPlayer = static_cast<CAVPlayerUI*>(m_pm.FindControl(_T("vlc_right_camera")));
-    // if (pAVPlayer) {
-    //	std::list<std::wstring> cameras = pAVPlayer->EnumCameras();
-    //	if (cameras.size() > 1) {
-    //		pAVPlayer->Play(1);
-    //	}
-    //}
+	//pAVPlayer = static_cast<CAVPlayerUI*>(m_pm.FindControl(_T("vlc_right_camera")));
+	//if (pAVPlayer) {
+	//	std::list<std::wstring> cameras = pAVPlayer->EnumCameras();
+	//	if (cameras.size() > 1) {
+	//		pAVPlayer->Play(1);
+	//	}
+	//}
 }
 
 void RFMainWindow::ShowEmgModeTrainPage()
 {
-    m_main_page->SetVisible(false);
-    m_patient_select_page->SetVisible(false);
-    m_patient_manager_page->SetVisible(false);
-    m_patient_detail_page->SetVisible(false);
-    m_login_success_page->SetVisible(false);
-    m_login_input_page->SetVisible(false);
-    m_login_page->SetVisible(false);
-    m_patient_edit_page->SetVisible(false);
-    m_about_page->SetVisible(false);
-    m_patient_add_page->SetVisible(false);
-    m_personor_info_edit_page->SetVisible(false);
-    m_train_main_page->SetVisible(false);
-    m_active_train_page->SetVisible(false);
-    m_patient_train_info->SetVisible(false);
-    m_patient_train_detail->SetVisible(false);
-    m_passive_train_page->SetVisible(false);
-    m_eyemode_page->SetVisible(false);
-    m_emgmode_page->SetVisible(true);
-    m_traindetail_chart->SetVisible(false);
-    m_active_train_game4_page->SetVisible(false);
-    m_evaluation_page->SetVisible(false);
-    m_evaluation_history_page->SetVisible(false);
-    m_evaluation_add_page->SetVisible(false);
-    m_evaluation_detail_page->SetVisible(false);
-    m_evaluation_ydgn_add_page->SetVisible(false);
-    m_evaluation_ydgn_detail_page->SetVisible(false);
-    m_systemset_info_edit_page->SetVisible(false);
+	m_main_page->SetVisible(false);
+	m_patient_select_page->SetVisible(false);
+	m_patient_manager_page->SetVisible(false);
+	m_patient_detail_page->SetVisible(false);
+	m_login_success_page->SetVisible(false);
+	m_login_input_page->SetVisible(false);
+	m_login_page->SetVisible(false);
+	m_patient_edit_page->SetVisible(false);
+	m_about_page->SetVisible(false);
+	m_patient_add_page->SetVisible(false);
+	m_personor_info_edit_page->SetVisible(false);
+	m_train_main_page->SetVisible(false);
+	m_active_train_page->SetVisible(false);
+	m_patient_train_info->SetVisible(false);
+	m_patient_train_detail->SetVisible(false);
+	m_passive_train_page->SetVisible(false);
+	m_eyemode_page->SetVisible(false);
+	m_emgmode_page->SetVisible(true);
+	m_traindetail_chart->SetVisible(false);
+	m_active_train_game4_page->SetVisible(false);
+	m_evaluation_page->SetVisible(false);
+	m_evaluation_history_page->SetVisible(false);
+	m_evaluation_add_page->SetVisible(false);
+	m_evaluation_detail_page->SetVisible(false);
+	m_evaluation_ydgn_add_page->SetVisible(false);
+	m_evaluation_ydgn_detail_page->SetVisible(false);
+	m_systemset_info_edit_page->SetVisible(false);
 
-    StopActiveGameDetect();
+	StopActiveGameDetect();
 
-    m_current_passivetraininfos.clear();
+	m_current_passivetraininfos.clear();
 }
 
 void RFMainWindow::ShowTrainDataChartPage(int id)
 {
-    m_main_page->SetVisible(false);
-    m_patient_select_page->SetVisible(false);
-    m_patient_manager_page->SetVisible(false);
-    m_patient_detail_page->SetVisible(false);
-    m_login_success_page->SetVisible(false);
-    m_login_input_page->SetVisible(false);
-    m_login_page->SetVisible(false);
-    m_patient_edit_page->SetVisible(false);
-    m_about_page->SetVisible(false);
-    m_patient_add_page->SetVisible(false);
-    m_personor_info_edit_page->SetVisible(false);
-    m_train_main_page->SetVisible(false);
-    m_active_train_page->SetVisible(false);
-    m_patient_train_info->SetVisible(false);
-    m_patient_train_detail->SetVisible(false);
-    m_passive_train_page->SetVisible(false);
-    m_eyemode_page->SetVisible(false);
-    m_emgmode_page->SetVisible(false);
-    m_traindetail_chart->SetVisible(true);
-    m_active_train_game4_page->SetVisible(false);
-    m_evaluation_page->SetVisible(false);
-    m_evaluation_history_page->SetVisible(false);
-    m_evaluation_add_page->SetVisible(false);
-    m_evaluation_detail_page->SetVisible(false);
-    m_evaluation_ydgn_add_page->SetVisible(false);
-    m_evaluation_ydgn_detail_page->SetVisible(false);
-    m_systemset_info_edit_page->SetVisible(false);
+	m_main_page->SetVisible(false);
+	m_patient_select_page->SetVisible(false);
+	m_patient_manager_page->SetVisible(false);
+	m_patient_detail_page->SetVisible(false);
+	m_login_success_page->SetVisible(false);
+	m_login_input_page->SetVisible(false);
+	m_login_page->SetVisible(false);
+	m_patient_edit_page->SetVisible(false);
+	m_about_page->SetVisible(false);
+	m_patient_add_page->SetVisible(false);
+	m_personor_info_edit_page->SetVisible(false);
+	m_train_main_page->SetVisible(false);
+	m_active_train_page->SetVisible(false);
+	m_patient_train_info->SetVisible(false);
+	m_patient_train_detail->SetVisible(false);
+	m_passive_train_page->SetVisible(false);
+	m_eyemode_page->SetVisible(false);
+	m_emgmode_page->SetVisible(false);
+	m_traindetail_chart->SetVisible(true);
+	m_active_train_game4_page->SetVisible(false);
+	m_evaluation_page->SetVisible(false);
+	m_evaluation_history_page->SetVisible(false);
+	m_evaluation_add_page->SetVisible(false);
+	m_evaluation_detail_page->SetVisible(false);
+	m_evaluation_ydgn_add_page->SetVisible(false);
+	m_evaluation_ydgn_detail_page->SetVisible(false);
+	m_systemset_info_edit_page->SetVisible(false);
 
-    StopActiveGameDetect();
+	StopActiveGameDetect();
 
-    m_current_passivetraininfos.clear();
+	m_current_passivetraininfos.clear();
 
-    PatientTrainDetails trainDetails = RFPatientsTrainDetails::get()->getTrainDetail(id);
-    UpdateZDChart(trainDetails);
-    UpdateBDChart(trainDetails);
-    UpdateYDChart(trainDetails);
-    UpdateEMGChart(trainDetails);
+	PatientTrainDetails trainDetails = RFPatientsTrainDetails::get()->getTrainDetail(id);
+	UpdateZDChart(trainDetails);
+	UpdateBDChart(trainDetails);
+	UpdateYDChart(trainDetails);
+	UpdateEMGChart(trainDetails);
 }
 
 void RFMainWindow::ShowEvaluationHistoryPage()
 {
-    m_main_page->SetVisible(false);
-    m_patient_select_page->SetVisible(false);
-    m_patient_manager_page->SetVisible(false);
-    m_patient_detail_page->SetVisible(false);
-    m_login_success_page->SetVisible(false);
-    m_login_input_page->SetVisible(false);
-    m_login_page->SetVisible(false);
-    m_patient_edit_page->SetVisible(false);
-    m_about_page->SetVisible(false);
-    m_patient_add_page->SetVisible(false);
-    m_personor_info_edit_page->SetVisible(false);
-    m_train_main_page->SetVisible(false);
-    m_active_train_page->SetVisible(false);
-    m_patient_train_info->SetVisible(false);
-    m_patient_train_detail->SetVisible(false);
-    m_passive_train_page->SetVisible(false);
-    m_eyemode_page->SetVisible(false);
-    m_emgmode_page->SetVisible(false);
-    m_traindetail_chart->SetVisible(false);
-    m_active_train_game4_page->SetVisible(false);
-    m_evaluation_page->SetVisible(false);
-    m_evaluation_history_page->SetVisible(true);
-    m_evaluation_add_page->SetVisible(false);
-    m_evaluation_detail_page->SetVisible(false);
-    m_evaluation_ydgn_add_page->SetVisible(false);
-    m_evaluation_ydgn_detail_page->SetVisible(false);
-    m_systemset_info_edit_page->SetVisible(false);
+	m_main_page->SetVisible(false);
+	m_patient_select_page->SetVisible(false);
+	m_patient_manager_page->SetVisible(false);
+	m_patient_detail_page->SetVisible(false);
+	m_login_success_page->SetVisible(false);
+	m_login_input_page->SetVisible(false);
+	m_login_page->SetVisible(false);
+	m_patient_edit_page->SetVisible(false);
+	m_about_page->SetVisible(false);
+	m_patient_add_page->SetVisible(false);
+	m_personor_info_edit_page->SetVisible(false);
+	m_train_main_page->SetVisible(false);
+	m_active_train_page->SetVisible(false);
+	m_patient_train_info->SetVisible(false);
+	m_patient_train_detail->SetVisible(false);
+	m_passive_train_page->SetVisible(false);
+	m_eyemode_page->SetVisible(false);
+	m_emgmode_page->SetVisible(false);
+	m_traindetail_chart->SetVisible(false);
+	m_active_train_game4_page->SetVisible(false);
+	m_evaluation_page->SetVisible(false);
+	m_evaluation_history_page->SetVisible(true);
+	m_evaluation_add_page->SetVisible(false);
+	m_evaluation_detail_page->SetVisible(false);
+	m_evaluation_ydgn_add_page->SetVisible(false);
+	m_evaluation_ydgn_detail_page->SetVisible(false);
+	m_systemset_info_edit_page->SetVisible(false);
 }
 
 void RFMainWindow::ShowEvaluationDetailPage()
 {
-    m_main_page->SetVisible(false);
-    m_patient_select_page->SetVisible(false);
-    m_patient_manager_page->SetVisible(false);
-    m_patient_detail_page->SetVisible(false);
-    m_login_success_page->SetVisible(false);
-    m_login_input_page->SetVisible(false);
-    m_login_page->SetVisible(false);
-    m_patient_edit_page->SetVisible(false);
-    m_about_page->SetVisible(false);
-    m_patient_add_page->SetVisible(false);
-    m_personor_info_edit_page->SetVisible(false);
-    m_train_main_page->SetVisible(false);
-    m_active_train_page->SetVisible(false);
-    m_patient_train_info->SetVisible(false);
-    m_patient_train_detail->SetVisible(false);
-    m_passive_train_page->SetVisible(false);
-    m_eyemode_page->SetVisible(false);
-    m_emgmode_page->SetVisible(false);
-    m_traindetail_chart->SetVisible(false);
-    m_active_train_game4_page->SetVisible(false);
-    m_evaluation_page->SetVisible(false);
-    m_evaluation_history_page->SetVisible(false);
-    m_evaluation_add_page->SetVisible(false);
-    m_evaluation_detail_page->SetVisible(true);
-    m_evaluation_ydgn_add_page->SetVisible(false);
-    m_evaluation_ydgn_detail_page->SetVisible(false);
-    m_systemset_info_edit_page->SetVisible(false);
+	m_main_page->SetVisible(false);
+	m_patient_select_page->SetVisible(false);
+	m_patient_manager_page->SetVisible(false);
+	m_patient_detail_page->SetVisible(false);
+	m_login_success_page->SetVisible(false);
+	m_login_input_page->SetVisible(false);
+	m_login_page->SetVisible(false);
+	m_patient_edit_page->SetVisible(false);
+	m_about_page->SetVisible(false);
+	m_patient_add_page->SetVisible(false);
+	m_personor_info_edit_page->SetVisible(false);
+	m_train_main_page->SetVisible(false);
+	m_active_train_page->SetVisible(false);
+	m_patient_train_info->SetVisible(false);
+	m_patient_train_detail->SetVisible(false);
+	m_passive_train_page->SetVisible(false);
+	m_eyemode_page->SetVisible(false);
+	m_emgmode_page->SetVisible(false);
+	m_traindetail_chart->SetVisible(false);
+	m_active_train_game4_page->SetVisible(false);
+	m_evaluation_page->SetVisible(false);
+	m_evaluation_history_page->SetVisible(false);
+	m_evaluation_add_page->SetVisible(false);
+	m_evaluation_detail_page->SetVisible(true);
+	m_evaluation_ydgn_add_page->SetVisible(false);
+	m_evaluation_ydgn_detail_page->SetVisible(false);
+	m_systemset_info_edit_page->SetVisible(false);
 }
 
 void RFMainWindow::ShowEvaluationYDGNDetailPage()
 {
-    m_main_page->SetVisible(false);
-    m_patient_select_page->SetVisible(false);
-    m_patient_manager_page->SetVisible(false);
-    m_patient_detail_page->SetVisible(false);
-    m_login_success_page->SetVisible(false);
-    m_login_input_page->SetVisible(false);
-    m_login_page->SetVisible(false);
-    m_patient_edit_page->SetVisible(false);
-    m_about_page->SetVisible(false);
-    m_patient_add_page->SetVisible(false);
-    m_personor_info_edit_page->SetVisible(false);
-    m_train_main_page->SetVisible(false);
-    m_active_train_page->SetVisible(false);
-    m_patient_train_info->SetVisible(false);
-    m_patient_train_detail->SetVisible(false);
-    m_passive_train_page->SetVisible(false);
-    m_eyemode_page->SetVisible(false);
-    m_emgmode_page->SetVisible(false);
-    m_traindetail_chart->SetVisible(false);
-    m_active_train_game4_page->SetVisible(false);
-    m_evaluation_page->SetVisible(false);
-    m_evaluation_history_page->SetVisible(false);
-    m_evaluation_add_page->SetVisible(false);
-    m_evaluation_detail_page->SetVisible(false);
-    m_evaluation_ydgn_add_page->SetVisible(false);
-    m_evaluation_ydgn_detail_page->SetVisible(true);
-    m_systemset_info_edit_page->SetVisible(false);
+	m_main_page->SetVisible(false);
+	m_patient_select_page->SetVisible(false);
+	m_patient_manager_page->SetVisible(false);
+	m_patient_detail_page->SetVisible(false);
+	m_login_success_page->SetVisible(false);
+	m_login_input_page->SetVisible(false);
+	m_login_page->SetVisible(false);
+	m_patient_edit_page->SetVisible(false);
+	m_about_page->SetVisible(false);
+	m_patient_add_page->SetVisible(false);
+	m_personor_info_edit_page->SetVisible(false);
+	m_train_main_page->SetVisible(false);
+	m_active_train_page->SetVisible(false);
+	m_patient_train_info->SetVisible(false);
+	m_patient_train_detail->SetVisible(false);
+	m_passive_train_page->SetVisible(false);
+	m_eyemode_page->SetVisible(false);
+	m_emgmode_page->SetVisible(false);
+	m_traindetail_chart->SetVisible(false);
+	m_active_train_game4_page->SetVisible(false);
+	m_evaluation_page->SetVisible(false);
+	m_evaluation_history_page->SetVisible(false);
+	m_evaluation_add_page->SetVisible(false);
+	m_evaluation_detail_page->SetVisible(false);
+	m_evaluation_ydgn_add_page->SetVisible(false);
+	m_evaluation_ydgn_detail_page->SetVisible(true);
+	m_systemset_info_edit_page->SetVisible(false);
 }
 
 
 void RFMainWindow::ShowEvaluationYDGNAddPage()
 {
-    m_main_page->SetVisible(false);
-    m_patient_select_page->SetVisible(false);
-    m_patient_manager_page->SetVisible(false);
-    m_patient_detail_page->SetVisible(false);
-    m_login_success_page->SetVisible(false);
-    m_login_input_page->SetVisible(false);
-    m_login_page->SetVisible(false);
-    m_patient_edit_page->SetVisible(false);
-    m_about_page->SetVisible(false);
-    m_patient_add_page->SetVisible(false);
-    m_personor_info_edit_page->SetVisible(false);
-    m_train_main_page->SetVisible(false);
-    m_active_train_page->SetVisible(false);
-    m_patient_train_info->SetVisible(false);
-    m_patient_train_detail->SetVisible(false);
-    m_passive_train_page->SetVisible(false);
-    m_eyemode_page->SetVisible(false);
-    m_emgmode_page->SetVisible(false);
-    m_traindetail_chart->SetVisible(false);
-    m_active_train_game4_page->SetVisible(false);
-    m_evaluation_page->SetVisible(false);
-    m_evaluation_history_page->SetVisible(false);
-    m_evaluation_add_page->SetVisible(false);
-    m_evaluation_detail_page->SetVisible(false);
-    m_evaluation_ydgn_add_page->SetVisible(true);
-    m_evaluation_ydgn_detail_page->SetVisible(false);
-    m_systemset_info_edit_page->SetVisible(false);
+	m_main_page->SetVisible(false);
+	m_patient_select_page->SetVisible(false);
+	m_patient_manager_page->SetVisible(false);
+	m_patient_detail_page->SetVisible(false);
+	m_login_success_page->SetVisible(false);
+	m_login_input_page->SetVisible(false);
+	m_login_page->SetVisible(false);
+	m_patient_edit_page->SetVisible(false);
+	m_about_page->SetVisible(false);
+	m_patient_add_page->SetVisible(false);
+	m_personor_info_edit_page->SetVisible(false);
+	m_train_main_page->SetVisible(false);
+	m_active_train_page->SetVisible(false);
+	m_patient_train_info->SetVisible(false);
+	m_patient_train_detail->SetVisible(false);
+	m_passive_train_page->SetVisible(false);
+	m_eyemode_page->SetVisible(false);
+	m_emgmode_page->SetVisible(false);
+	m_traindetail_chart->SetVisible(false);
+	m_active_train_game4_page->SetVisible(false);
+	m_evaluation_page->SetVisible(false);
+	m_evaluation_history_page->SetVisible(false);
+	m_evaluation_add_page->SetVisible(false);
+	m_evaluation_detail_page->SetVisible(false);
+	m_evaluation_ydgn_add_page->SetVisible(true);
+	m_evaluation_ydgn_detail_page->SetVisible(false);
+	m_systemset_info_edit_page->SetVisible(false);
 }
 
 void RFMainWindow::ShowEvaluationAddPage()
 {
-    m_main_page->SetVisible(false);
-    m_patient_select_page->SetVisible(false);
-    m_patient_manager_page->SetVisible(false);
-    m_patient_detail_page->SetVisible(false);
-    m_login_success_page->SetVisible(false);
-    m_login_input_page->SetVisible(false);
-    m_login_page->SetVisible(false);
-    m_patient_edit_page->SetVisible(false);
-    m_about_page->SetVisible(false);
-    m_patient_add_page->SetVisible(false);
-    m_personor_info_edit_page->SetVisible(false);
-    m_train_main_page->SetVisible(false);
-    m_active_train_page->SetVisible(false);
-    m_patient_train_info->SetVisible(false);
-    m_patient_train_detail->SetVisible(false);
-    m_passive_train_page->SetVisible(false);
-    m_eyemode_page->SetVisible(false);
-    m_emgmode_page->SetVisible(false);
-    m_traindetail_chart->SetVisible(false);
-    m_active_train_game4_page->SetVisible(false);
-    m_evaluation_page->SetVisible(false);
-    m_evaluation_history_page->SetVisible(false);
-    m_evaluation_add_page->SetVisible(true);
-    m_evaluation_detail_page->SetVisible(false);
-    m_evaluation_ydgn_add_page->SetVisible(false);
-    m_evaluation_ydgn_detail_page->SetVisible(false);
-    m_systemset_info_edit_page->SetVisible(false);
+	m_main_page->SetVisible(false);
+	m_patient_select_page->SetVisible(false);
+	m_patient_manager_page->SetVisible(false);
+	m_patient_detail_page->SetVisible(false);
+	m_login_success_page->SetVisible(false);
+	m_login_input_page->SetVisible(false);
+	m_login_page->SetVisible(false);
+	m_patient_edit_page->SetVisible(false);
+	m_about_page->SetVisible(false);
+	m_patient_add_page->SetVisible(false);
+	m_personor_info_edit_page->SetVisible(false);
+	m_train_main_page->SetVisible(false);
+	m_active_train_page->SetVisible(false);
+	m_patient_train_info->SetVisible(false);
+	m_patient_train_detail->SetVisible(false);
+	m_passive_train_page->SetVisible(false);
+	m_eyemode_page->SetVisible(false);
+	m_emgmode_page->SetVisible(false);
+	m_traindetail_chart->SetVisible(false);
+	m_active_train_game4_page->SetVisible(false);
+	m_evaluation_page->SetVisible(false);
+	m_evaluation_history_page->SetVisible(false);
+	m_evaluation_add_page->SetVisible(true);
+	m_evaluation_detail_page->SetVisible(false);
+	m_evaluation_ydgn_add_page->SetVisible(false);
+	m_evaluation_ydgn_detail_page->SetVisible(false);
+	m_systemset_info_edit_page->SetVisible(false);
 }
 
 void RFMainWindow::ShowEvaluationPage()
 {
-    m_main_page->SetVisible(false);
-    m_patient_select_page->SetVisible(false);
-    m_patient_manager_page->SetVisible(false);
-    m_patient_detail_page->SetVisible(false);
-    m_login_success_page->SetVisible(false);
-    m_login_input_page->SetVisible(false);
-    m_login_page->SetVisible(false);
-    m_patient_edit_page->SetVisible(false);
-    m_about_page->SetVisible(false);
-    m_patient_add_page->SetVisible(false);
-    m_personor_info_edit_page->SetVisible(false);
-    m_train_main_page->SetVisible(false);
-    m_active_train_page->SetVisible(false);
-    m_patient_train_info->SetVisible(false);
-    m_patient_train_detail->SetVisible(false);
-    m_passive_train_page->SetVisible(false);
-    m_eyemode_page->SetVisible(false);
-    m_emgmode_page->SetVisible(false);
-    m_traindetail_chart->SetVisible(false);
-    m_active_train_game4_page->SetVisible(false);
-    m_evaluation_page->SetVisible(true);
-    m_evaluation_history_page->SetVisible(false);
-    m_evaluation_add_page->SetVisible(false);
-    m_evaluation_detail_page->SetVisible(false);
-    m_evaluation_ydgn_add_page->SetVisible(false);
-    m_evaluation_ydgn_detail_page->SetVisible(false);
-    m_systemset_info_edit_page->SetVisible(false);
+	m_main_page->SetVisible(false);
+	m_patient_select_page->SetVisible(false);
+	m_patient_manager_page->SetVisible(false);
+	m_patient_detail_page->SetVisible(false);
+	m_login_success_page->SetVisible(false);
+	m_login_input_page->SetVisible(false);
+	m_login_page->SetVisible(false);
+	m_patient_edit_page->SetVisible(false);
+	m_about_page->SetVisible(false);
+	m_patient_add_page->SetVisible(false);
+	m_personor_info_edit_page->SetVisible(false);
+	m_train_main_page->SetVisible(false);
+	m_active_train_page->SetVisible(false);
+	m_patient_train_info->SetVisible(false);
+	m_patient_train_detail->SetVisible(false);
+	m_passive_train_page->SetVisible(false);
+	m_eyemode_page->SetVisible(false);
+	m_emgmode_page->SetVisible(false);
+	m_traindetail_chart->SetVisible(false);
+	m_active_train_game4_page->SetVisible(false);
+	m_evaluation_page->SetVisible(true);
+	m_evaluation_history_page->SetVisible(false);
+	m_evaluation_add_page->SetVisible(false);
+	m_evaluation_detail_page->SetVisible(false);
+	m_evaluation_ydgn_add_page->SetVisible(false);
+	m_evaluation_ydgn_detail_page->SetVisible(false);
+	m_systemset_info_edit_page->SetVisible(false);
 }
 
 void RFMainWindow::ShowActiveGameWebkit()
 {
-    m_main_page->SetVisible(false);
-    m_patient_select_page->SetVisible(false);
-    m_patient_manager_page->SetVisible(false);
-    m_patient_detail_page->SetVisible(false);
-    m_login_success_page->SetVisible(false);
-    m_login_input_page->SetVisible(false);
-    m_login_page->SetVisible(false);
-    m_patient_edit_page->SetVisible(false);
-    m_about_page->SetVisible(false);
-    m_patient_add_page->SetVisible(false);
-    m_personor_info_edit_page->SetVisible(false);
-    m_train_main_page->SetVisible(false);
-    m_active_train_page->SetVisible(false);
-    m_patient_train_info->SetVisible(false);
-    m_patient_train_detail->SetVisible(false);
-    m_passive_train_page->SetVisible(false);
-    m_eyemode_page->SetVisible(false);
-    m_emgmode_page->SetVisible(false);
-    m_traindetail_chart->SetVisible(false);
-    m_active_train_game4_page->SetVisible(true);
-    m_evaluation_page->SetVisible(false);
-    m_evaluation_history_page->SetVisible(false);
-    m_evaluation_detail_page->SetVisible(false);
-    m_evaluation_ydgn_add_page->SetVisible(false);
-    m_evaluation_ydgn_detail_page->SetVisible(false);
-    m_systemset_info_edit_page->SetVisible(false);
-    StartActiveGameDetect();
+	m_main_page->SetVisible(false);
+	m_patient_select_page->SetVisible(false);
+	m_patient_manager_page->SetVisible(false);
+	m_patient_detail_page->SetVisible(false);
+	m_login_success_page->SetVisible(false);
+	m_login_input_page->SetVisible(false);
+	m_login_page->SetVisible(false);
+	m_patient_edit_page->SetVisible(false);
+	m_about_page->SetVisible(false);
+	m_patient_add_page->SetVisible(false);
+	m_personor_info_edit_page->SetVisible(false);
+	m_train_main_page->SetVisible(false);
+	m_active_train_page->SetVisible(false);
+	m_patient_train_info->SetVisible(false);
+	m_patient_train_detail->SetVisible(false);
+	m_passive_train_page->SetVisible(false);
+	m_eyemode_page->SetVisible(false);
+	m_emgmode_page->SetVisible(false);
+	m_traindetail_chart->SetVisible(false);
+	m_active_train_game4_page->SetVisible(true);
+	m_evaluation_page->SetVisible(false);
+	m_evaluation_history_page->SetVisible(false);
+	m_evaluation_detail_page->SetVisible(false);
+	m_evaluation_ydgn_add_page->SetVisible(false);
+	m_evaluation_ydgn_detail_page->SetVisible(false);
+	m_systemset_info_edit_page->SetVisible(false);
+	StartActiveGameDetect();
 }
 
 void RFMainWindow::DeletePatient(int patientid)
 {
-    if (patientid > 0) {
-        RFPatientsManager::get()->remove(patientid);
-    }
+	if (patientid > 0) {
+		RFPatientsManager::get()->remove(patientid);
+	}
 
-    CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("manager_patient_welcom")));
-    pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
+	CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("manager_patient_welcom")));
+	pLabel->SetText((_T("欢迎您，") + m_login_info.login_user + _T("!∨")).c_str());
 
-    UpdateManagePatientPage(RFPatientsManager::get()->getPage(RFPatientsManager::get()->m_current_page));
-    UpdateManagePageNumber(RFPatientsManager::get()->m_current_page);
-    ShowManagerPatientPage();
+	UpdateManagePatientPage(RFPatientsManager::get()->getPage(RFPatientsManager::get()->m_current_page));
+	UpdateManagePageNumber(RFPatientsManager::get()->m_current_page);
+	ShowManagerPatientPage();
 }
 
 
 void RFMainWindow::UpdatePageNumber(int page)
 {
-    wchar_t pageid[16] = _T("");
+	wchar_t pageid[16] = _T("");
+	
+	for(int i = 0; i < 4; i++) {
+		wchar_t pagevalue[16] = _T("");
 
-    for (int i = 0; i < 4; i++) {
-        wchar_t pagevalue[16] = _T("");
+		wsprintf(pageid, _T("page%d"), i+1);
+		CButtonUI* pButton = static_cast<CButtonUI*>(m_pm.FindControl(pageid));
+		
+		if (page % 4 == i) {
+			wsprintf(pagevalue, _T("%d"), page + 1);
 
-        wsprintf(pageid, _T("page%d"), i + 1);
-        CButtonUI *pButton = static_cast<CButtonUI *>(m_pm.FindControl(pageid));
+			pButton->SetBkColor(0xFF184199);
+			pButton->SetText(pagevalue);
+			pButton->SetTextColor(0xffffffff);
+		} else {
+			wsprintf(pagevalue, _T("%d"), (page/4)*4 + i + 1);
 
-        if (page % 4 == i) {
-            wsprintf(pagevalue, _T("%d"), page + 1);
-
-            pButton->SetBkColor(0xFF184199);
-            pButton->SetText(pagevalue);
-            pButton->SetTextColor(0xffffffff);
-        }
-        else {
-            wsprintf(pagevalue, _T("%d"), (page / 4) * 4 + i + 1);
-
-            pButton->SetTextColor(0xff000000);
-            pButton->SetBkColor(0xFFFFFFFF);
-            pButton->SetText(pagevalue);
-        }
-    }
+			pButton->SetTextColor(0xff000000);
+			pButton->SetBkColor(0xFFFFFFFF);
+			pButton->SetText(pagevalue);
+		}
+	}
 }
 
 void RFMainWindow::UpdateManagePageNumber(int page)
 {
-    wchar_t pageid[16] = _T("");
+	wchar_t pageid[16] = _T("");
 
-    for (int i = 0; i < 4; i++) {
-        wchar_t pagevalue[16] = _T("");
+	for(int i = 0; i < 4; i++) {
+		wchar_t pagevalue[16] = _T("");
 
-        wsprintf(pageid, _T("manage_page%d"), i + 1);
-        CButtonUI *pButton = static_cast<CButtonUI *>(m_pm.FindControl(pageid));
+		wsprintf(pageid, _T("manage_page%d"), i+1);
+		CButtonUI* pButton = static_cast<CButtonUI*>(m_pm.FindControl(pageid));
 
-        if (page % 4 == i) {
-            wsprintf(pagevalue, _T("%d"), page + 1);
+		if (page % 4 == i) {
+			wsprintf(pagevalue, _T("%d"), page + 1);
 
-            pButton->SetTextColor(0xffffffff);
-            pButton->SetBkColor(0xFF184199);
-            pButton->SetText(pagevalue);
-        }
-        else {
-            wsprintf(pagevalue, _T("%d"), (page / 4) * 4 + i + 1);
+			pButton->SetTextColor(0xffffffff);
+			pButton->SetBkColor(0xFF184199);
+			pButton->SetText(pagevalue);
+		} else {
+			wsprintf(pagevalue, _T("%d"), (page/4)*4 + i + 1);
 
-            pButton->SetTextColor(0xff000000);
-            pButton->SetBkColor(0xFFFFFFFF);
-            pButton->SetText(pagevalue);
-        }
-    }
+			pButton->SetTextColor(0xff000000);
+			pButton->SetBkColor(0xFFFFFFFF);
+			pButton->SetText(pagevalue);
+		}
+	}
 }
 
-void RFMainWindow::UpdatePatientPage(std::list<PatientInfo> &patients)
+void RFMainWindow::UpdatePatientPage(std::list<PatientInfo>& patients)
 {
-    std::list<PatientInfo>::iterator iter = patients.begin();
-    for (int i = 1; i < 9; i++) {
-        wchar_t rowid[16] = _T("");
-        wsprintf(rowid, _T("row0%d"), i);
+	std::list<PatientInfo>::iterator iter = patients.begin();
+	for (int i = 1; i < 9; i++)
+	{
+		wchar_t rowid[16] = _T("");
+		wsprintf(rowid, _T("row0%d"), i);
 
-        CHorizontalLayoutUI *pRow = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(rowid));
+		CHorizontalLayoutUI *pRow = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(rowid));
+	
+		for (int j = 0; j < pRow->GetCount(); j++) {
+			pRow->GetItemAt(j)->SetVisible(true);
+		}
 
-        for (int j = 0; j < pRow->GetCount(); j++) {
-            pRow->GetItemAt(j)->SetVisible(true);
-        }
+		if (iter != patients.end()) {
+			//pRow->SetVisible(true);
+			wchar_t cellvalue[16] = _T("");
+			
+			wchar_t cellid[16] = _T("");
+			wsprintf(cellid, _T("cell%d1"), i-1);
+			CLabelUI* pLabel = static_cast<CLabelUI*>(pRow->FindSubControl(cellid));
+			wsprintf(cellvalue, _T("%d"), iter->id);
+			pLabel->SetText(cellvalue);
 
-        if (iter != patients.end()) {
-            // pRow->SetVisible(true);
-            wchar_t cellvalue[16] = _T("");
+			memset(cellid, 0, 16);
+			wsprintf(cellid, _T("cell%d2"), i-1);
+			pLabel = static_cast<CLabelUI*>(pRow->FindSubControl(cellid));
+			pLabel->SetText(iter->name.c_str());
 
-            wchar_t cellid[16] = _T("");
-            wsprintf(cellid, _T("cell%d1"), i - 1);
-            CLabelUI *pLabel = static_cast<CLabelUI *>(pRow->FindSubControl(cellid));
-            wsprintf(cellvalue, _T("%d"), iter->id);
-            pLabel->SetText(cellvalue);
+			memset(cellid, 0, 16);
+			wsprintf(cellid, _T("cell%d3"), i-1);
+			pLabel = static_cast<CLabelUI*>(pRow->FindSubControl(cellid));
+			pLabel->SetText(iter->sex.c_str());
 
-            memset(cellid, 0, 16);
-            wsprintf(cellid, _T("cell%d2"), i - 1);
-            pLabel = static_cast<CLabelUI *>(pRow->FindSubControl(cellid));
-            pLabel->SetText(iter->name.c_str());
+			memset(cellid, 0, 16);
+			wsprintf(cellid, _T("cell%d4"), i-1);
+			pLabel = static_cast<CLabelUI*>(pRow->FindSubControl(cellid));
+			wsprintf(cellvalue, _T("%d"), iter->age);
+			pLabel->SetText(cellvalue);
 
-            memset(cellid, 0, 16);
-            wsprintf(cellid, _T("cell%d3"), i - 1);
-            pLabel = static_cast<CLabelUI *>(pRow->FindSubControl(cellid));
-            pLabel->SetText(iter->sex.c_str());
+			memset(cellid, 0, 16);
+			wsprintf(cellid, _T("cell%d5"), i-1);
+			pLabel = static_cast<CLabelUI*>(pRow->FindSubControl(cellid));
+			pLabel->SetText(iter->createtime.c_str());
 
-            memset(cellid, 0, 16);
-            wsprintf(cellid, _T("cell%d4"), i - 1);
-            pLabel = static_cast<CLabelUI *>(pRow->FindSubControl(cellid));
-            wsprintf(cellvalue, _T("%d"), iter->age);
-            pLabel->SetText(cellvalue);
+			memset(cellid, 0, 16);
+			wsprintf(cellid, _T("cell%d6"), i-1);
+			pLabel = static_cast<CLabelUI*>(pRow->FindSubControl(cellid));
+			pLabel->SetText(iter->lasttreattime.c_str());
 
-            memset(cellid, 0, 16);
-            wsprintf(cellid, _T("cell%d5"), i - 1);
-            pLabel = static_cast<CLabelUI *>(pRow->FindSubControl(cellid));
-            pLabel->SetText(iter->createtime.c_str());
+			memset(cellid, 0, 16);
+			wsprintf(cellid, _T("cell%d7"), i-1);
+			pLabel = static_cast<CLabelUI*>(pRow->FindSubControl(cellid));
+			pLabel->SetText(iter->totaltreattime.c_str());
 
-            memset(cellid, 0, 16);
-            wsprintf(cellid, _T("cell%d6"), i - 1);
-            pLabel = static_cast<CLabelUI *>(pRow->FindSubControl(cellid));
-            pLabel->SetText(iter->lasttreattime.c_str());
+			memset(cellid, 0, 16);
+			wsprintf(cellid, _T("cell%d8"), i-1);
+			pLabel = static_cast<CLabelUI*>(pRow->FindSubControl(cellid));
+			pLabel->SetText(iter->recoverdetail.c_str());
 
-            memset(cellid, 0, 16);
-            wsprintf(cellid, _T("cell%d7"), i - 1);
-            pLabel = static_cast<CLabelUI *>(pRow->FindSubControl(cellid));
-            pLabel->SetText(iter->totaltreattime.c_str());
+			memset(cellid, 0, 16);
+			wsprintf(cellid, _T("cell%d9"), i-1);
+			pLabel = static_cast<CLabelUI*>(pRow->FindSubControl(cellid));
+			pLabel->SetText(iter->remarks.c_str());
 
-            memset(cellid, 0, 16);
-            wsprintf(cellid, _T("cell%d8"), i - 1);
-            pLabel = static_cast<CLabelUI *>(pRow->FindSubControl(cellid));
-            pLabel->SetText(iter->recoverdetail.c_str());
-
-            memset(cellid, 0, 16);
-            wsprintf(cellid, _T("cell%d9"), i - 1);
-            pLabel = static_cast<CLabelUI *>(pRow->FindSubControl(cellid));
-            pLabel->SetText(iter->remarks.c_str());
-
-            iter++;
-        }
-        else {
-            for (int k = 0; k < pRow->GetCount(); k++) {
-                pRow->GetItemAt(k)->SetVisible(false);
-            }
-        }
-    }
+			iter++;
+		} else {
+			for (int k = 0; k < pRow->GetCount(); k++) {
+				pRow->GetItemAt(k)->SetVisible(false);
+			}
+		}
+	}
 }
 
 
-void RFMainWindow::UpdateManagePatientPage(std::list<PatientInfo> &patients)
+void RFMainWindow::UpdateManagePatientPage(std::list<PatientInfo>& patients)
 {
-    std::list<PatientInfo>::iterator iter = patients.begin();
-    for (int i = 1; i < 9; i++) {
-        wchar_t rowid[16] = _T("");
-        wsprintf(rowid, _T("manage_row0%d"), i);
+	std::list<PatientInfo>::iterator iter = patients.begin();
+	for (int i = 1; i < 9; i++)
+	{
+		wchar_t rowid[16] = _T("");
+		wsprintf(rowid, _T("manage_row0%d"), i);
 
-        CHorizontalLayoutUI *pRow = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(rowid));
+		CHorizontalLayoutUI *pRow = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(rowid));
 
-        for (int j = 0; j < pRow->GetCount(); j++) {
-            pRow->GetItemAt(j)->SetVisible(true);
-        }
+		for (int j = 0; j < pRow->GetCount(); j++) {
+			pRow->GetItemAt(j)->SetVisible(true);
+		}
 
-        if (iter != patients.end()) {
-            // pRow->SetVisible(true);
-            wchar_t cellvalue[16] = _T("");
+		if (iter != patients.end()) {
+			//pRow->SetVisible(true);
+			wchar_t cellvalue[16] = _T("");
 
-            wchar_t cellid[16] = _T("");
-            wsprintf(cellid, _T("manage_cell%d1"), i - 1);
-            CLabelUI *pLabel = static_cast<CLabelUI *>(pRow->FindSubControl(cellid));
-            wsprintf(cellvalue, _T("%d"), iter->id);
-            pLabel->SetText(cellvalue);
+			wchar_t cellid[16] = _T("");
+			wsprintf(cellid, _T("manage_cell%d1"), i-1);
+			CLabelUI* pLabel = static_cast<CLabelUI*>(pRow->FindSubControl(cellid));
+			wsprintf(cellvalue, _T("%d"), iter->id);
+			pLabel->SetText(cellvalue);
 
-            memset(cellid, 0, 16);
-            wsprintf(cellid, _T("manage_cell%d2"), i - 1);
-            pLabel = static_cast<CLabelUI *>(pRow->FindSubControl(cellid));
-            pLabel->SetText(iter->name.c_str());
+			memset(cellid, 0, 16);
+			wsprintf(cellid, _T("manage_cell%d2"), i-1);
+			pLabel = static_cast<CLabelUI*>(pRow->FindSubControl(cellid));
+			pLabel->SetText(iter->name.c_str());
 
-            memset(cellid, 0, 16);
-            wsprintf(cellid, _T("manage_cell%d3"), i - 1);
-            pLabel = static_cast<CLabelUI *>(pRow->FindSubControl(cellid));
-            pLabel->SetText(iter->sex.c_str());
+			memset(cellid, 0, 16);
+			wsprintf(cellid, _T("manage_cell%d3"), i-1);
+			pLabel = static_cast<CLabelUI*>(pRow->FindSubControl(cellid));
+			pLabel->SetText(iter->sex.c_str());
 
-            memset(cellid, 0, 16);
-            wsprintf(cellid, _T("manage_cell%d4"), i - 1);
-            pLabel = static_cast<CLabelUI *>(pRow->FindSubControl(cellid));
-            wsprintf(cellvalue, _T("%d"), iter->age);
-            pLabel->SetText(cellvalue);
+			memset(cellid, 0, 16);
+			wsprintf(cellid, _T("manage_cell%d4"), i-1);
+			pLabel = static_cast<CLabelUI*>(pRow->FindSubControl(cellid));
+			wsprintf(cellvalue, _T("%d"), iter->age);
+			pLabel->SetText(cellvalue);
 
-            memset(cellid, 0, 16);
-            wsprintf(cellid, _T("manage_cell%d5"), i - 1);
-            pLabel = static_cast<CLabelUI *>(pRow->FindSubControl(cellid));
-            pLabel->SetText(iter->createtime.c_str());
+			memset(cellid, 0, 16);
+			wsprintf(cellid, _T("manage_cell%d5"), i-1);
+			pLabel = static_cast<CLabelUI*>(pRow->FindSubControl(cellid));
+			pLabel->SetText(iter->createtime.c_str());
 
-            iter++;
-        }
-        else {
-            for (int k = 0; k < pRow->GetCount(); k++) {
-                pRow->GetItemAt(k)->SetVisible(false);
-            }
-        }
-    }
+			iter++;
+		} else {
+			for (int k = 0; k < pRow->GetCount(); k++) {
+				pRow->GetItemAt(k)->SetVisible(false);
+			}
+		}
+	}
 }
 
 void RFMainWindow::UpdatePersonInfo()
 {
 
-    wchar_t intString[64] = _T("");
-    CEditUI *pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("personor_id")));
-    if (pEdit) {
-        pEdit->SetText(m_login_info.employeenumber.c_str());
-    }
+	wchar_t intString[64] = _T(""); 
+	CEditUI *pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("personor_id")));
+	if (pEdit) {
+		pEdit->SetText(m_login_info.employeenumber.c_str());
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("personor_education")));
-    if (pEdit) {
-        pEdit->SetText(m_login_info.education.c_str());
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("personor_education")));
+	if (pEdit) {
+		pEdit->SetText(m_login_info.education.c_str());
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("personor_name")));
-    if (pEdit) {
-        pEdit->SetText(m_login_info.name.c_str());
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("personor_name")));
+	if (pEdit) {
+		pEdit->SetText(m_login_info.name.c_str());
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("personor_nation")));
-    if (pEdit) {
-        pEdit->SetText(m_login_info.nation.c_str());
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("personor_nation")));
+	if (pEdit) {
+		pEdit->SetText(m_login_info.nation.c_str());
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("personor_sex")));
-    if (pEdit) {
-        pEdit->SetText(m_login_info.sex.c_str());
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("personor_sex")));
+	if (pEdit) {
+		pEdit->SetText(m_login_info.sex.c_str());
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("personor_originplace")));
-    if (pEdit) {
-        pEdit->SetText(m_login_info.birthplace.c_str());
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("personor_originplace")));
+	if (pEdit) {
+		pEdit->SetText(m_login_info.birthplace.c_str());
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("personor_birthday")));
-    if (pEdit) {
-        pEdit->SetText(m_login_info.birthday.c_str());
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("personor_birthday")));
+	if (pEdit) {
+		pEdit->SetText(m_login_info.birthday.c_str());
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("personor_householdprop")));
-    if (pEdit) {
-        pEdit->SetText(m_login_info.householdprop.c_str());
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("personor_householdprop")));
+	if (pEdit) {
+		pEdit->SetText(m_login_info.householdprop.c_str());
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("personor_certid")));
-    if (pEdit) {
-        pEdit->SetText(m_login_info.certid.c_str());
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("personor_certid")));
+	if (pEdit) {
+		pEdit->SetText(m_login_info.certid.c_str());
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("personor_department")));
-    if (pEdit) {
-        pEdit->SetText(m_login_info.department.c_str());
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("personor_department")));
+	if (pEdit) {
+		pEdit->SetText(m_login_info.department.c_str());
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("personor_tel")));
-    if (pEdit) {
-        pEdit->SetText(m_login_info.telephone.c_str());
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("personor_tel")));
+	if (pEdit) {
+		pEdit->SetText(m_login_info.telephone.c_str());
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("personor_keshi")));
-    if (pEdit) {
-        pEdit->SetText(m_login_info.group.c_str());
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("personor_keshi")));
+	if (pEdit) {
+		pEdit->SetText(m_login_info.group.c_str());
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("personor_bloodtype")));
-    if (pEdit) {
-        if (m_login_info.bloodtype == BLOOD_A) {
-            pEdit->SetText(BLOOD_A_STRING);
-        }
-        switch (m_login_info.bloodtype) {
-        case BLOOD_A:
-            pEdit->SetText(BLOOD_A_STRING);
-            break;
-        case BLOOD_B:
-            pEdit->SetText(BLOOD_B_STRING);
-            break;
-        case BLOOD_AB:
-            pEdit->SetText(BLOOD_AB_STRING);
-            break;
-        case BLOOD_O:
-            pEdit->SetText(BLOOD_O_STRING);
-            break;
-        default:
-            break;
-        }
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("personor_bloodtype")));
+	if (pEdit) {
+		if (m_login_info.bloodtype == BLOOD_A) {
+			pEdit->SetText(BLOOD_A_STRING);
+		} 
+		switch(m_login_info.bloodtype) {
+			case BLOOD_A:
+				pEdit->SetText(BLOOD_A_STRING);
+				break;
+			case BLOOD_B:
+				pEdit->SetText(BLOOD_B_STRING);
+				break;
+			case BLOOD_AB:
+				pEdit->SetText(BLOOD_AB_STRING);
+				break;
+			case BLOOD_O:
+				pEdit->SetText(BLOOD_O_STRING);
+				break;
+			default:
+				break;
+		}
+	}
 
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("personor_position")));
-    if (pEdit) {
-        pEdit->SetText(m_login_info.positon.c_str());
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("personor_position")));
+	if (pEdit) {
+		pEdit->SetText(m_login_info.positon.c_str());
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("personor_address")));
-    if (pEdit) {
-        pEdit->SetText(m_login_info.address.c_str());
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("personor_address")));
+	if (pEdit) {
+		pEdit->SetText(m_login_info.address.c_str());
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("personor_entrydate")));
-    if (pEdit) {
-        pEdit->SetText(m_login_info.entrydate.c_str());
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("personor_entrydate")));
+	if (pEdit) {
+		pEdit->SetText(m_login_info.entrydate.c_str());
+	}
 }
 
 LoginInfo RFMainWindow::GetPersonInfo()
 {
-    LoginInfo doctor = m_login_info;
+	LoginInfo doctor = m_login_info;
 
-    std::wstring txt = _T("");
-    wchar_t intString[64] = _T("");
-    CEditUI *pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("personor_id")));
-    if (pEdit) {
-        txt = pEdit->GetText();
-        doctor.employeenumber = txt;
-    }
+	std::wstring txt = _T("");
+	wchar_t intString[64] = _T(""); 
+	CEditUI *pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("personor_id")));
+	if (pEdit) {
+		txt = pEdit->GetText();
+		doctor.employeenumber = txt;
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("personor_education")));
-    if (pEdit) {
-        txt = pEdit->GetText();
-        doctor.education = txt;
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("personor_education")));
+	if (pEdit) {
+		txt = pEdit->GetText();
+		doctor.education = txt;
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("personor_name")));
-    if (pEdit) {
-        txt = pEdit->GetText();
-        doctor.name = txt;
-        doctor.login_user = txt;
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("personor_name")));
+	if (pEdit) {
+		txt = pEdit->GetText();
+		doctor.name = txt;
+		doctor.login_user = txt;
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("personor_nation")));
-    if (pEdit) {
-        txt = pEdit->GetText();
-        doctor.nation = txt;
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("personor_nation")));
+	if (pEdit) {
+		txt = pEdit->GetText();
+		doctor.nation = txt;
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("personor_sex")));
-    if (pEdit) {
-        txt = pEdit->GetText();
-        doctor.sex = txt;
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("personor_sex")));
+	if (pEdit) {
+		txt = pEdit->GetText();
+		doctor.sex = txt;
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("personor_originplace")));
-    if (pEdit) {
-        txt = pEdit->GetText();
-        doctor.birthplace = txt;
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("personor_originplace")));
+	if (pEdit) {
+		txt = pEdit->GetText();
+		doctor.birthplace = txt;
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("personor_birthday")));
-    if (pEdit) {
-        txt = pEdit->GetText();
-        doctor.birthday = txt;
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("personor_birthday")));
+	if (pEdit) {
+		txt = pEdit->GetText();
+		doctor.birthday = txt;
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("personor_householdprop")));
-    if (pEdit) {
-        txt = pEdit->GetText();
-        doctor.householdprop = txt;
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("personor_householdprop")));
+	if (pEdit) {
+		txt = pEdit->GetText();
+		doctor.householdprop = txt;
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("personor_certid")));
-    if (pEdit) {
-        txt = pEdit->GetText();
-        doctor.certid = txt;
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("personor_certid")));
+	if (pEdit) {
+		txt = pEdit->GetText();
+		doctor.certid = txt;
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("personor_department")));
-    if (pEdit) {
-        txt = pEdit->GetText();
-        doctor.department = txt;
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("personor_department")));
+	if (pEdit) {
+		txt = pEdit->GetText();
+		doctor.department = txt;
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("personor_tel")));
-    if (pEdit) {
-        txt = pEdit->GetText();
-        doctor.telephone = txt;
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("personor_tel")));
+	if (pEdit) {
+		txt = pEdit->GetText();
+		doctor.telephone = txt;
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("personor_keshi")));
-    if (pEdit) {
-        txt = pEdit->GetText();
-        doctor.group = txt;
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("personor_keshi")));
+	if (pEdit) {
+		txt = pEdit->GetText();
+		doctor.group = txt;
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("personor_bloodtype")));
-    if (pEdit) {
-        txt = pEdit->GetText();
-
-        if (txt == BLOOD_A_STRING) {
-            doctor.bloodtype = BLOOD_A;
-        }
-        else if (txt == BLOOD_B_STRING) {
-            doctor.bloodtype = BLOOD_B;
-        }
-        else if (txt == BLOOD_AB_STRING) {
-            doctor.bloodtype = BLOOD_AB;
-        }
-        else if (txt == BLOOD_O_STRING) {
-            doctor.bloodtype = BLOOD_O;
-        }
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("personor_bloodtype")));
+	if (pEdit) {
+		txt = pEdit->GetText();
+		
+		if (txt == BLOOD_A_STRING) {
+			doctor.bloodtype = BLOOD_A;
+		} else if (txt == BLOOD_B_STRING) {
+			doctor.bloodtype = BLOOD_B;
+		} else if (txt == BLOOD_AB_STRING) {
+			doctor.bloodtype = BLOOD_AB;
+		} else if (txt == BLOOD_O_STRING) {
+			doctor.bloodtype = BLOOD_O;
+		} 
+	}
 
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("personor_position")));
-    if (pEdit) {
-        txt = pEdit->GetText();
-        doctor.positon = txt;
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("personor_position")));
+	if (pEdit) {
+		txt = pEdit->GetText();
+		doctor.positon = txt;
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("personor_address")));
-    if (pEdit) {
-        txt = pEdit->GetText();
-        doctor.address = txt;
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("personor_address")));
+	if (pEdit) {
+		txt = pEdit->GetText();
+		doctor.address = txt;
+	}
 
-    pEdit = static_cast<CEditUI *>(m_pm.FindControl(_T("personor_entrydate")));
-    if (pEdit) {
-        txt = pEdit->GetText();
-        doctor.entrydate = txt;
-    }
+	pEdit = static_cast<CEditUI*>(m_pm.FindControl(_T("personor_entrydate")));
+	if (pEdit) {
+		txt = pEdit->GetText();
+		doctor.entrydate = txt;
+	}
 
-    return doctor;
+	return doctor;
 }
 
 void RFMainWindow::UpdateEvaluationScore(std::wstring score)
 {
-    std::wstring text = _T("最近得分：") + score;
-    CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("evaluation_history_score")));
-    pLabel->SetText(text.c_str());
+	std::wstring text = _T("最近得分：") + score;
+	CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("evaluation_history_score")));
+	pLabel->SetText(text.c_str());
 }
 
 void RFMainWindow::UpdateEvaluationDetailScore(std::wstring score)
 {
-    std::wstring text = _T("综合得分：") + score;
-    CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("evaluation_detail_score")));
-    pLabel->SetText(text.c_str());
+	std::wstring text = _T("综合得分：") + score;
+	CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("evaluation_detail_score")));
+	pLabel->SetText(text.c_str());
 }
 
 void RFMainWindow::UpdateEvaluationNumber(int page)
 {
-    wchar_t pageid[16] = _T("");
+	wchar_t pageid[16] = _T("");
 
-    for (int i = 0; i < 4; i++) {
-        wchar_t pagevalue[16] = _T("");
+	for(int i = 0; i < 4; i++) {
+		wchar_t pagevalue[16] = _T("");
 
-        wsprintf(pageid, _T("ev_page%d"), i + 1);
-        CButtonUI *pButton = static_cast<CButtonUI *>(m_pm.FindControl(pageid));
+		wsprintf(pageid, _T("ev_page%d"), i+1);
+		CButtonUI* pButton = static_cast<CButtonUI*>(m_pm.FindControl(pageid));
 
-        if (page % 4 == i) {
-            wsprintf(pagevalue, _T("%d"), page + 1);
+		if (page % 4 == i) {
+			wsprintf(pagevalue, _T("%d"), page + 1);
 
-            pButton->SetTextColor(0xffffffff);
-            pButton->SetBkColor(0xFF184199);
-            pButton->SetText(pagevalue);
-        }
-        else {
-            wsprintf(pagevalue, _T("%d"), (page / 4) * 4 + i + 1);
+			pButton->SetTextColor(0xffffffff);
+			pButton->SetBkColor(0xFF184199);
+			pButton->SetText(pagevalue);
+		} else {
+			wsprintf(pagevalue, _T("%d"), (page/4)*4 + i + 1);
 
-            pButton->SetTextColor(0xff000000);
-            pButton->SetBkColor(0xFFFFFFFF);
-            pButton->SetText(pagevalue);
-        }
-    }
+			pButton->SetTextColor(0xff000000);
+			pButton->SetBkColor(0xFFFFFFFF);
+			pButton->SetText(pagevalue);
+		}
+	}
 }
 
 void RFMainWindow::UpdateEvaluationDetailNumber(int page)
 {
-    wchar_t pageid[16] = _T("");
+	wchar_t pageid[16] = _T("");
 
-    for (int i = 0; i < 4; i++) {
-        wchar_t pagevalue[16] = _T("");
+	for(int i = 0; i < 4; i++) {
+		wchar_t pagevalue[16] = _T("");
 
-        wsprintf(pageid, _T("evd_page%d"), i + 1);
-        CButtonUI *pButton = static_cast<CButtonUI *>(m_pm.FindControl(pageid));
+		wsprintf(pageid, _T("evd_page%d"), i+1);
+		CButtonUI* pButton = static_cast<CButtonUI*>(m_pm.FindControl(pageid));
 
-        if (page % 4 == i) {
-            wsprintf(pagevalue, _T("%d"), page + 1);
+		if (page % 4 == i) {
+			wsprintf(pagevalue, _T("%d"), page + 1);
 
-            pButton->SetTextColor(0xffffffff);
-            pButton->SetBkColor(0xFF184199);
-            pButton->SetText(pagevalue);
-        }
-        else {
-            wsprintf(pagevalue, _T("%d"), (page / 4) * 4 + i + 1);
+			pButton->SetTextColor(0xffffffff);
+			pButton->SetBkColor(0xFF184199);
+			pButton->SetText(pagevalue);
+		} else {
+			wsprintf(pagevalue, _T("%d"), (page/4)*4 + i + 1);
 
-            pButton->SetTextColor(0xff000000);
-            pButton->SetBkColor(0xFFFFFFFF);
-            pButton->SetText(pagevalue);
-        }
-    }
+			pButton->SetTextColor(0xff000000);
+			pButton->SetBkColor(0xFFFFFFFF);
+			pButton->SetText(pagevalue);
+		}
+	}
 }
 
 void RFMainWindow::UpdateEvaluationDetailPage(std::list<EvaluationRecordData> datas)
 {
-    std::list<EvaluationRecordData>::iterator iter = datas.begin();
-    for (int i = 1; i < 5; i++) {
-        wchar_t rowid[16] = _T("");
-        wsprintf(rowid, _T("evd_row0%d"), i);
+	std::list<EvaluationRecordData>::iterator iter = datas.begin();
+	for (int i = 1; i < 5; i++)
+	{
+		wchar_t rowid[16] = _T("");
+		wsprintf(rowid, _T("evd_row0%d"), i);
 
-        CHorizontalLayoutUI *pRow = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(rowid));
+		CHorizontalLayoutUI *pRow = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(rowid));
 
-        for (int j = 0; j < pRow->GetCount(); j++) {
-            pRow->GetItemAt(j)->SetVisible(true);
-        }
+		for (int j = 0; j < pRow->GetCount(); j++) {
+			pRow->GetItemAt(j)->SetVisible(true);
+		}
 
-        if (iter != datas.end()) {
-            wchar_t cellvalue[16] = _T("");
+		if (iter != datas.end()) {
+			wchar_t cellvalue[16] = _T("");
 
-            wchar_t cellid[16] = _T("");
-            wsprintf(cellid, _T("evd_cell%d1"), i - 1);
-            CLabelUI *pLabel = static_cast<CLabelUI *>(pRow->FindSubControl(cellid));
-            pLabel->SetText(iter->item.c_str());
+			wchar_t cellid[16] = _T("");
+			wsprintf(cellid, _T("evd_cell%d1"), i-1);
+			CLabelUI* pLabel = static_cast<CLabelUI*>(pRow->FindSubControl(cellid));
+			pLabel->SetText(iter->item.c_str());
 
-            memset(cellid, 0, 16);
-            wsprintf(cellid, _T("evd_cell%d2"), i - 1);
-            pLabel = static_cast<CLabelUI *>(pRow->FindSubControl(cellid));
-            pLabel->SetText(iter->result.c_str());
+			memset(cellid, 0, 16);
+			wsprintf(cellid, _T("evd_cell%d2"), i-1);
+			pLabel = static_cast<CLabelUI*>(pRow->FindSubControl(cellid));
+			pLabel->SetText(iter->result.c_str());
 
-            iter++;
-        }
-        else {
-            for (int k = 0; k < pRow->GetCount(); k++) {
-                pRow->GetItemAt(k)->SetVisible(false);
-            }
-        }
-    }
+			iter++;
+		} else {
+			for (int k = 0; k < pRow->GetCount(); k++) {
+				pRow->GetItemAt(k)->SetVisible(false);
+			}
+		}
+	}
 }
 
 void RFMainWindow::UpdateEvaluationPage(std::list<EvaluationData> datas)
 {
-    std::list<EvaluationData>::iterator iter = datas.begin();
-    for (int i = 1; i < 6; i++) {
-        wchar_t rowid[16] = _T("");
-        wsprintf(rowid, _T("eval_row0%d"), i);
+	std::list<EvaluationData>::iterator iter = datas.begin();
+	for (int i = 1; i < 6; i++)
+	{
+		wchar_t rowid[16] = _T("");
+		wsprintf(rowid, _T("eval_row0%d"), i);
 
-        CHorizontalLayoutUI *pRow = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(rowid));
+		CHorizontalLayoutUI *pRow = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(rowid));
 
-        for (int j = 0; j < pRow->GetCount(); j++) {
-            pRow->GetItemAt(j)->SetVisible(true);
-        }
+		for (int j = 0; j < pRow->GetCount(); j++) {
+			pRow->GetItemAt(j)->SetVisible(true);
+		}
 
-        if (iter != datas.end()) {
-            wchar_t cellvalue[16] = _T("");
+		if (iter != datas.end()) {
+			wchar_t cellvalue[16] = _T("");
 
-            wchar_t cellid[16] = _T("");
-            wsprintf(cellid, _T("eval_cell%d1"), i - 1);
-            CLabelUI *pLabel = static_cast<CLabelUI *>(pRow->FindSubControl(cellid));
-            wsprintf(cellvalue, _T("%d"), iter->id);
-            pLabel->SetText(cellvalue);
+			wchar_t cellid[16] = _T("");
+			wsprintf(cellid, _T("eval_cell%d1"), i-1);
+			CLabelUI* pLabel = static_cast<CLabelUI*>(pRow->FindSubControl(cellid));
+			wsprintf(cellvalue, _T("%d"), iter->id);
+			pLabel->SetText(cellvalue);
 
-            memset(cellid, 0, 16);
-            wsprintf(cellid, _T("eval_cell%d2"), i - 1);
-            pLabel = static_cast<CLabelUI *>(pRow->FindSubControl(cellid));
-            pLabel->SetText(iter->date.c_str());
+			memset(cellid, 0, 16);
+			wsprintf(cellid, _T("eval_cell%d2"), i-1);
+			pLabel = static_cast<CLabelUI*>(pRow->FindSubControl(cellid));
+			pLabel->SetText(iter->date.c_str());
 
-            memset(cellid, 0, 16);
-            wsprintf(cellid, _T("eval_cell%d3"), i - 1);
-            pLabel = static_cast<CLabelUI *>(pRow->FindSubControl(cellid));
-            pLabel->SetText(iter->name.c_str());
+			memset(cellid, 0, 16);
+			wsprintf(cellid, _T("eval_cell%d3"), i-1);
+			pLabel = static_cast<CLabelUI*>(pRow->FindSubControl(cellid));
+			pLabel->SetText(iter->name.c_str());
 
-            memset(cellid, 0, 16);
-            wsprintf(cellid, _T("eval_cell%d4"), i - 1);
-            pLabel = static_cast<CLabelUI *>(pRow->FindSubControl(cellid));
-            pLabel->SetText(iter->score.c_str());
+			memset(cellid, 0, 16);
+			wsprintf(cellid, _T("eval_cell%d4"), i-1);
+			pLabel = static_cast<CLabelUI*>(pRow->FindSubControl(cellid));
+			pLabel->SetText(iter->score.c_str());
 
-            iter++;
-        }
-        else {
-            for (int k = 0; k < pRow->GetCount(); k++) {
-                pRow->GetItemAt(k)->SetVisible(false);
-            }
-        }
-    }
+			iter++;
+		} else {
+			for (int k = 0; k < pRow->GetCount(); k++) {
+				pRow->GetItemAt(k)->SetVisible(false);
+			}
+		}
+	}
 }
 
 void RFMainWindow::SaveEVAnserToDB()
 {
-    wchar_t score[64] = _T("");
-    std::vector<std::wstring> questions;
-    std::vector<std::wstring> answers;
-    if (m_evalution_type == 1) {
-        wsprintf(score, _T("%d"), m_fma.getScore());
-        m_fma.getQuestionAndAnswer(questions, answers);
-    }
-    else {
-        wsprintf(score, _T("%d"), m_mas.getScore());
-        m_mas.getQuestionAndAnswer(questions, answers);
-    }
-    if (questions.size() != answers.size() || questions.size() == 0) {
-        return;
-    }
+	wchar_t score[64] = _T("");
+	std::vector<std::wstring> questions;
+	std::vector<std::wstring> answers;
+	if (m_evalution_type == 1) {
+		wsprintf(score, _T("%d"), m_fma.getScore());
+		m_fma.getQuestionAndAnswer(questions, answers);
+	} else {
+		wsprintf(score, _T("%d"), m_mas.getScore());
+		m_mas.getQuestionAndAnswer(questions, answers);
+	}
+	if (questions.size() != answers.size() || questions.size() == 0) {
+		return;
+	}
 
-    EvaluationData data;
+	EvaluationData data;
 
-    DWORD createTime = time(NULL);
-    data.doctorid = m_login_info.doctorid;
-    data.name = m_current_patient.name;
-    data.patientid = m_current_patient.id;
-    data.score = score;
-    data.type = m_evalution_type;
-    data.date = RFToTimeString(createTime);
-    data.id = RFEvaluationData::get()->m_nextid;
+	DWORD createTime = time(NULL);
+	data.doctorid = m_login_info.doctorid;
+	data.name = m_current_patient.name;
+	data.patientid = m_current_patient.id;
+	data.score = score;
+	data.type = m_evalution_type;
+	data.date = RFToTimeString(createTime);
+	data.id = RFEvaluationData::get()->m_nextid;
+	
+
+	for (int i = 0; i < questions.size(); i++) {
+		EvaluationRecordData record;
+
+		record.item = questions.at(i);
+		record.result = answers.at(i);
+		record.evalid = data.id;
+		data.datas.push_back(record);
+	}
 
 
-    for (int i = 0; i < questions.size(); i++) {
-        EvaluationRecordData record;
-
-        record.item = questions.at(i);
-        record.result = answers.at(i);
-        record.evalid = data.id;
-        data.datas.push_back(record);
-    }
-
-
-    RFEvaluationData::get()->Add(data);
+	RFEvaluationData::get()->Add(data);
 }
 
 bool RFMainWindow::UpdateEVAnswerToData()
 {
-    bool someSelected = false;
+	bool someSelected = false;
 
-    for (int i = 1; i < 7; i++) {
-        wchar_t name[128] = _T("");
-        wsprintf(name, _T("question%d"), i);
-        COptionUI *pOption = static_cast<COptionUI *>(m_pm.FindControl(name));
-        if (pOption->IsSelected()) {
+	for (int i = 1; i < 7; i++)
+	{
+		wchar_t name[128] = _T("");
+		wsprintf(name, _T("question%d"), i);
+		COptionUI* pOption = static_cast<COptionUI*>(m_pm.FindControl(name));
+		if (pOption->IsSelected()) {
+			
+			if (m_evalution_type == 1) {
+				m_fma.saveAnswer(m_fma.m_current_index, (i-1));
+			} else {
+				m_mas.saveAnswer(m_mas.m_current_index, (i-1));
+			}
+			someSelected = true;
+			break;
+		}
+	}
 
-            if (m_evalution_type == 1) {
-                m_fma.saveAnswer(m_fma.m_current_index, (i - 1));
-            }
-            else {
-                m_mas.saveAnswer(m_mas.m_current_index, (i - 1));
-            }
-            someSelected = true;
-            break;
-        }
-    }
-
-    return someSelected;
+	return someSelected;
 }
 
 void RFMainWindow::UpdateEVAnswerToUI()
 {
-    int cur = 1;
-    int answer = 1;
-    if (m_evalution_type == 1) {
-        cur = m_fma.m_current_index;
-        if (m_fma.m_result.find(cur) == m_fma.m_result.end()) {
-            return;
-        }
-        answer = m_fma.m_result[cur] + 1;
-    }
-    else {
-        cur = m_mas.m_current_index;
-        if (m_mas.m_result.find(cur) == m_mas.m_result.end()) {
-            return;
-        }
-        answer = m_mas.m_result[cur] + 1;
-    }
+	int cur = 1;
+	int answer = 1;
+	if (m_evalution_type == 1) {
+		cur = m_fma.m_current_index;
+		if (m_fma.m_result.find(cur) == m_fma.m_result.end()) {
+			return;
+		}
+		answer = m_fma.m_result[cur] + 1;
+	} else {
+		cur = m_mas.m_current_index;
+		if (m_mas.m_result.find(cur) == m_mas.m_result.end()) {
+			return;
+		}
+		answer = m_mas.m_result[cur] + 1;
+	}
 
-    wchar_t name[128] = _T("");
-    wsprintf(name, _T("question%d"), answer);
-    COptionUI *pOption = static_cast<COptionUI *>(m_pm.FindControl(name));
-    if (pOption) {
-        pOption->Selected(true);
-    }
+	wchar_t name[128] = _T("");
+	wsprintf(name, _T("question%d"), answer);
+	COptionUI* pOption = static_cast<COptionUI*>(m_pm.FindControl(name));
+	if (pOption) {
+		pOption->Selected(true);
+	}
 }
 
 void RFMainWindow::UpdateEVIndex()
 {
-    int cur = 0;
-    int total = 0;
+	int cur = 0;
+	int total = 0;
 
-    if (m_evalution_type == 1) {
-        cur = m_fma.m_current_index + 1;
-        total = m_fma.m_questions.size();
-    }
-    else {
-        cur = m_mas.m_current_index + 1;
-        total = m_mas.m_questions.size();
-    }
+	if (m_evalution_type == 1) {
+		cur = m_fma.m_current_index+1;
+		total = m_fma.m_questions.size();
+	} else {
+		cur = m_mas.m_current_index + 1;
+		total = m_mas.m_questions.size();
+	}
 
-    wchar_t index[128];
-    wsprintf(index, _T("%d/%d"), cur, total);
-    CLabelUI *pLbl = static_cast<CLabelUI *>(m_pm.FindControl(_T("evaluation_question_index")));
-    pLbl->SetText(index);
+	wchar_t index[128];
+	wsprintf(index, _T("%d/%d"), cur, total);
+	CLabelUI* pLbl = static_cast<CLabelUI*>(m_pm.FindControl(_T("evaluation_question_index")));
+	pLbl->SetText(index);
 
-    if (cur < total) {
-        CHorizontalLayoutUI *pHori = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(_T("evaluation_continue")));
-        pHori->SetVisible(true);
-
-
-        pHori = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(_T("evaluation_submit")));
-        pHori->SetVisible(false);
-    }
-    else {
-        CHorizontalLayoutUI *pHori = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(_T("evaluation_continue")));
-        pHori->SetVisible(false);
+	if (cur < total) {
+		CHorizontalLayoutUI* pHori = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(_T("evaluation_continue")));
+		pHori->SetVisible(true);
 
 
-        pHori = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(_T("evaluation_submit")));
-        pHori->SetVisible(true);
-    }
+		pHori = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(_T("evaluation_submit")));
+		pHori->SetVisible(false);
+	} else {
+		CHorizontalLayoutUI* pHori = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(_T("evaluation_continue")));
+		pHori->SetVisible(false);
+
+
+		pHori = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(_T("evaluation_submit")));
+		pHori->SetVisible(true);
+	}
 }
 
 void RFMainWindow::UpdateEVQuestion()
 {
-    std::wstring question;
-    if (m_evalution_type == 1) {
-        question = m_fma.getQuestion(m_fma.m_current_index);
-    }
-    else if (m_evalution_type == 2) {
-        question = m_mas.getQuestion(m_mas.m_current_index);
-    }
+	std::wstring question;
+	if (m_evalution_type == 1) {
+		question = m_fma.getQuestion(m_fma.m_current_index);
+	} else if (m_evalution_type == 2) {
+		question = m_mas.getQuestion(m_mas.m_current_index);
+	}
 
-    CLabelUI *pLbl = static_cast<CLabelUI *>(m_pm.FindControl(_T("evaluation_question")));
-    pLbl->SetText(question.c_str());
+	CLabelUI* pLbl = static_cast<CLabelUI*>(m_pm.FindControl(_T("evaluation_question")));
+	pLbl->SetText(question.c_str());
 }
 
 void RFMainWindow::UpdateEVAnswer()
 {
-    std::vector<std::wstring> answers;
-    if (m_evalution_type == 1) {
-        answers = m_fma.getAnswers(m_fma.m_current_index);
-    }
-    else {
-        answers = m_mas.getAnswers(m_mas.m_current_index);
-    }
+	std::vector<std::wstring> answers;
+	if (m_evalution_type == 1) {
+		answers = m_fma.getAnswers(m_fma.m_current_index);
+	} else {
+		answers = m_mas.getAnswers(m_mas.m_current_index);
+	}
 
-    for (int i = 0; i < 6; i++) {
-        wchar_t name[128] = _T("");
-        wsprintf(name, _T("answer%d"), i + 1);
+	for (int i = 0; i < 6; i++) {
+		wchar_t name[128] = _T("");
+		wsprintf(name, _T("answer%d"), i+1);
+		
+		CHorizontalLayoutUI* pHori = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(name));
+		pHori->SetVisible(false);
+		if (i < answers.size()) {
+			wsprintf(name, _T("evaluation_text%d"), i+1);
+			CLabelUI* pLbl = static_cast<CLabelUI*>(m_pm.FindControl(name));
+			pLbl->SetText(answers.at(i).c_str());
 
-        CHorizontalLayoutUI *pHori = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(name));
-        pHori->SetVisible(false);
-        if (i < answers.size()) {
-            wsprintf(name, _T("evaluation_text%d"), i + 1);
-            CLabelUI *pLbl = static_cast<CLabelUI *>(m_pm.FindControl(name));
-            pLbl->SetText(answers.at(i).c_str());
+			wsprintf(name, _T("question%d"), i+1);
+			COptionUI* pOption = static_cast<COptionUI*>(m_pm.FindControl(name));
+			if (answers.at(i) == _T("/")) {
+				pOption->SetNormalImage(_T("radio_3.png"));
+				pOption->SetHotImage(_T("radio_3.png"));
+				pOption->SetHotForeImage(_T("radio_3.png"));
+				pOption->SetPushedImage(_T("radio_3.png"));
+				pOption->SetSelectedImage(_T("radio_3.png"));
+				pOption->SetSelectedForedImage(_T("radio_3.png"));
+				pOption->Selected(false);
+			} else {
+				pOption->SetNormalImage(_T("radio_0.png"));
+				pOption->SetHotImage(_T("radio_0.png"));
+				pOption->SetHotForeImage(_T("radio_0.png"));
+				pOption->SetPushedImage(_T("radio_0.png"));
+				pOption->SetSelectedImage(_T("radio_1.png"));
+				pOption->SetSelectedForedImage(_T("radio_1.png"));
+				pOption->Selected(false);
+			}
 
-            wsprintf(name, _T("question%d"), i + 1);
-            COptionUI *pOption = static_cast<COptionUI *>(m_pm.FindControl(name));
-            if (answers.at(i) == _T("/")) {
-                pOption->SetNormalImage(_T("radio_3.png"));
-                pOption->SetHotImage(_T("radio_3.png"));
-                pOption->SetHotForeImage(_T("radio_3.png"));
-                pOption->SetPushedImage(_T("radio_3.png"));
-                pOption->SetSelectedImage(_T("radio_3.png"));
-                pOption->SetSelectedForedImage(_T("radio_3.png"));
-                pOption->Selected(false);
-            }
-            else {
-                pOption->SetNormalImage(_T("radio_0.png"));
-                pOption->SetHotImage(_T("radio_0.png"));
-                pOption->SetHotForeImage(_T("radio_0.png"));
-                pOption->SetPushedImage(_T("radio_0.png"));
-                pOption->SetSelectedImage(_T("radio_1.png"));
-                pOption->SetSelectedForedImage(_T("radio_1.png"));
-                pOption->Selected(false);
-            }
-
-            pHori->SetVisible(true);
-        }
-    }
+			pHori->SetVisible(true);
+		} 
+	}
 }
 
 void RFMainWindow::UpdateTrainInfoPageNumber(int page)
 {
-    wchar_t pageid[16] = _T("");
+	wchar_t pageid[16] = _T("");
 
-    for (int i = 0; i < 4; i++) {
-        wchar_t pagevalue[16] = _T("");
+	for(int i = 0; i < 4; i++) {
+		wchar_t pagevalue[16] = _T("");
 
-        wsprintf(pageid, _T("pf_page%d"), i + 1);
-        CButtonUI *pButton = static_cast<CButtonUI *>(m_pm.FindControl(pageid));
+		wsprintf(pageid, _T("pf_page%d"), i+1);
+		CButtonUI* pButton = static_cast<CButtonUI*>(m_pm.FindControl(pageid));
 
-        if (page % 4 == i) {
-            wsprintf(pagevalue, _T("%d"), page + 1);
+		if (page % 4 == i) {
+			wsprintf(pagevalue, _T("%d"), page + 1);
 
-            pButton->SetTextColor(0xffffffff);
-            pButton->SetBkColor(0xFF184199);
-            pButton->SetText(pagevalue);
-        }
-        else {
-            wsprintf(pagevalue, _T("%d"), (page / 4) * 4 + i + 1);
+			pButton->SetTextColor(0xffffffff);
+			pButton->SetBkColor(0xFF184199);
+			pButton->SetText(pagevalue);
+		} else {
+			wsprintf(pagevalue, _T("%d"), (page/4)*4 + i + 1);
 
-            pButton->SetTextColor(0xff000000);
-            pButton->SetBkColor(0xFFFFFFFF);
-            pButton->SetText(pagevalue);
-        }
-    }
+			pButton->SetTextColor(0xff000000);
+			pButton->SetBkColor(0xFFFFFFFF);
+			pButton->SetText(pagevalue);
+		}
+	}
 }
 
 void RFMainWindow::UpdateTrainInfoPage(std::list<PatientTrainInfo> trains)
 {
-    std::list<PatientTrainInfo>::iterator iter = trains.begin();
-    for (int i = 1; i < 9; i++) {
-        wchar_t rowid[16] = _T("");
-        wsprintf(rowid, _T("pf_row0%d"), i);
+	std::list<PatientTrainInfo>::iterator iter = trains.begin();
+	for (int i = 1; i < 9; i++)
+	{
+		wchar_t rowid[16] = _T("");
+		wsprintf(rowid, _T("pf_row0%d"), i);
 
-        CHorizontalLayoutUI *pRow = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(rowid));
+		CHorizontalLayoutUI *pRow = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(rowid));
 
-        for (int j = 0; j < pRow->GetCount(); j++) {
-            pRow->GetItemAt(j)->SetVisible(true);
-        }
+		for (int j = 0; j < pRow->GetCount(); j++) {
+			pRow->GetItemAt(j)->SetVisible(true);
+		}
 
-        if (iter != trains.end()) {
-            // pRow->SetVisible(true);
-            wchar_t cellvalue[16] = _T("");
+		if (iter != trains.end()) {
+			//pRow->SetVisible(true);
+			wchar_t cellvalue[16] = _T("");
 
-            wchar_t cellid[16] = _T("");
-            wsprintf(cellid, _T("pf_cell%d1"), i - 1);
-            CLabelUI *pLabel = static_cast<CLabelUI *>(pRow->FindSubControl(cellid));
-            wsprintf(cellvalue, _T("%d"), iter->id);
-            pLabel->SetText(cellvalue);
+			wchar_t cellid[16] = _T("");
+			wsprintf(cellid, _T("pf_cell%d1"), i-1);
+			CLabelUI* pLabel = static_cast<CLabelUI*>(pRow->FindSubControl(cellid));
+			wsprintf(cellvalue, _T("%d"), iter->id);
+			pLabel->SetText(cellvalue);
 
-            memset(cellid, 0, 16);
-            wsprintf(cellid, _T("pf_cell%d2"), i - 1);
-            pLabel = static_cast<CLabelUI *>(pRow->FindSubControl(cellid));
-            pLabel->SetText(iter->name.c_str());
+			memset(cellid, 0, 16);
+			wsprintf(cellid, _T("pf_cell%d2"), i-1);
+			pLabel = static_cast<CLabelUI*>(pRow->FindSubControl(cellid));
+			pLabel->SetText(iter->name.c_str());
 
-            memset(cellid, 0, 16);
-            wsprintf(cellid, _T("pf_cell%d3"), i - 1);
-            pLabel = static_cast<CLabelUI *>(pRow->FindSubControl(cellid));
-            pLabel->SetText(iter->sex.c_str());
+			memset(cellid, 0, 16);
+			wsprintf(cellid, _T("pf_cell%d3"), i-1);
+			pLabel = static_cast<CLabelUI*>(pRow->FindSubControl(cellid));
+			pLabel->SetText(iter->sex.c_str());
 
-            memset(cellid, 0, 16);
-            wsprintf(cellid, _T("pf_cell%d4"), i - 1);
-            pLabel = static_cast<CLabelUI *>(pRow->FindSubControl(cellid));
-            pLabel->SetText(iter->age.c_str());
+			memset(cellid, 0, 16);
+			wsprintf(cellid, _T("pf_cell%d4"), i-1);
+			pLabel = static_cast<CLabelUI*>(pRow->FindSubControl(cellid));
+			pLabel->SetText(iter->age.c_str());
 
-            memset(cellid, 0, 16);
-            wsprintf(cellid, _T("pf_cell%d5"), i - 1);
-            pLabel = static_cast<CLabelUI *>(pRow->FindSubControl(cellid));
-            pLabel->SetText(iter->createtime.c_str());
+			memset(cellid, 0, 16);
+			wsprintf(cellid, _T("pf_cell%d5"), i-1);
+			pLabel = static_cast<CLabelUI*>(pRow->FindSubControl(cellid));
+			pLabel->SetText(iter->createtime.c_str());
 
-            iter++;
-        }
-        else {
-            for (int k = 0; k < pRow->GetCount(); k++) {
-                pRow->GetItemAt(k)->SetVisible(false);
-            }
-        }
-    }
+			iter++;
+		} else {
+			for (int k = 0; k < pRow->GetCount(); k++) {
+				pRow->GetItemAt(k)->SetVisible(false);
+			}
+		}
+	}
 }
 
 
-void RFMainWindow::UpdateTrainDetailPage(const PatientTrainInfo &train)
+void RFMainWindow::UpdateTrainDetailPage(const PatientTrainInfo& train)
 {
-    wchar_t cellvalue[64] = _T("");
-    CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("pfv_cell01")));
-    wsprintf(cellvalue, _T("%d"), train.id);
-    pLabel->SetText(cellvalue);
+	wchar_t cellvalue[64] = _T("");
+	CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("pfv_cell01")));
+	wsprintf(cellvalue, _T("%d"), train.id);
+	pLabel->SetText(cellvalue);
 
-    pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("pfv_cell02")));
-    pLabel->SetText(train.name.c_str());
+	pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("pfv_cell02")));
+	pLabel->SetText(train.name.c_str());
 
-    pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("pfv_cell03")));
-    pLabel->SetText(train.sex.c_str());
+	pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("pfv_cell03")));
+	pLabel->SetText(train.sex.c_str());
 
-    pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("pfv_cell04")));
-    pLabel->SetText(train.age.c_str());
+	pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("pfv_cell04")));
+	pLabel->SetText(train.age.c_str());
 
-    pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("pfv_cell05")));
-    pLabel->SetText(train.createtime.c_str());
+	pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("pfv_cell05")));
+	pLabel->SetText(train.createtime.c_str());
 }
 
-void RFMainWindow::UpdateBDChart(const PatientTrainDetails &trainDetails)
+void RFMainWindow::UpdateBDChart(const PatientTrainDetails& trainDetails)
 {
-    if (trainDetails.traintype != RF_TRAIN_TYPE_BD) {
-        CVerticalLayoutUI *traindetail_chart_bd_title = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("traindetail_chart_bd_title")));
-        traindetail_chart_bd_title->SetVisible(false);
+	if (trainDetails.traintype != RF_TRAIN_TYPE_BD) {
+		CVerticalLayoutUI* traindetail_chart_bd_title = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("traindetail_chart_bd_title")));
+		traindetail_chart_bd_title->SetVisible(false);
 
-        CVerticalLayoutUI *traindetail_chart_bd_view = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("traindetail_chart_bd_view")));
-        traindetail_chart_bd_view->SetVisible(false);
-        return;
-    }
+		CVerticalLayoutUI* traindetail_chart_bd_view = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("traindetail_chart_bd_view")));
+		traindetail_chart_bd_view->SetVisible(false);
+		return;
+	}
 
 
-    m_current_chart = RF_TRAIN_TYPE_BD;
-    CVerticalLayoutUI *traindetail_chart_bd_title = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("traindetail_chart_bd_title")));
-    traindetail_chart_bd_title->SetVisible(true);
+	m_current_chart = RF_TRAIN_TYPE_BD;
+	CVerticalLayoutUI* traindetail_chart_bd_title = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("traindetail_chart_bd_title")));
+	traindetail_chart_bd_title->SetVisible(true);
 
-    CVerticalLayoutUI *traindetail_chart_bd_view = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("traindetail_chart_bd_view")));
-    traindetail_chart_bd_view->SetVisible(true);
+	CVerticalLayoutUI* traindetail_chart_bd_view = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("traindetail_chart_bd_view")));
+	traindetail_chart_bd_view->SetVisible(true);
 
-    CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("bd_cell01")));
-    pLabel->SetText(trainDetails.createtime.c_str());
+	CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("bd_cell01")));
+	pLabel->SetText(trainDetails.createtime.c_str());
 
-    pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("bd_cell02")));
-    pLabel->SetText(trainDetails.traintype.c_str());
+	pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("bd_cell02")));
+	pLabel->SetText(trainDetails.traintype.c_str());
 
-    pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("bd_cell03")));
-    pLabel->SetText(trainDetails.game.c_str());
+	pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("bd_cell03")));
+	pLabel->SetText(trainDetails.game.c_str());
 
-    pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("bd_cell04")));
-    pLabel->SetText(trainDetails.traintime.c_str());
+	pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("bd_cell04")));
+	pLabel->SetText(trainDetails.traintime.c_str());
 
-    RFPatientsTrainData::get()->LoadTrainData(trainDetails);
+	RFPatientsTrainData::get()->LoadTrainData(trainDetails);
 }
 
-void RFMainWindow::UpdateJGJWaveData(std::list<LineWaveData> &trainDatas)
+void RFMainWindow::UpdateJGJWaveData(std::list<LineWaveData>& trainDatas)
 {
-    CWaveUI *pWave = static_cast<CWaveUI *>(m_pm.FindControl(_T("bd_jgj_wave")));
-    if (!pWave) {
-        return;
-    }
+	CWaveUI* pWave = static_cast<CWaveUI*>(m_pm.FindControl(_T("bd_jgj_wave")));
+	if (!pWave) {
+		return;
+	}
 
-    pWave->m_lstDatas = trainDatas;
-    pWave->SetStartX(0);
+	pWave->m_lstDatas = trainDatas;
+	pWave->SetStartX(0);
 }
 
 void RFMainWindow::UpdateJGJWaveXNum(double fStart)
 {
-    char x[32] = "";
-    CLabelUI *zd_chart_x0 = static_cast<CLabelUI *>(m_pm.FindControl(_T("bd_chart_x0")));
-    if (zd_chart_x0) {
-        fStart += 2;
-        sprintf(x, "%3.2f", fStart);
-        zd_chart_x0->SetText(TGUTF8ToUTF16(x).c_str());
-    }
+	char x[32] = "";
+	CLabelUI* zd_chart_x0 = static_cast<CLabelUI*>(m_pm.FindControl(_T("bd_chart_x0")));
+	if (zd_chart_x0) {
+		fStart += 2;
+		sprintf(x, "%3.2f", fStart);
+		zd_chart_x0->SetText(TGUTF8ToUTF16(x).c_str());
+	}
 
-    CLabelUI *zd_chart_x1 = static_cast<CLabelUI *>(m_pm.FindControl(_T("bd_chart_x1")));
-    if (zd_chart_x1) {
-        fStart += 2;
-        sprintf(x, "%3.2f", fStart);
-        zd_chart_x1->SetText(TGUTF8ToUTF16(x).c_str());
-    }
+	CLabelUI* zd_chart_x1 = static_cast<CLabelUI*>(m_pm.FindControl(_T("bd_chart_x1")));
+	if (zd_chart_x1) {
+		fStart += 2;
+		sprintf(x, "%3.2f", fStart);
+		zd_chart_x1->SetText(TGUTF8ToUTF16(x).c_str());
+	}
 
-    CLabelUI *zd_chart_x2 = static_cast<CLabelUI *>(m_pm.FindControl(_T("bd_chart_x2")));
-    if (zd_chart_x2) {
-        fStart += 2;
-        sprintf(x, "%3.2f", fStart);
-        zd_chart_x2->SetText(TGUTF8ToUTF16(x).c_str());
-    }
+	CLabelUI* zd_chart_x2 = static_cast<CLabelUI*>(m_pm.FindControl(_T("bd_chart_x2")));
+	if (zd_chart_x2) {
+		fStart += 2;
+		sprintf(x, "%3.2f", fStart);
+		zd_chart_x2->SetText(TGUTF8ToUTF16(x).c_str());
+	}
 
-    CLabelUI *zd_chart_x3 = static_cast<CLabelUI *>(m_pm.FindControl(_T("bd_chart_x3")));
-    if (zd_chart_x3) {
-        fStart += 2;
-        sprintf(x, "%3.2f", fStart);
-        zd_chart_x3->SetText(TGUTF8ToUTF16(x).c_str());
-    }
+	CLabelUI* zd_chart_x3 = static_cast<CLabelUI*>(m_pm.FindControl(_T("bd_chart_x3")));
+	if (zd_chart_x3) {
+		fStart += 2;
+		sprintf(x, "%3.2f", fStart);
+		zd_chart_x3->SetText(TGUTF8ToUTF16(x).c_str());
+	}
 
-    CLabelUI *zd_chart_x4 = static_cast<CLabelUI *>(m_pm.FindControl(_T("bd_chart_x4")));
-    if (zd_chart_x4) {
-        fStart += 2;
-        sprintf(x, "%3.2f", fStart);
-        zd_chart_x4->SetText(TGUTF8ToUTF16(x).c_str());
-    }
+	CLabelUI* zd_chart_x4 = static_cast<CLabelUI*>(m_pm.FindControl(_T("bd_chart_x4")));
+	if (zd_chart_x4) {
+		fStart += 2;
+		sprintf(x, "%3.2f", fStart);
+		zd_chart_x4->SetText(TGUTF8ToUTF16(x).c_str());
+	}
 }
 
-void RFMainWindow::UpdateZGJWaveData(std::list<LineWaveData> &trainDatas)
+void RFMainWindow::UpdateZGJWaveData(std::list<LineWaveData>& trainDatas)
 {
-    CWaveUI *pWave = static_cast<CWaveUI *>(m_pm.FindControl(_T("bd_zgj_wave")));
-    if (!pWave) {
-        return;
-    }
+	CWaveUI* pWave = static_cast<CWaveUI*>(m_pm.FindControl(_T("bd_zgj_wave")));
+	if (!pWave) {
+		return;
+	}
 
-    pWave->m_lstDatas = trainDatas;
-    pWave->SetStartX(0);
+	pWave->m_lstDatas = trainDatas;
+	pWave->SetStartX(0);
 }
 
 void RFMainWindow::UpdateZGJWaveXNum(double fStart)
 {
-    char x[32] = "";
-    CLabelUI *zd_chart_x0 = static_cast<CLabelUI *>(m_pm.FindControl(_T("bd_zgj_chart_x0")));
-    if (zd_chart_x0) {
-        fStart += 2;
-        sprintf(x, "%3.2f", fStart);
-        zd_chart_x0->SetText(TGUTF8ToUTF16(x).c_str());
-    }
+	char x[32] = "";
+	CLabelUI* zd_chart_x0 = static_cast<CLabelUI*>(m_pm.FindControl(_T("bd_zgj_chart_x0")));
+	if (zd_chart_x0) {
+		fStart += 2;
+		sprintf(x, "%3.2f", fStart);
+		zd_chart_x0->SetText(TGUTF8ToUTF16(x).c_str());
+	}
 
-    CLabelUI *zd_chart_x1 = static_cast<CLabelUI *>(m_pm.FindControl(_T("bd_zgj_chart_x1")));
-    if (zd_chart_x1) {
-        fStart += 2;
-        sprintf(x, "%3.2f", fStart);
-        zd_chart_x1->SetText(TGUTF8ToUTF16(x).c_str());
-    }
+	CLabelUI* zd_chart_x1 = static_cast<CLabelUI*>(m_pm.FindControl(_T("bd_zgj_chart_x1")));
+	if (zd_chart_x1) {
+		fStart += 2;
+		sprintf(x, "%3.2f", fStart);
+		zd_chart_x1->SetText(TGUTF8ToUTF16(x).c_str());
+	}
 
-    CLabelUI *zd_chart_x2 = static_cast<CLabelUI *>(m_pm.FindControl(_T("bd_zgj_chart_x2")));
-    if (zd_chart_x2) {
-        fStart += 2;
-        sprintf(x, "%3.2f", fStart);
-        zd_chart_x2->SetText(TGUTF8ToUTF16(x).c_str());
-    }
+	CLabelUI* zd_chart_x2 = static_cast<CLabelUI*>(m_pm.FindControl(_T("bd_zgj_chart_x2")));
+	if (zd_chart_x2) {
+		fStart += 2;
+		sprintf(x, "%3.2f", fStart);
+		zd_chart_x2->SetText(TGUTF8ToUTF16(x).c_str());
+	}
 
-    CLabelUI *zd_chart_x3 = static_cast<CLabelUI *>(m_pm.FindControl(_T("bd_zgj_chart_x3")));
-    if (zd_chart_x3) {
-        fStart += 2;
-        sprintf(x, "%3.2f", fStart);
-        zd_chart_x3->SetText(TGUTF8ToUTF16(x).c_str());
-    }
+	CLabelUI* zd_chart_x3 = static_cast<CLabelUI*>(m_pm.FindControl(_T("bd_zgj_chart_x3")));
+	if (zd_chart_x3) {
+		fStart += 2;
+		sprintf(x, "%3.2f", fStart);
+		zd_chart_x3->SetText(TGUTF8ToUTF16(x).c_str());
+	}
 
-    CLabelUI *zd_chart_x4 = static_cast<CLabelUI *>(m_pm.FindControl(_T("bd_zgj_chart_x4")));
-    if (zd_chart_x4) {
-        fStart += 2;
-        sprintf(x, "%3.2f", fStart);
-        zd_chart_x4->SetText(TGUTF8ToUTF16(x).c_str());
-    }
+	CLabelUI* zd_chart_x4 = static_cast<CLabelUI*>(m_pm.FindControl(_T("bd_zgj_chart_x4")));
+	if (zd_chart_x4) {
+		fStart += 2;
+		sprintf(x, "%3.2f", fStart);
+		zd_chart_x4->SetText(TGUTF8ToUTF16(x).c_str());
+	}
+
 }
 
-void RFMainWindow::UpdateYDChart(const PatientTrainDetails &trainDetails)
+void RFMainWindow::UpdateYDChart(const PatientTrainDetails& trainDetails)
 {
-    if (trainDetails.traintype != RF_TRAIN_TYPE_YD) {
-        CVerticalLayoutUI *traindetail_chart_yd_title = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("traindetail_chart_yd_title")));
-        traindetail_chart_yd_title->SetVisible(false);
+	if (trainDetails.traintype != RF_TRAIN_TYPE_YD) {
+		CVerticalLayoutUI* traindetail_chart_yd_title = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("traindetail_chart_yd_title")));
+		traindetail_chart_yd_title->SetVisible(false);
 
-        CVerticalLayoutUI *traindetail_chart_yd_view = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("traindetail_chart_yd_view")));
-        traindetail_chart_yd_view->SetVisible(false);
-        return;
-    }
+		CVerticalLayoutUI* traindetail_chart_yd_view = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("traindetail_chart_yd_view")));
+		traindetail_chart_yd_view->SetVisible(false);
+		return;
+	}
 
-    m_current_chart = RF_TRAIN_TYPE_YD;
-    CVerticalLayoutUI *traindetail_chart_yd_title = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("traindetail_chart_yd_title")));
-    traindetail_chart_yd_title->SetVisible(true);
+	m_current_chart = RF_TRAIN_TYPE_YD;
+	CVerticalLayoutUI* traindetail_chart_yd_title = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("traindetail_chart_yd_title")));
+	traindetail_chart_yd_title->SetVisible(true);
 
-    CVerticalLayoutUI *traindetail_chart_yd_view = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("traindetail_chart_yd_view")));
-    traindetail_chart_yd_view->SetVisible(true);
+	CVerticalLayoutUI* traindetail_chart_yd_view = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("traindetail_chart_yd_view")));
+	traindetail_chart_yd_view->SetVisible(true);
 
-    CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("yd_cell01")));
-    pLabel->SetText(trainDetails.createtime.c_str());
+	CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("yd_cell01")));
+	pLabel->SetText(trainDetails.createtime.c_str());
 
-    pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("yd_cell02")));
-    pLabel->SetText(trainDetails.traintype.c_str());
+	pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("yd_cell02")));
+	pLabel->SetText(trainDetails.traintype.c_str());
 
-    pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("yd_cell03")));
-    pLabel->SetText(trainDetails.traintime.c_str());
+	pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("yd_cell03")));
+	pLabel->SetText(trainDetails.traintime.c_str());
 
-    RFPatientsTrainData::get()->LoadTrainData(trainDetails);
+	RFPatientsTrainData::get()->LoadTrainData(trainDetails);
 }
 
-void RFMainWindow::UpdateYDGJJDWaveData(std::list<LineWaveData> &trainDatas)
+void RFMainWindow::UpdateYDGJJDWaveData(std::list<LineWaveData>& trainDatas)
 {
-    CWaveUI *pWave = static_cast<CWaveUI *>(m_pm.FindControl(_T("yd_gjydjd_wave")));
-    if (!pWave) {
-        return;
-    }
+	CWaveUI* pWave = static_cast<CWaveUI*>(m_pm.FindControl(_T("yd_gjydjd_wave")));
+	if (!pWave) {
+		return;
+	}
 
-    pWave->m_lstDatas = trainDatas;
-    pWave->SetStartX(0);
+	pWave->m_lstDatas = trainDatas;
+	pWave->SetStartX(0);
 }
 
 void RFMainWindow::UpdateYDGJJDWaveXNum(double fStart)
 {
-    char x[32] = "";
-    CLabelUI *yd_chart_x0 = static_cast<CLabelUI *>(m_pm.FindControl(_T("yd_chart_x0")));
-    if (yd_chart_x0) {
-        fStart += 2;
-        sprintf(x, "%3.2f", fStart);
-        yd_chart_x0->SetText(TGUTF8ToUTF16(x).c_str());
-    }
+	char x[32] = "";
+	CLabelUI* yd_chart_x0 = static_cast<CLabelUI*>(m_pm.FindControl(_T("yd_chart_x0")));
+	if (yd_chart_x0) {
+		fStart += 2;
+		sprintf(x, "%3.2f", fStart);
+		yd_chart_x0->SetText(TGUTF8ToUTF16(x).c_str());
+	}
 
-    CLabelUI *yd_chart_x1 = static_cast<CLabelUI *>(m_pm.FindControl(_T("yd_chart_x1")));
-    if (yd_chart_x1) {
-        fStart += 2;
-        sprintf(x, "%3.2f", fStart);
-        yd_chart_x1->SetText(TGUTF8ToUTF16(x).c_str());
-    }
+	CLabelUI* yd_chart_x1 = static_cast<CLabelUI*>(m_pm.FindControl(_T("yd_chart_x1")));
+	if (yd_chart_x1) {
+		fStart += 2;
+		sprintf(x, "%3.2f", fStart);
+		yd_chart_x1->SetText(TGUTF8ToUTF16(x).c_str());
+	}
 
-    CLabelUI *yd_chart_x2 = static_cast<CLabelUI *>(m_pm.FindControl(_T("yd_chart_x2")));
-    if (yd_chart_x2) {
-        fStart += 2;
-        sprintf(x, "%3.2f", fStart);
-        yd_chart_x2->SetText(TGUTF8ToUTF16(x).c_str());
-    }
+	CLabelUI* yd_chart_x2 = static_cast<CLabelUI*>(m_pm.FindControl(_T("yd_chart_x2")));
+	if (yd_chart_x2) {
+		fStart += 2;
+		sprintf(x, "%3.2f", fStart);
+		yd_chart_x2->SetText(TGUTF8ToUTF16(x).c_str());
+	}
 
-    CLabelUI *yd_chart_x3 = static_cast<CLabelUI *>(m_pm.FindControl(_T("yd_chart_x3")));
-    if (yd_chart_x3) {
-        fStart += 2;
-        sprintf(x, "%3.2f", fStart);
-        yd_chart_x3->SetText(TGUTF8ToUTF16(x).c_str());
-    }
+	CLabelUI* yd_chart_x3 = static_cast<CLabelUI*>(m_pm.FindControl(_T("yd_chart_x3")));
+	if (yd_chart_x3) {
+		fStart += 2;
+		sprintf(x, "%3.2f", fStart);
+		yd_chart_x3->SetText(TGUTF8ToUTF16(x).c_str());
+	}
 
-    CLabelUI *yd_chart_x4 = static_cast<CLabelUI *>(m_pm.FindControl(_T("yd_chart_x4")));
-    if (yd_chart_x4) {
-        fStart += 2;
-        sprintf(x, "%3.2f", fStart);
-        yd_chart_x4->SetText(TGUTF8ToUTF16(x).c_str());
-    }
+	CLabelUI* yd_chart_x4 = static_cast<CLabelUI*>(m_pm.FindControl(_T("yd_chart_x4")));
+	if (yd_chart_x4) {
+		fStart += 2;
+		sprintf(x, "%3.2f", fStart);
+		yd_chart_x4->SetText(TGUTF8ToUTF16(x).c_str());
+	}
 }
 
 
-void RFMainWindow::UpdateEMGChart(const PatientTrainDetails &trainDetails)
+void RFMainWindow::UpdateEMGChart(const PatientTrainDetails& trainDetails)
 {
-    if (trainDetails.traintype != RF_TRAIN_TYPE_EMG) {
-        CVerticalLayoutUI *traindetail_chart_emg_title = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("traindetail_chart_emg_title")));
-        traindetail_chart_emg_title->SetVisible(false);
+	if (trainDetails.traintype != RF_TRAIN_TYPE_EMG) {
+		CVerticalLayoutUI* traindetail_chart_emg_title = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("traindetail_chart_emg_title")));
+		traindetail_chart_emg_title->SetVisible(false);
 
-        CVerticalLayoutUI *traindetail_chart_emg_view = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("traindetail_chart_emg_view")));
-        traindetail_chart_emg_view->SetVisible(false);
-        return;
-    }
+		CVerticalLayoutUI* traindetail_chart_emg_view = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("traindetail_chart_emg_view")));
+		traindetail_chart_emg_view->SetVisible(false);
+		return;
+	}
 
 
-    m_current_chart = RF_TRAIN_TYPE_EMG;
-    CVerticalLayoutUI *traindetail_chart_emg_title = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("traindetail_chart_emg_title")));
-    traindetail_chart_emg_title->SetVisible(true);
+	m_current_chart = RF_TRAIN_TYPE_EMG;
+	CVerticalLayoutUI* traindetail_chart_emg_title = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("traindetail_chart_emg_title")));
+	traindetail_chart_emg_title->SetVisible(true);
 
-    CVerticalLayoutUI *traindetail_chart_emg_view = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("traindetail_chart_emg_view")));
-    traindetail_chart_emg_view->SetVisible(true);
+	CVerticalLayoutUI* traindetail_chart_emg_view = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("traindetail_chart_emg_view")));
+	traindetail_chart_emg_view->SetVisible(true);
 
-    CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("emg_cell01")));
-    pLabel->SetText(trainDetails.createtime.c_str());
+	CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("emg_cell01")));
+	pLabel->SetText(trainDetails.createtime.c_str());
 
-    pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("emg_cell02")));
-    pLabel->SetText(trainDetails.traintype.c_str());
+	pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("emg_cell02")));
+	pLabel->SetText(trainDetails.traintype.c_str());
 
-    pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("emg_cell03")));
-    pLabel->SetText(trainDetails.traintime.c_str());
+	pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("emg_cell03")));
+	pLabel->SetText(trainDetails.traintime.c_str());
 
-    RFPatientsTrainData::get()->LoadTrainData(trainDetails);
+	RFPatientsTrainData::get()->LoadTrainData(trainDetails);
 }
 
-void RFMainWindow::UpdateEMGWaveData(std::list<LineWaveData> &trainDatas)
+void RFMainWindow::UpdateEMGWaveData(std::list<LineWaveData>& trainDatas)
 {
-    CWaveUI *pWave = static_cast<CWaveUI *>(m_pm.FindControl(_T("emg_wave")));
-    if (!pWave) {
-        return;
-    }
+	CWaveUI* pWave = static_cast<CWaveUI*>(m_pm.FindControl(_T("emg_wave")));
+	if (!pWave) {
+		return;
+	}
 
-    pWave->m_lstDatas = trainDatas;
-    pWave->SetStartX(0);
+	pWave->m_lstDatas = trainDatas;
+	pWave->SetStartX(0);
 }
 
 
 void RFMainWindow::UpdateEMGWaveXNum(double fStart)
 {
-    char x[32] = "";
-    CLabelUI *emg_chart_x0 = static_cast<CLabelUI *>(m_pm.FindControl(_T("emg_chart_x0")));
-    if (emg_chart_x0) {
-        fStart += 2;
-        sprintf(x, "%3.2f", fStart);
-        emg_chart_x0->SetText(TGUTF8ToUTF16(x).c_str());
-    }
+	char x[32] = "";
+	CLabelUI* emg_chart_x0 = static_cast<CLabelUI*>(m_pm.FindControl(_T("emg_chart_x0")));
+	if (emg_chart_x0) {
+		fStart += 2;
+		sprintf(x, "%3.2f", fStart);
+		emg_chart_x0->SetText(TGUTF8ToUTF16(x).c_str());
+	}
 
-    CLabelUI *emg_chart_x1 = static_cast<CLabelUI *>(m_pm.FindControl(_T("emg_chart_x1")));
-    if (emg_chart_x1) {
-        fStart += 2;
-        sprintf(x, "%3.2f", fStart);
-        emg_chart_x1->SetText(TGUTF8ToUTF16(x).c_str());
-    }
+	CLabelUI* emg_chart_x1 = static_cast<CLabelUI*>(m_pm.FindControl(_T("emg_chart_x1")));
+	if (emg_chart_x1) {
+		fStart += 2;
+		sprintf(x, "%3.2f", fStart);
+		emg_chart_x1->SetText(TGUTF8ToUTF16(x).c_str());
+	}
 
-    CLabelUI *emg_chart_x2 = static_cast<CLabelUI *>(m_pm.FindControl(_T("emg_chart_x2")));
-    if (emg_chart_x2) {
-        fStart += 2;
-        sprintf(x, "%3.2f", fStart);
-        emg_chart_x2->SetText(TGUTF8ToUTF16(x).c_str());
-    }
+	CLabelUI* emg_chart_x2 = static_cast<CLabelUI*>(m_pm.FindControl(_T("emg_chart_x2")));
+	if (emg_chart_x2) {
+		fStart += 2;
+		sprintf(x, "%3.2f", fStart);
+		emg_chart_x2->SetText(TGUTF8ToUTF16(x).c_str());
+	}
 
-    CLabelUI *emg_chart_x3 = static_cast<CLabelUI *>(m_pm.FindControl(_T("emg_chart_x3")));
-    if (emg_chart_x3) {
-        fStart += 2;
-        sprintf(x, "%3.2f", fStart);
-        emg_chart_x3->SetText(TGUTF8ToUTF16(x).c_str());
-    }
+	CLabelUI* emg_chart_x3 = static_cast<CLabelUI*>(m_pm.FindControl(_T("emg_chart_x3")));
+	if (emg_chart_x3) {
+		fStart += 2;
+		sprintf(x, "%3.2f", fStart);
+		emg_chart_x3->SetText(TGUTF8ToUTF16(x).c_str());
+	}
 
-    CLabelUI *emg_chart_x4 = static_cast<CLabelUI *>(m_pm.FindControl(_T("emg_chart_x4")));
-    if (emg_chart_x4) {
-        fStart += 2;
-        sprintf(x, "%3.2f", fStart);
-        emg_chart_x4->SetText(TGUTF8ToUTF16(x).c_str());
-    }
+	CLabelUI* emg_chart_x4 = static_cast<CLabelUI*>(m_pm.FindControl(_T("emg_chart_x4")));
+	if (emg_chart_x4) {
+		fStart += 2;
+		sprintf(x, "%3.2f", fStart);
+		emg_chart_x4->SetText(TGUTF8ToUTF16(x).c_str());
+	}
 }
 
-void RFMainWindow::UpdateEMGGJYDWaveData(std::list<LineWaveData> &trainDatas)
+void RFMainWindow::UpdateEMGGJYDWaveData(std::list<LineWaveData>& trainDatas)
 {
-    CWaveUI *pWave = static_cast<CWaveUI *>(m_pm.FindControl(_T("emg_gjyd_wave")));
-    if (!pWave) {
-        return;
-    }
+	CWaveUI* pWave = static_cast<CWaveUI*>(m_pm.FindControl(_T("emg_gjyd_wave")));
+	if (!pWave) {
+		return;
+	}
 
-    pWave->m_lstDatas = trainDatas;
-    pWave->SetStartX(0);
+	pWave->m_lstDatas = trainDatas;
+	pWave->SetStartX(0);
 }
 
 void RFMainWindow::UpdateEMGGJYDWaveXNum(double fStart)
 {
-    char x[32] = "";
-    CLabelUI *emg_gjyd_chart_x0 = static_cast<CLabelUI *>(m_pm.FindControl(_T("emg_gjyd_chart_x0")));
-    if (emg_gjyd_chart_x0) {
-        fStart += 2;
-        sprintf(x, "%3.2f", fStart);
-        emg_gjyd_chart_x0->SetText(TGUTF8ToUTF16(x).c_str());
-    }
+	char x[32] = "";
+	CLabelUI* emg_gjyd_chart_x0 = static_cast<CLabelUI*>(m_pm.FindControl(_T("emg_gjyd_chart_x0")));
+	if (emg_gjyd_chart_x0) {
+		fStart += 2;
+		sprintf(x, "%3.2f", fStart);
+		emg_gjyd_chart_x0->SetText(TGUTF8ToUTF16(x).c_str());
+	}
 
-    CLabelUI *emg_gjyd_chart_x1 = static_cast<CLabelUI *>(m_pm.FindControl(_T("emg_gjyd_chart_x1")));
-    if (emg_gjyd_chart_x1) {
-        fStart += 2;
-        sprintf(x, "%3.2f", fStart);
-        emg_gjyd_chart_x1->SetText(TGUTF8ToUTF16(x).c_str());
-    }
+	CLabelUI* emg_gjyd_chart_x1 = static_cast<CLabelUI*>(m_pm.FindControl(_T("emg_gjyd_chart_x1")));
+	if (emg_gjyd_chart_x1) {
+		fStart += 2;
+		sprintf(x, "%3.2f", fStart);
+		emg_gjyd_chart_x1->SetText(TGUTF8ToUTF16(x).c_str());
+	}
 
-    CLabelUI *emg_gjyd_chart_x2 = static_cast<CLabelUI *>(m_pm.FindControl(_T("emg_gjyd_chart_x2")));
-    if (emg_gjyd_chart_x2) {
-        fStart += 2;
-        sprintf(x, "%3.2f", fStart);
-        emg_gjyd_chart_x2->SetText(TGUTF8ToUTF16(x).c_str());
-    }
+	CLabelUI* emg_gjyd_chart_x2 = static_cast<CLabelUI*>(m_pm.FindControl(_T("emg_gjyd_chart_x2")));
+	if (emg_gjyd_chart_x2) {
+		fStart += 2;
+		sprintf(x, "%3.2f", fStart);
+		emg_gjyd_chart_x2->SetText(TGUTF8ToUTF16(x).c_str());
+	}
 
-    CLabelUI *emg_gjyd_chart_x3 = static_cast<CLabelUI *>(m_pm.FindControl(_T("emg_gjyd_chart_x3")));
-    if (emg_gjyd_chart_x3) {
-        fStart += 2;
-        sprintf(x, "%3.2f", fStart);
-        emg_gjyd_chart_x3->SetText(TGUTF8ToUTF16(x).c_str());
-    }
+	CLabelUI* emg_gjyd_chart_x3 = static_cast<CLabelUI*>(m_pm.FindControl(_T("emg_gjyd_chart_x3")));
+	if (emg_gjyd_chart_x3) {
+		fStart += 2;
+		sprintf(x, "%3.2f", fStart);
+		emg_gjyd_chart_x3->SetText(TGUTF8ToUTF16(x).c_str());
+	}
 
-    CLabelUI *emg_gjyd_chart_x4 = static_cast<CLabelUI *>(m_pm.FindControl(_T("emg_gjyd_chart_x4")));
-    if (emg_gjyd_chart_x4) {
-        fStart += 2;
-        sprintf(x, "%3.2f", fStart);
-        emg_gjyd_chart_x4->SetText(TGUTF8ToUTF16(x).c_str());
-    }
+	CLabelUI* emg_gjyd_chart_x4 = static_cast<CLabelUI*>(m_pm.FindControl(_T("emg_gjyd_chart_x4")));
+	if (emg_gjyd_chart_x4) {
+		fStart += 2;
+		sprintf(x, "%3.2f", fStart);
+		emg_gjyd_chart_x4->SetText(TGUTF8ToUTF16(x).c_str());
+	}
 }
 
 void RFMainWindow::SaveEMGTrainData()
 {
-    time_t finish_time = time(NULL);
+	time_t finish_time = time(NULL);
 
-    PatientTrainDetails details;
+	PatientTrainDetails details;
 
-    details.patientid = m_current_patient.id;
-    details.traindate = RFToDateString(m_emg_createtime);
-    details.content = RF_TRAINTYPE_STRING_EMG;
-    details.duration = RFToTimeString(m_emg_createtime) + _T("-") + RFToTimeString(finish_time);
-    details.traintime = RFToTimeLenth(m_emg_createtime, finish_time);
-    details.createtime = RFToDateTimeString(m_emg_createtime);
-    details.traintype = RF_TRAINTYPE_STRING_EMG;
+	details.patientid = m_current_patient.id;
+	details.traindate = RFToDateString(m_emg_createtime);
+	details.content = RF_TRAINTYPE_STRING_EMG;
+	details.duration = RFToTimeString(m_emg_createtime) + _T("-") + RFToTimeString(finish_time);
+	details.traintime = RFToTimeLenth(m_emg_createtime, finish_time);
+	details.createtime = RFToDateTimeString(m_emg_createtime);
+	details.traintype = RF_TRAINTYPE_STRING_EMG;
 
-    details.lasttreattime = RFToDateString(finish_time);
-    details.totaltreattime = details.traintime;
-    details.recoverdetail = details.content;
+	details.lasttreattime = RFToDateString(finish_time);
+	details.totaltreattime = details.traintime;
+	details.recoverdetail = details.content;
 
-    details.emg_signal[0] = m_emgmode_data[0];
-    details.emg_signal[1] = m_emgmode_data[1];
-    details.emg_signal[2] = m_emgmode_data[2];
-    details.emg_signal[3] = m_emgmode_data[3];
-    details.emg_angle[0] = m_emgmode_ydjd[0];
-    details.emg_angle[1] = m_emgmode_ydjd[1];
-    RFPatientsTrainDetails::get()->AddPatientTrainDetails(details);
+	details.emg_signal[0] = m_emgmode_data[0];
+	details.emg_signal[1] = m_emgmode_data[1];
+	details.emg_signal[2] = m_emgmode_data[2];
+	details.emg_signal[3] = m_emgmode_data[3];
+	details.emg_angle[0] = m_emgmode_ydjd[0];
+	details.emg_angle[1] = m_emgmode_ydjd[1];
+	RFPatientsTrainDetails::get()->AddPatientTrainDetails(details);
 }
 
-void RFMainWindow::UpdateZDChart(const PatientTrainDetails &trainDetails)
+void RFMainWindow::UpdateZDChart(const PatientTrainDetails& trainDetails)
 {
-    if (trainDetails.traintype != RF_TRAIN_TYPE_ZD) {
-        CVerticalLayoutUI *traindetail_chart_zd_title = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("traindetail_chart_zd_title")));
-        traindetail_chart_zd_title->SetVisible(false);
+	if (trainDetails.traintype != RF_TRAIN_TYPE_ZD) {
+		CVerticalLayoutUI* traindetail_chart_zd_title = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("traindetail_chart_zd_title")));
+		traindetail_chart_zd_title->SetVisible(false);
 
-        CVerticalLayoutUI *traindetail_chart_zd_view = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("traindetail_chart_zd_view")));
-        traindetail_chart_zd_view->SetVisible(false);
-        return;
-    }
+		CVerticalLayoutUI* traindetail_chart_zd_view = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("traindetail_chart_zd_view")));
+		traindetail_chart_zd_view->SetVisible(false);
+		return;
+	}
 
-    m_current_chart = RF_TRAIN_TYPE_ZD;
-    CVerticalLayoutUI *traindetail_chart_zd_title = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("traindetail_chart_zd_title")));
-    traindetail_chart_zd_title->SetVisible(true);
+	m_current_chart = RF_TRAIN_TYPE_ZD;
+	CVerticalLayoutUI* traindetail_chart_zd_title = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("traindetail_chart_zd_title")));
+	traindetail_chart_zd_title->SetVisible(true);
 
-    CVerticalLayoutUI *traindetail_chart_zd_view = static_cast<CVerticalLayoutUI *>(m_pm.FindControl(_T("traindetail_chart_zd_view")));
-    traindetail_chart_zd_view->SetVisible(true);
+	CVerticalLayoutUI* traindetail_chart_zd_view = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("traindetail_chart_zd_view")));
+	traindetail_chart_zd_view->SetVisible(true);
 
-    CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("zd_cell01")));
-    pLabel->SetText(trainDetails.createtime.c_str());
+	CLabelUI* pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("zd_cell01")));
+	pLabel->SetText(trainDetails.createtime.c_str());
 
-    pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("zd_cell02")));
-    pLabel->SetText(trainDetails.traintype.c_str());
+	pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("zd_cell02")));
+	pLabel->SetText(trainDetails.traintype.c_str());
 
-    pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("zd_cell03")));
-    pLabel->SetText(trainDetails.game.c_str());
+	pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("zd_cell03")));
+	pLabel->SetText(trainDetails.game.c_str());
 
-    pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("zd_cell04")));
-    pLabel->SetText(trainDetails.nandu.c_str());
+	pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("zd_cell04")));
+	pLabel->SetText(trainDetails.nandu.c_str());
 
-    pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("zd_cell05")));
-    pLabel->SetText(trainDetails.defen.c_str());
+	pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("zd_cell05")));
+	pLabel->SetText(trainDetails.defen.c_str());
 
-    RFPatientsTrainData::get()->LoadTrainData(trainDetails);
+	RFPatientsTrainData::get()->LoadTrainData(trainDetails);
 }
 
-void RFMainWindow::UpdateZDGJJDWaveData(std::list<LineWaveData> &trainDatas)
+void RFMainWindow::UpdateZDGJJDWaveData(std::list<LineWaveData>& trainDatas)
 {
-    CWaveUI *pWave = static_cast<CWaveUI *>(m_pm.FindControl(_T("zd_gjjd_wave")));
-    if (!pWave) {
-        return;
-    }
+	CWaveUI* pWave = static_cast<CWaveUI*>(m_pm.FindControl(_T("zd_gjjd_wave")));
+	if (!pWave) {
+		return;
+	}
 
-    pWave->m_lstDatas = trainDatas;
-    pWave->SetStartX(0);
+	pWave->m_lstDatas = trainDatas;
+	pWave->SetStartX(0);
 }
 
-void RFMainWindow::UpdateZDWLWaveData(std::list<LineWaveData> &trainDatas)
+void RFMainWindow::UpdateZDWLWaveData(std::list<LineWaveData>& trainDatas)
 {
-    CWaveUI *pWave = static_cast<CWaveUI *>(m_pm.FindControl(_T("zd_wl_wave")));
-    if (!pWave) {
-        return;
-    }
+	CWaveUI* pWave = static_cast<CWaveUI*>(m_pm.FindControl(_T("zd_wl_wave")));
+	if (!pWave) {
+		return;
+	}
 
-    pWave->m_lstDatas = trainDatas;
-    pWave->SetStartX(0);
+	pWave->m_lstDatas = trainDatas;
+	pWave->SetStartX(0);
 }
 
 void RFMainWindow::UpdateZDGJJDWaveXNum(double fStart)
 {
-    char x[32] = "";
-    CLabelUI *zd_chart_x0 = static_cast<CLabelUI *>(m_pm.FindControl(_T("zd_chart_x0")));
-    if (zd_chart_x0) {
-        fStart += 2;
-        sprintf(x, "%3.2f", fStart);
-        zd_chart_x0->SetText(TGUTF8ToUTF16(x).c_str());
-    }
+	char x[32] = "";
+	CLabelUI* zd_chart_x0 = static_cast<CLabelUI*>(m_pm.FindControl(_T("zd_chart_x0")));
+	if (zd_chart_x0) {
+		fStart += 2;
+		sprintf(x, "%3.2f", fStart);
+		zd_chart_x0->SetText(TGUTF8ToUTF16(x).c_str());
+	}
 
-    CLabelUI *zd_chart_x1 = static_cast<CLabelUI *>(m_pm.FindControl(_T("zd_chart_x1")));
-    if (zd_chart_x1) {
-        fStart += 2;
-        sprintf(x, "%3.2f", fStart);
-        zd_chart_x1->SetText(TGUTF8ToUTF16(x).c_str());
-    }
+	CLabelUI* zd_chart_x1 = static_cast<CLabelUI*>(m_pm.FindControl(_T("zd_chart_x1")));
+	if (zd_chart_x1) {
+		fStart += 2;
+		sprintf(x, "%3.2f", fStart);
+		zd_chart_x1->SetText(TGUTF8ToUTF16(x).c_str());
+	}
 
-    CLabelUI *zd_chart_x2 = static_cast<CLabelUI *>(m_pm.FindControl(_T("zd_chart_x2")));
-    if (zd_chart_x2) {
-        fStart += 2;
-        sprintf(x, "%3.2f", fStart);
-        zd_chart_x2->SetText(TGUTF8ToUTF16(x).c_str());
-    }
+	CLabelUI* zd_chart_x2 = static_cast<CLabelUI*>(m_pm.FindControl(_T("zd_chart_x2")));
+	if (zd_chart_x2) {
+		fStart += 2;
+		sprintf(x, "%3.2f", fStart);
+		zd_chart_x2->SetText(TGUTF8ToUTF16(x).c_str());
+	}
 
-    CLabelUI *zd_chart_x3 = static_cast<CLabelUI *>(m_pm.FindControl(_T("zd_chart_x3")));
-    if (zd_chart_x3) {
-        fStart += 2;
-        sprintf(x, "%3.2f", fStart);
-        zd_chart_x3->SetText(TGUTF8ToUTF16(x).c_str());
-    }
+	CLabelUI* zd_chart_x3 = static_cast<CLabelUI*>(m_pm.FindControl(_T("zd_chart_x3")));
+	if (zd_chart_x3) {
+		fStart += 2;
+		sprintf(x, "%3.2f", fStart);
+		zd_chart_x3->SetText(TGUTF8ToUTF16(x).c_str());
+	}
 
-    CLabelUI *zd_chart_x4 = static_cast<CLabelUI *>(m_pm.FindControl(_T("zd_chart_x4")));
-    if (zd_chart_x4) {
-        fStart += 2;
-        sprintf(x, "%3.2f", fStart);
-        zd_chart_x4->SetText(TGUTF8ToUTF16(x).c_str());
-    }
+	CLabelUI* zd_chart_x4 = static_cast<CLabelUI*>(m_pm.FindControl(_T("zd_chart_x4")));
+	if (zd_chart_x4) {
+		fStart += 2;
+		sprintf(x, "%3.2f", fStart);
+		zd_chart_x4->SetText(TGUTF8ToUTF16(x).c_str());
+	}
 }
 
 void RFMainWindow::UpdateZDWLWaveXNum(double fStart)
 {
-    char x[32] = "";
-    CLabelUI *zd_wl_chart_x0 = static_cast<CLabelUI *>(m_pm.FindControl(_T("zd_wl_chart_x0")));
-    if (zd_wl_chart_x0) {
-        fStart += 2;
-        sprintf(x, "%3.2f", fStart);
-        zd_wl_chart_x0->SetText(TGUTF8ToUTF16(x).c_str());
-    }
+	char x[32] = "";
+	CLabelUI* zd_wl_chart_x0 = static_cast<CLabelUI*>(m_pm.FindControl(_T("zd_wl_chart_x0")));
+	if (zd_wl_chart_x0) {
+		fStart += 2;
+		sprintf(x, "%3.2f", fStart);
+		zd_wl_chart_x0->SetText(TGUTF8ToUTF16(x).c_str());
+	}
 
-    CLabelUI *zd_wl_chart_x1 = static_cast<CLabelUI *>(m_pm.FindControl(_T("zd_wl_chart_x1")));
-    if (zd_wl_chart_x1) {
-        fStart += 2;
-        sprintf(x, "%3.2f", fStart);
-        zd_wl_chart_x1->SetText(TGUTF8ToUTF16(x).c_str());
-    }
+	CLabelUI* zd_wl_chart_x1 = static_cast<CLabelUI*>(m_pm.FindControl(_T("zd_wl_chart_x1")));
+	if (zd_wl_chart_x1) {
+		fStart += 2;
+		sprintf(x, "%3.2f", fStart);
+		zd_wl_chart_x1->SetText(TGUTF8ToUTF16(x).c_str());
+	}
 
-    CLabelUI *zd_wl_chart_x2 = static_cast<CLabelUI *>(m_pm.FindControl(_T("zd_wl_chart_x2")));
-    if (zd_wl_chart_x2) {
-        fStart += 2;
-        sprintf(x, "%3.2f", fStart);
-        zd_wl_chart_x2->SetText(TGUTF8ToUTF16(x).c_str());
-    }
+	CLabelUI* zd_wl_chart_x2 = static_cast<CLabelUI*>(m_pm.FindControl(_T("zd_wl_chart_x2")));
+	if (zd_wl_chart_x2) {
+		fStart += 2;
+		sprintf(x, "%3.2f", fStart);
+		zd_wl_chart_x2->SetText(TGUTF8ToUTF16(x).c_str());
+	}
 
-    CLabelUI *zd_wl_chart_x3 = static_cast<CLabelUI *>(m_pm.FindControl(_T("zd_wl_chart_x3")));
-    if (zd_wl_chart_x3) {
-        fStart += 2;
-        sprintf(x, "%3.2f", fStart);
-        zd_wl_chart_x3->SetText(TGUTF8ToUTF16(x).c_str());
-    }
+	CLabelUI* zd_wl_chart_x3 = static_cast<CLabelUI*>(m_pm.FindControl(_T("zd_wl_chart_x3")));
+	if (zd_wl_chart_x3) {
+		fStart += 2;
+		sprintf(x, "%3.2f", fStart);
+		zd_wl_chart_x3->SetText(TGUTF8ToUTF16(x).c_str());
+	}
 
-    CLabelUI *zd_wl_chart_x4 = static_cast<CLabelUI *>(m_pm.FindControl(_T("zd_wl_chart_x4")));
-    if (zd_wl_chart_x4) {
-        fStart += 2;
-        sprintf(x, "%3.2f", fStart);
-        zd_wl_chart_x4->SetText(TGUTF8ToUTF16(x).c_str());
-    }
+	CLabelUI* zd_wl_chart_x4 = static_cast<CLabelUI*>(m_pm.FindControl(_T("zd_wl_chart_x4")));
+	if (zd_wl_chart_x4) {
+		fStart += 2;
+		sprintf(x, "%3.2f", fStart);
+		zd_wl_chart_x4->SetText(TGUTF8ToUTF16(x).c_str());
+	}
 }
 
 void RFMainWindow::UpdateTrainDetailPageNumber(int page)
 {
-    wchar_t pageid[16] = _T("");
+	wchar_t pageid[16] = _T("");
 
-    for (int i = 0; i < 4; i++) {
-        wchar_t pagevalue[16] = _T("");
+	for(int i = 0; i < 4; i++) {
+		wchar_t pagevalue[16] = _T("");
 
-        wsprintf(pageid, _T("pd_page%d"), i + 1);
-        CButtonUI *pButton = static_cast<CButtonUI *>(m_pm.FindControl(pageid));
+		wsprintf(pageid, _T("pd_page%d"), i+1);
+		CButtonUI* pButton = static_cast<CButtonUI*>(m_pm.FindControl(pageid));
 
-        if (page % 4 == i) {
-            wsprintf(pagevalue, _T("%d"), page + 1);
+		if (page % 4 == i) {
+			wsprintf(pagevalue, _T("%d"), page + 1);
 
-            pButton->SetTextColor(0xffffffff);
-            pButton->SetBkColor(0xFF184199);
-            pButton->SetText(pagevalue);
-        }
-        else {
-            wsprintf(pagevalue, _T("%d"), (page / 4) * 4 + i + 1);
-
-            pButton->SetTextColor(0xff000000);
-            pButton->SetBkColor(0xFFFFFFFF);
-            pButton->SetText(pagevalue);
-        }
-    }
+			pButton->SetTextColor(0xffffffff);
+			pButton->SetBkColor(0xFF184199);
+			pButton->SetText(pagevalue);
+		} else {
+			wsprintf(pagevalue, _T("%d"), (page/4)*4 + i + 1);
+	
+			pButton->SetTextColor(0xff000000);
+			pButton->SetBkColor(0xFFFFFFFF);
+			pButton->SetText(pagevalue);
+		}
+	}
 }
 
-void RFMainWindow::UpdateTrainDetailPage(std::list<PatientTrainDetails> &details)
+void RFMainWindow::UpdateTrainDetailPage( std::list<PatientTrainDetails>& details)
 {
-    std::list<PatientTrainDetails>::iterator iter = details.begin();
-    for (int i = 1; i < 6; i++) {
-        wchar_t rowid[16] = _T("");
-        wsprintf(rowid, _T("pd_row0%d"), i);
+	std::list<PatientTrainDetails>::iterator iter = details.begin();
+	for (int i = 1; i < 6; i++)
+	{
+		wchar_t rowid[16] = _T("");
+		wsprintf(rowid, _T("pd_row0%d"), i);
 
-        CHorizontalLayoutUI *pRow = static_cast<CHorizontalLayoutUI *>(m_pm.FindControl(rowid));
+		CHorizontalLayoutUI *pRow = static_cast<CHorizontalLayoutUI*>(m_pm.FindControl(rowid));
 
-        for (int j = 0; j < pRow->GetCount(); j++) {
-            pRow->GetItemAt(j)->SetVisible(true);
-        }
+		for (int j = 0; j < pRow->GetCount(); j++) {
+			pRow->GetItemAt(j)->SetVisible(true);
+		}
 
-        if (iter != details.end()) {
-            // pRow->SetVisible(true);
-            wchar_t cellvalue[16] = _T("");
+		if (iter != details.end()) {
+			//pRow->SetVisible(true);
+			wchar_t cellvalue[16] = _T("");
 
-            wchar_t cellid[32] = _T("");
-            wsprintf(cellid, _T("pd_cell%d1"), i - 1);
-            CLabelUI *pLabel = static_cast<CLabelUI *>(pRow->FindSubControl(cellid));
-            pLabel->SetText(iter->traindate.c_str());
+			wchar_t cellid[32] = _T("");
+			wsprintf(cellid, _T("pd_cell%d1"), i-1);
+			CLabelUI* pLabel = static_cast<CLabelUI*>(pRow->FindSubControl(cellid));
+			pLabel->SetText(iter->traindate.c_str());
 
-            memset(cellid, 0, 32);
-            wsprintf(cellid, _T("pd_cell%d2"), i - 1);
-            pLabel = static_cast<CLabelUI *>(pRow->FindSubControl(cellid));
-            pLabel->SetText(iter->content.c_str());
+			memset(cellid, 0, 32);
+			wsprintf(cellid, _T("pd_cell%d2"), i-1);
+			pLabel = static_cast<CLabelUI*>(pRow->FindSubControl(cellid));
+			pLabel->SetText(iter->content.c_str());
 
-            memset(cellid, 0, 32);
-            wsprintf(cellid, _T("pd_cell%d3"), i - 1);
-            pLabel = static_cast<CLabelUI *>(pRow->FindSubControl(cellid));
-            pLabel->SetText(iter->duration.c_str());
+			memset(cellid, 0, 32);
+			wsprintf(cellid, _T("pd_cell%d3"), i-1);
+			pLabel = static_cast<CLabelUI*>(pRow->FindSubControl(cellid));
+			pLabel->SetText(iter->duration.c_str());
 
-            memset(cellid, 0, 32);
-            wsprintf(cellid, _T("pd_cell%d4"), i - 1);
-            pLabel = static_cast<CLabelUI *>(pRow->FindSubControl(cellid));
-            // wsprintf(cellvalue, _T("%d"), iter->score);
-            pLabel->SetText(iter->traintime.c_str());
+			memset(cellid, 0, 32);
+			wsprintf(cellid, _T("pd_cell%d4"), i-1);
+			pLabel = static_cast<CLabelUI*>(pRow->FindSubControl(cellid));
+			//wsprintf(cellvalue, _T("%d"), iter->score);
+			pLabel->SetText(iter->traintime.c_str());
 
-            memset(cellid, 0, 32);
-            wsprintf(cellid, _T("train_detail_detail%d"), i);
-            CButtonUI *pButton = static_cast<CButtonUI *>(pRow->FindSubControl(cellid));
-            pButton->SetTag(iter->id);
+			memset(cellid, 0, 32);
+			wsprintf(cellid, _T("train_detail_detail%d"), i);
+			CButtonUI* pButton = static_cast<CButtonUI*>(pRow->FindSubControl(cellid));
+			pButton->SetTag(iter->id);
 
-            iter++;
-        }
-        else {
-            for (int k = 0; k < pRow->GetCount(); k++) {
-                pRow->GetItemAt(k)->SetVisible(false);
-            }
-        }
-    }
+			iter++;
+		} else {
+			for (int k = 0; k < pRow->GetCount(); k++) {
+				pRow->GetItemAt(k)->SetVisible(false);
+			}
+		}
+	}
 }
 
 void RFMainWindow::SetPassiveTrainProgress(int time, int total, bool playing)
 {
-    //这个progress bar没有工作，是外包自己定义的，运行了之后会出错。需要修改。
-    // CProgressExUI *pProgress = static_cast<CProgressExUI*>(m_pm.FindControl(_T("passive_train_progress")));
-    // if (pProgress) {
-    //	pProgress->SetProgressTotal(total);
-    //	pProgress->SetProgressCurrent(time);
-    //}
+	//这个progress bar没有工作，是外包自己定义的，运行了之后会出错。需要修改。
+	//CProgressExUI *pProgress = static_cast<CProgressExUI*>(m_pm.FindControl(_T("passive_train_progress")));
+	//if (pProgress) {
+	//	pProgress->SetProgressTotal(total);
+	//	pProgress->SetProgressCurrent(time);
+	//}
 
-    CLabelUI *pLabel = static_cast<CLabelUI *>(m_pm.FindControl(_T("passsive_train_progress_text")));
-    if (pLabel) {
-        int second1 = time / 1000 % 60;
-        int minute1 = time / 60000;
+	CLabelUI *pLabel = static_cast<CLabelUI*>(m_pm.FindControl(_T("passsive_train_progress_text")));
+	if (pLabel) {
+		int second1 = time / 1000 % 60;
+		int minute1 = time / 60000;
 
-        std::wstring format1 = std::wstring(minute1 > 9 ? _T("%d:") : _T("0%d:")) + std::wstring(second1 > 9 ? _T("%d") : _T("0%d"));
+		std::wstring format1 = std::wstring(minute1 > 9 ? _T("%d:") : _T("0%d:")) + std::wstring(second1 > 9 ? _T("%d") : _T("0%d"));
 
-        int second2 = total / 1000 % 60;
-        int minute2 = total / 60000;
-        std::wstring format2 = std::wstring(minute2 > 9 ? _T("%d:") : _T("0%d:")) + std::wstring(second2 > 9 ? _T("%d") : _T("0%d"));
+		int second2 = total / 1000 % 60;
+		int minute2 = total / 60000;
+		std::wstring format2 = std::wstring(minute2 > 9 ? _T("%d:") : _T("0%d:")) + std::wstring(second2 > 9 ? _T("%d") : _T("0%d"));
 
-        std::wstring format = format1 + _T("/") + format2;
-        wchar_t szValue[64] = _T("");
-        wsprintf(szValue, format.c_str(), minute1, second1, minute2, second2);
-        pLabel->SetText(szValue);
-    }
+		std::wstring format = format1 + _T("/") + format2;
+		wchar_t szValue[64] = _T("");
+		wsprintf(szValue, format.c_str(), minute1, second1, minute2, second2);
+		pLabel->SetText(szValue);
+	}
 
-    CCheckBoxUI *pCheckBox = static_cast<CCheckBoxUI *>(m_pm.FindControl(_T("passive_play")));
-    if (!playing) {
-        pCheckBox->SetCheck(playing);
-    }
+	CCheckBoxUI* pCheckBox = static_cast<CCheckBoxUI*>(m_pm.FindControl(_T("passive_play")));
+	if (!playing) {
+		pCheckBox->SetCheck(playing);
+	}
 }
 
-void RFMainWindow::AddPassiveTrainItem(CListUI *pList, const PassiveTrainInfo &train)
+void RFMainWindow::AddPassiveTrainItem(CListUI* pList, const PassiveTrainInfo& train)
 {
-    CDialogBuilder builder;
-    CListContainerElementUI *pItem = static_cast<CListContainerElementUI *>(builder.Create(_T("passivetrainitem.xml"), NULL));
+	CDialogBuilder builder;
+	CListContainerElementUI *pItem = static_cast<CListContainerElementUI*>(builder.Create(_T("passivetrainitem.xml"), NULL));
+	
+	MEDIA media;
+	media.train = train;
+	media.name = train.name;
+	media.exName = _T(".wav");
+	media.pathFileName = CPaintManagerUI::GetResourcePath().GetData();
+	media.pathFileName += _T("voice\\");
+	media.pathFileName += train.name;
+	media.pathFileName += _T(".wav");
+	media.playNum = 0;
+	media.size = FileSizeToString(GetFileSize(media.pathFileName.c_str()));
+	media.totalTime = train.timelen;
+	//media.totalTime = m_player.GetMusicLenght(m_zplay, media.pathFileName);
 
-    MEDIA media;
-    media.train = train;
-    media.name = train.name;
-    media.exName = _T(".wav");
-    media.pathFileName = CPaintManagerUI::GetResourcePath().GetData();
-    media.pathFileName += _T("voice\\");
-    media.pathFileName += train.name;
-    media.pathFileName += _T(".wav");
-    media.playNum = 0;
-    media.size = FileSizeToString(GetFileSize(media.pathFileName.c_str()));
-    media.totalTime = train.timelen;
-    // media.totalTime = m_player.GetMusicLenght(m_zplay, media.pathFileName);
+	CLabelUI* pLable = static_cast<CLabelUI*>(pItem->FindSubControl(_T("passivetrainitem_sort")));
+	if (pLable) {
+		pLable->SetText(train.id.c_str());
+	}
+	pLable = static_cast<CLabelUI*>(pItem->FindSubControl(_T("passivetrainitem_name")));
+	if (pLable) {
+		pLable->SetText(train.name.c_str());
+	}
 
-    CLabelUI *pLable = static_cast<CLabelUI *>(pItem->FindSubControl(_T("passivetrainitem_sort")));
-    if (pLable) {
-        pLable->SetText(train.id.c_str());
-    }
-    pLable = static_cast<CLabelUI *>(pItem->FindSubControl(_T("passivetrainitem_name")));
-    if (pLable) {
-        pLable->SetText(train.name.c_str());
-    }
+	pLable = static_cast<CLabelUI*>(pItem->FindSubControl(_T("passivetrainitem_type")));
+	if (pLable) {
+		pLable->SetText(train.traintype.c_str());
+	}
 
-    pLable = static_cast<CLabelUI *>(pItem->FindSubControl(_T("passivetrainitem_type")));
-    if (pLable) {
-        pLable->SetText(train.traintype.c_str());
-    }
+	pLable = static_cast<CLabelUI*>(pItem->FindSubControl(_T("passivetrainitem_timelen")));
+	if (pLable) {
+		pLable->SetText(train.timelen.c_str());
+	}
 
-    pLable = static_cast<CLabelUI *>(pItem->FindSubControl(_T("passivetrainitem_timelen")));
-    if (pLable) {
-        pLable->SetText(train.timelen.c_str());
-    }
+	CButtonUI *pButton = static_cast<CButtonUI*>(pItem->FindSubControl(_T("bd_add_action")));
+	pButton->OnNotify += MakeDelegate(this, &RFMainWindow::OnBDAddActionToPlayList);
 
-    CButtonUI *pButton = static_cast<CButtonUI *>(pItem->FindSubControl(_T("bd_add_action")));
-    pButton->OnNotify += MakeDelegate(this, &RFMainWindow::OnBDAddActionToPlayList);
+	CButtonUI *pButton1 = static_cast<CButtonUI*>(pItem->FindSubControl(_T("bd_delete_action")));
+	pButton1->OnNotify += MakeDelegate(this, &RFMainWindow::OnBDDeleteAction);
 
-    CButtonUI *pButton1 = static_cast<CButtonUI *>(pItem->FindSubControl(_T("bd_delete_action")));
-    pButton1->OnNotify += MakeDelegate(this, &RFMainWindow::OnBDDeleteAction);
-
-    m_id_passivetrainitem[pButton->GetId()] = media;
-    m_delete_id_passivetrainitem[pButton1->GetId()] = media;
-    m_id_media[pItem->GetId()] = media;
-    pList->Add(pItem);
+	m_id_passivetrainitem[pButton->GetId()] = media;
+	m_delete_id_passivetrainitem[pButton1->GetId()] = media;
+	m_id_media[pItem->GetId()] = media;
+	pList->Add(pItem);
 }
 
-void RFMainWindow::UpdateMusicList(CListUI *pList)
+void RFMainWindow::UpdateMusicList(CListUI* pList)
 {
-    if (m_current_passivetraininfos.size() < 1) {
-        return;
-    }
+	if (m_current_passivetraininfos.size() < 1) {
+		return;
+	}
+	
+	pList->RemoveAll();
+	int i = 0;
+	std::list<MEDIA>::iterator begin = m_current_passivetraininfos.begin();
+	for (; begin!=m_current_passivetraininfos.end(); begin++) {
+		CDialogBuilder builder;
+		CListContainerElementUI *pItem = static_cast<CListContainerElementUI*>(builder.Create(_T("musiclistitem.xml"), NULL));
 
-    pList->RemoveAll();
-    int i = 0;
-    std::list<MEDIA>::iterator begin = m_current_passivetraininfos.begin();
-    for (; begin != m_current_passivetraininfos.end(); begin++) {
-        CDialogBuilder builder;
-        CListContainerElementUI *pItem = static_cast<CListContainerElementUI *>(builder.Create(_T("musiclistitem.xml"), NULL));
+		wchar_t cell_value[256] = _T("");
+		CLabelUI* pLabel = static_cast<CLabelUI*>(pItem->FindSubControl(_T("music_cell01")));
+		if (pLabel) {
+			wsprintf(cell_value, _T("%d"), i);
+			pLabel->SetText(cell_value);
+		}
+		if (begin->index == m_passive_train_action.m_curmedia.index) {
+			pLabel->SetTextColor(0xFF114391);
+		} else {
+			pLabel->SetTextColor(0xff3d3d3d);
+		}
 
-        wchar_t cell_value[256] = _T("");
-        CLabelUI *pLabel = static_cast<CLabelUI *>(pItem->FindSubControl(_T("music_cell01")));
-        if (pLabel) {
-            wsprintf(cell_value, _T("%d"), i);
-            pLabel->SetText(cell_value);
-        }
-        if (begin->index == m_passive_train_action.m_curmedia.index) {
-            pLabel->SetTextColor(0xFF114391);
-        }
-        else {
-            pLabel->SetTextColor(0xff3d3d3d);
-        }
+		pLabel = static_cast<CLabelUI*>(pItem->FindSubControl(_T("music_cell02")));
+		if (pLabel) {
+			pLabel->SetText(begin->name.c_str());
+		}
+		if (begin->index == m_passive_train_action.m_curmedia.index) {
+			pLabel->SetTextColor(0xFF114391);
+		} else {
+			pLabel->SetTextColor(0xff3d3d3d);
+		}
 
-        pLabel = static_cast<CLabelUI *>(pItem->FindSubControl(_T("music_cell02")));
-        if (pLabel) {
-            pLabel->SetText(begin->name.c_str());
-        }
-        if (begin->index == m_passive_train_action.m_curmedia.index) {
-            pLabel->SetTextColor(0xFF114391);
-        }
-        else {
-            pLabel->SetTextColor(0xff3d3d3d);
-        }
+		pLabel = static_cast<CLabelUI*>(pItem->FindSubControl(_T("music_cell03")));
+		if (pLabel) {
+			pLabel->SetText(begin->totalTime.c_str());
+		}
+		if (begin->index == m_passive_train_action.m_curmedia.index) {
+			pLabel->SetTextColor(0xFF114391);
+		} else {
+			pLabel->SetTextColor(0xff3d3d3d);
+		}
 
-        pLabel = static_cast<CLabelUI *>(pItem->FindSubControl(_T("music_cell03")));
-        if (pLabel) {
-            pLabel->SetText(begin->totalTime.c_str());
-        }
-        if (begin->index == m_passive_train_action.m_curmedia.index) {
-            pLabel->SetTextColor(0xFF114391);
-        }
-        else {
-            pLabel->SetTextColor(0xff3d3d3d);
-        }
+		CButtonUI* pButton = static_cast<CButtonUI*>(pItem->FindSubControl(_T("music_item_delete")));
+		pButton->OnNotify += MakeDelegate(this, &RFMainWindow::OnMusicItemDelete);
 
-        CButtonUI *pButton = static_cast<CButtonUI *>(pItem->FindSubControl(_T("music_item_delete")));
-        pButton->OnNotify += MakeDelegate(this, &RFMainWindow::OnMusicItemDelete);
+		if (begin->index == m_passive_train_action.m_curmedia.index) {
+			pItem->SetBkColor(0xFFf0f0f0);
+		} else {
+			pItem->SetBkColor(0);
+		}
 
-        if (begin->index == m_passive_train_action.m_curmedia.index) {
-            pItem->SetBkColor(0xFFf0f0f0);
-        }
-        else {
-            pItem->SetBkColor(0);
-        }
-
-        pList->Add(pItem);
-        i++;
-    }
+		pList->Add(pItem);
+		i++;
+	}
 }
 
 void RFMainWindow::StartGameRecord()
 {
-    s_active_game4_start = time(NULL);
-    s_active_begin_recode = true;
-    s_active_data[0].clear();
-    s_active_data[1].clear();
-    s_active_data_wl.clear();
-    // m_robot.startActiveMove();
+	s_active_game4_start = time(NULL);
+	s_active_begin_recode = true;
+	s_active_data[0].clear();
+	s_active_data[1].clear();
+	s_active_data_wl.clear();
+	//m_robot.startActiveMove();
 }
 
 void RFMainWindow::StopGameRecord()
 {
-    s_active_begin_recode = false;
-    s_active_game4_stop = time(NULL);
-    // m_robot.stopActiveMove();
-    SaveActiveGameDetectData();
-    s_active_data[0].clear();
-    s_active_data[1].clear();
-    s_active_data_wl.clear();
+	s_active_begin_recode = false;
+	s_active_game4_stop = time(NULL);
+	//m_robot.stopActiveMove();
+	SaveActiveGameDetectData();
+	s_active_data[0].clear();
+	s_active_data[1].clear();
+	s_active_data_wl.clear();
 }
 
 
 int temp_counter = 0;
 void OnActiveGameDetectTimer(HWND hWnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
 {
-    if (!RFMainWindow::MainWindow) {
-        return;
-    }
+	if (!RFMainWindow::MainWindow) {
+		return;
+	}
 
-    CWkeWebkitUI *game_webkit = static_cast<CWkeWebkitUI *>(RFMainWindow::MainWindow->m_pm.FindControl(_T("game4")));
-    if (!game_webkit) {
-        return;
-    }
+	CWkeWebkitUI* game_webkit = static_cast<CWkeWebkitUI*>(RFMainWindow::MainWindow->m_pm.FindControl(_T("game4")));
+	if (!game_webkit) {
+		return;
+	}
 
-    // 得到主动运动是否进行
-    bool start = RFMainWindow::MainWindow->m_robot.m_isActiveModeStart;
+	// 得到主动运动是否进行
+	bool start = RFMainWindow::MainWindow->m_robot.m_isActiveModeStart;
 
-    // 根据计时器计时来改变
-    if (start) {
-        active_timer += 200;
-        if (active_timer % 1000 == 0) {
-            wchar_t time[32];
-            int second = (active_timer / 1000) % 60;
-            int minute = (active_timer / 60000) % 60;
-            int hour = active_timer / 3600000;
-            std::wstring format = (_T("训练用时:"));
-            format += (hour < 10) ? _T("0%d:") : _T("%d:");
-            format += (minute < 10) ? _T("0%d:") : _T("%d:");
-            format += (second < 10) ? _T("0%d") : _T("%d");
-            wsprintf(time, format.c_str(), hour, minute, second);
-            CLabelUI *timer_label = static_cast<CLabelUI *>(RFMainWindow::MainWindow->m_pm.FindControl(_T("active_train_timer")));
-            timer_label->SetText(time);
-        }
-    }
-    // 根据主动运动是否进行来决定是否将训练记录存放到数据库中
-    if (start && !s_active_begin_recode) {
-        RFMainWindow::MainWindow->StartGameRecord();
-    }
-    if (!start && s_active_begin_recode) {
-        RFMainWindow::MainWindow->StopGameRecord();
-    }
+	// 根据计时器计时来改变
+	if (start) {
+		active_timer += 200;
+		if (active_timer % 1000 == 0) {
+			wchar_t time[32];
+			int second = (active_timer / 1000) % 60;
+			int minute = (active_timer / 60000) % 60;
+			int hour = active_timer / 3600000;
+			std::wstring format = (_T("训练用时:"));
+			format += (hour < 10) ? _T("0%d:") : _T("%d:");
+			format += (minute < 10) ? _T("0%d:") : _T("%d:");
+			format += (second < 10) ? _T("0%d") : _T("%d");
+			wsprintf(time, format.c_str(), hour, minute, second);
+			CLabelUI *timer_label = static_cast<CLabelUI *>(RFMainWindow::MainWindow->m_pm.FindControl(_T("active_train_timer")));
+			timer_label->SetText(time);
+		}
+	}
+	// 根据主动运动是否进行来决定是否将训练记录存放到数据库中
+	if (start && !s_active_begin_recode) {
+		RFMainWindow::MainWindow->StartGameRecord();
+	}
+	if (!start && s_active_begin_recode) {
+		RFMainWindow::MainWindow->StopGameRecord();
+	}
 
-    bool fire = true;
-    std::wstring gameType = game_webkit->RunJS(_T("getGameType();"));
-    // 游戏的控制都在这里，通过判断游戏的type来执行不同的控制
-    if (gameType == RF_GAME_NAME_FRY_EGG) {
-        // 这个运动暂时设计为和擦窗户是一样的
-        double pos[2];
-        RFMainWindow::MainWindow->m_robot.CalculateRagPos(pos);
+	bool fire = false;
+	// 这里采集握力传感器的值决定是否fire，只有在使能的情况下才进行采集
+	if (RFMainWindow::MainWindow->m_grip_strength_enable) {
+		if (RFMainWindow::MainWindow->m_robot.IsFire()) {
+			fire = true;
+		}
+	} else {
+		fire = true;
+	}
 
-        wchar_t xy[128];
-        wsprintf(xy, _T("(%d,%d);"), (int)pos[0], (int)pos[1]);
-        std::wstring rag_move = _T("selfmove");
-        rag_move += xy;
-        game_webkit->RunJS(rag_move);
-    }
-    else if (gameType == RF_GAME_NAME_CLEAN_WINDOW) {
-        // 擦窗户
-        double pos[2];
-        RFMainWindow::MainWindow->m_robot.CalculateRagPos(pos);
+	std::wstring gameType = game_webkit->RunJS(_T("getGameType();"));
+	// 游戏的控制都在这里，通过判断游戏的type来执行不同的控制
+	if (gameType == RF_GAME_NAME_FRY_EGG) {
+		// 这个运动暂时设计为和擦窗户是一样的
+		double pos[2];
+		RFMainWindow::MainWindow->m_robot.CalculateRagPos(pos);
 
-        wchar_t xy[128];
-        wsprintf(xy, _T("(%d,%d);"), (int)pos[0], (int)pos[1]);
-        std::wstring rag_move = _T("selfmove");
-        rag_move += xy;
-        game_webkit->RunJS(rag_move);
-    }
-    else if (gameType == RF_GAME_NAME_PLANE_GAOJI) {
-        // 飞机大战
-        if (fire) {
-            game_webkit->RunJS(_T("fire();"));
-        }
+		wchar_t xy[128];
+		wsprintf(xy, _T("(%d,%d);"), (int)pos[0], (int)pos[1]);
+		std::wstring rag_move = _T("selfmove");
+		rag_move += xy;
+		game_webkit->RunJS(rag_move);
+	} else if (gameType == RF_GAME_NAME_CLEAN_WINDOW) {
+		// 擦窗户
+		double pos[2];
+		RFMainWindow::MainWindow->m_robot.CalculateRagPos(pos);
 
-        // 直接去获取飞机的末端位置
-        double pos[2];
-        RFMainWindow::MainWindow->m_robot.GetPlanePos(0, 0, pos);
-        int X = pos[0];
-        int Y = pos[1];
-        wchar_t xy[128];
-        wsprintf(xy, _T("(%d,%d);"), X, Y);
-        std::wstring planeMove = _T("selfmove");
-        planeMove += xy;
-        game_webkit->RunJS(planeMove);
-    }
+		wchar_t xy[128];
+		wsprintf(xy, _T("(%d,%d);"), (int)pos[0], (int)pos[1]);
+		std::wstring rag_move = _T("selfmove");
+		rag_move += xy;
+		game_webkit->RunJS(rag_move);
 
-    if (s_active_begin_recode) {
-        double angles[2];
-        ControlCard::GetInstance().GetEncoderData(angles);
+	} else if (gameType == RF_GAME_NAME_PLANE_GAOJI) {
+		// 飞机大战
+		if (fire) {
+			game_webkit->RunJS(_T("fire();"));
+		}
 
-        s_active_data[0].push_back(angles[0]);
-        s_active_data[1].push_back(angles[1]);
+		// 直接去获取飞机的末端位置
+		double pos[2];
+		RFMainWindow::MainWindow->m_robot.GetPlanePos(0, 0, pos);
+		int X = pos[0];
+		int Y = pos[1];
+		wchar_t xy[128];
+		wsprintf(xy, _T("(%d,%d);"), X, Y);
+		std::wstring planeMove = _T("selfmove");
+		planeMove += xy;
+		game_webkit->RunJS(planeMove);
+	}
 
-        double wl = RFMainWindow::MainWindow->m_robot.GetGripStrength();
-        s_active_data_wl.push_back(wl);
-    }
+	if (s_active_begin_recode) {		
+		double angles[2];
+		ControlCard::GetInstance().GetEncoderData(angles);
+
+		s_active_data[0].push_back(angles[0]);
+		s_active_data[1].push_back(angles[1]);
+
+		double wl = RFMainWindow::MainWindow->m_robot.GetGripStrength();
+		s_active_data_wl.push_back(wl);
+	}
 }
 
 std::vector<double> s_ev_data_wl;
 void OnEvDetectTimer(HWND hWnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
 {
-    if (!RFMainWindow::MainWindow) {
-        return;
-    }
+	if (!RFMainWindow::MainWindow) {
+		return;
+	}
 
-    double wl = RFMainWindow::MainWindow->m_robot.GetGripStrength();
-    s_ev_data_wl.push_back(wl);
+	double wl = RFMainWindow::MainWindow->m_robot.GetGripStrength();
+	s_ev_data_wl.push_back(wl);
 }
 
 static UINT_PTR s_evDetectTimer = NULL;
 void RFMainWindow::StartEVDetect()
 {
-    s_ev_data_wl.clear();
-    s_evDetectTimer = ::SetTimer(NULL, 999, 200U, (TIMERPROC)OnEvDetectTimer);
+	s_ev_data_wl.clear();
+	s_evDetectTimer = ::SetTimer(NULL, 999, 200U, (TIMERPROC)OnEvDetectTimer);
 }
 
 void RFMainWindow::StopEVDetect()
 {
-    if (s_evDetectTimer != NULL) {
-        ::KillTimer(NULL, s_evDetectTimer);
-        s_evDetectTimer = NULL;
-    }
+	if (s_evDetectTimer != NULL) {
+		::KillTimer(NULL, s_evDetectTimer);
+		s_evDetectTimer = NULL;
+	}
 
-    SaveEVDataToDB();
+	SaveEVDataToDB();
 }
 
 void RFMainWindow::SaveEVDataToDB()
 {
-    double totalWL = .0f;
-    for (int i = 0; i < s_ev_data_wl.size(); i++) {
-        totalWL += s_ev_data_wl.at(i);
-    }
-    m_evydgn.wl = totalWL / s_ev_data_wl.size();
+	double totalWL = .0f;
+	for (int i = 0; i < s_ev_data_wl.size(); i++) {
+		totalWL += s_ev_data_wl.at(i);
+	}
+	m_evydgn.wl = totalWL / s_ev_data_wl.size(); 
+	
+	CSliderUI* pSlider = static_cast<CSliderUI*>(m_pm.FindControl(_T("passive_train_progress")));
+	m_evydgn.cs = 0.1 + 0.4 * pSlider->GetValue() / pSlider->GetMaxValue();
+	m_evydgn.score = 2 * (m_evydgn.jb + m_evydgn.zb) / (35 * m_evydgn.cs) + 0.1*m_evydgn.wl;
 
-    CSliderUI *pSlider = static_cast<CSliderUI *>(m_pm.FindControl(_T("passive_train_progress")));
-    m_evydgn.cs = 0.1 + 0.4 * pSlider->GetValue() / pSlider->GetMaxValue();
-    m_evydgn.score = 2 * (m_evydgn.jb + m_evydgn.zb) / (35 * m_evydgn.cs) + 0.1 * m_evydgn.wl;
+	EvaluationData data;
 
-    EvaluationData data;
+	wchar_t score[20];
+	ZeroMemory(score,sizeof(TCHAR) * 20);
+	_stprintf_s(score,20,_T("%.2f"),m_evydgn.score);
 
-    wchar_t score[20];
-    ZeroMemory(score, sizeof(TCHAR) * 20);
-    _stprintf_s(score, 20, _T("%.2f"), m_evydgn.score);
+	DWORD createTime = time(NULL);
+	data.doctorid = m_login_info.doctorid;
+	data.name = m_current_patient.name;
+	data.patientid = m_current_patient.id;
+	data.score = score;
+	data.type = m_evalution_type;
+	data.date = RFToTimeString(createTime);
+	data.id = RFEvaluationData::get()->m_nextid;
 
-    DWORD createTime = time(NULL);
-    data.doctorid = m_login_info.doctorid;
-    data.name = m_current_patient.name;
-    data.patientid = m_current_patient.id;
-    data.score = score;
-    data.type = m_evalution_type;
-    data.date = RFToTimeString(createTime);
-    data.id = RFEvaluationData::get()->m_nextid;
+	std::vector<std::wstring> questions;
+	std::vector<double> answers;
 
-    std::vector<std::wstring> questions;
-    std::vector<double> answers;
+	questions.push_back(_T("肘部起始角/°"));
+	answers.push_back(m_evydgn.zb1);
 
-    questions.push_back(_T("肘部起始角/°"));
-    answers.push_back(m_evydgn.zb1);
+	questions.push_back(_T("肘部终止角/°"));
+	answers.push_back(m_evydgn.zb2);
 
-    questions.push_back(_T("肘部终止角/°"));
-    answers.push_back(m_evydgn.zb2);
+	questions.push_back(_T("肘部关节活动/°"));
+	answers.push_back(m_evydgn.zb);
 
-    questions.push_back(_T("肘部关节活动/°"));
-    answers.push_back(m_evydgn.zb);
+	questions.push_back(_T("肩部起始角/°"));
+	answers.push_back(m_evydgn.jb1);
 
-    questions.push_back(_T("肩部起始角/°"));
-    answers.push_back(m_evydgn.jb1);
+	questions.push_back(_T("肩部终止角/°"));
+	answers.push_back(m_evydgn.jb2);
 
-    questions.push_back(_T("肩部终止角/°"));
-    answers.push_back(m_evydgn.jb2);
+	questions.push_back(_T("肩部关节活动/°"));
+	answers.push_back(m_evydgn.jb);
 
-    questions.push_back(_T("肩部关节活动/°"));
-    answers.push_back(m_evydgn.jb);
+	questions.push_back(_T("助力参数"));
+	answers.push_back(m_evydgn.cs);
 
-    questions.push_back(_T("助力参数"));
-    answers.push_back(m_evydgn.cs);
+	questions.push_back(_T("握力/N"));
+	answers.push_back(m_evydgn.wl);
 
-    questions.push_back(_T("握力/N"));
-    answers.push_back(m_evydgn.wl);
+	for (int i = 0; i < questions.size(); i++) {
+		EvaluationRecordData record;
 
-    for (int i = 0; i < questions.size(); i++) {
-        EvaluationRecordData record;
+		wchar_t temp[20];
+		ZeroMemory(temp,sizeof(TCHAR) * 20);
+		_stprintf_s(temp,20,_T("%.2f"),answers.at(i));
 
-        wchar_t temp[20];
-        ZeroMemory(temp, sizeof(TCHAR) * 20);
-        _stprintf_s(temp, 20, _T("%.2f"), answers.at(i));
+		record.item = questions.at(i);
+		record.result = temp;
+		record.evalid = data.id;
+		data.datas.push_back(record);
+	}
 
-        record.item = questions.at(i);
-        record.result = temp;
-        record.evalid = data.id;
-        data.datas.push_back(record);
-    }
-
-    RFEvaluationData::get()->Add(data);
+	RFEvaluationData::get()->Add(data);
+	
 }
 
 static UINT_PTR s_activeGameDetectTimer = NULL;
 void RFMainWindow::StartActiveGameDetect()
 {
-    CWkeWebkitUI *game4 = static_cast<CWkeWebkitUI *>(RFMainWindow::MainWindow->m_pm.FindControl(_T("game4")));
-    if (!game4) {
-        return;
-    }
+	CWkeWebkitUI* game4 = static_cast<CWkeWebkitUI*>(RFMainWindow::MainWindow->m_pm.FindControl(_T("game4")));
+	if (!game4) {
+		return;
+	}
 
-    // 进入Timer时，把显示用计时器的值清0
-    active_timer = 0;
+	// 进入Timer时，把显示用计时器的值清0
+	active_timer = 0;
 
-    s_activeGameDetectTimer = ::SetTimer(NULL, 999, 200U, (TIMERPROC)OnActiveGameDetectTimer);
+	s_activeGameDetectTimer = ::SetTimer(NULL, 999, 200U, (TIMERPROC)OnActiveGameDetectTimer);
 
-    // 开了另外一个线程根据肩部和肘部的角度去计算飞机应该在的位置，现在我们直接停掉这个功能
-    // m_robotEvent.Start(800, 681);
+	// 开了另外一个线程根据肩部和肘部的角度去计算飞机应该在的位置，现在我们直接停掉这个功能
+	//m_robotEvent.Start(800, 681);
 }
 
 void RFMainWindow::StopActiveGameDetect()
 {
-    if (s_activeGameDetectTimer != NULL) {
-        ::KillTimer(NULL, s_activeGameDetectTimer);
-        s_activeGameDetectTimer = NULL;
-    }
+	if (s_activeGameDetectTimer != NULL) {
+		::KillTimer(NULL, s_activeGameDetectTimer);
+		s_activeGameDetectTimer = NULL;
+	}
 
-    // 将计时器归零
-    CLabelUI *timer = static_cast<CLabelUI *>(m_pm.FindControl(_T("active_train_timer")));
-    timer->SetText(_T("训练用时:00:00:00"));
+	// 将计时器归零
+	CLabelUI *timer = static_cast<CLabelUI *>(m_pm.FindControl(_T("active_train_timer")));
+	timer->SetText(_T("训练用时:00:00:00"));
 
-    m_robotEvent.Stop();
+	m_robotEvent.Stop();
 }
 
 void OnEyeModeDetectTimer(HWND hWnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
 {
-    if (RFMainWindow::MainWindow) {
-        double angles[2];
-        ControlCard::GetInstance().GetEncoderData(angles);
-
-        s_eyemode_data[0].push_back(angles[0]);
-        s_eyemode_data[1].push_back(angles[1]);
-    }
+	if (RFMainWindow::MainWindow) {
+		double angles[2];
+		ControlCard::GetInstance().GetEncoderData(angles);
+	
+		s_eyemode_data[0].push_back(angles[0]);
+		s_eyemode_data[1].push_back(angles[1]);
+	}
 }
 
 static UINT_PTR s_eyeModeDetectTimer = NULL;
-void RFMainWindow::StartEyeModeGameDetect() { s_eyeModeDetectTimer = ::SetTimer(NULL, 998, 200U, (TIMERPROC)OnEyeModeDetectTimer); }
+void RFMainWindow::StartEyeModeGameDetect()
+{
+	s_eyeModeDetectTimer = ::SetTimer(NULL, 998, 200U, (TIMERPROC)OnEyeModeDetectTimer);
+}
 
 void RFMainWindow::StopEyeModeGameDetect()
 {
-    if (s_eyeModeDetectTimer != NULL) {
-        ::KillTimer(NULL, s_eyeModeDetectTimer);
-        s_eyeModeDetectTimer = NULL;
-    }
+	if (s_eyeModeDetectTimer != NULL) {
+		::KillTimer(NULL, s_eyeModeDetectTimer);
+		s_eyeModeDetectTimer = NULL;
+	}
 }
 
 
 void RFMainWindow::SaveEyeModeDetectData()
 {
-    PatientTrainDetails details;
+	PatientTrainDetails details;
 
-    details.patientid = m_current_patient.id;
-    details.traindate = RFToDateString(s_eyemode_start);
-    details.traintype = RF_TRAINTYPE_STRING_YD;
-    details.content = RF_TRAINTYPE_STRING_YD;
-    details.duration = RFToTimeString(s_eyemode_start) + _T("-") + RFToTimeString(s_eyemode_stop);
-    details.traintime = RFToTimeLenth(s_eyemode_start, s_eyemode_stop);
-    details.createtime = RFToDateTimeString(s_eyemode_start);
+	details.patientid = m_current_patient.id;
+	details.traindate = RFToDateString(s_eyemode_start);
+	details.traintype = RF_TRAINTYPE_STRING_YD;
+	details.content = RF_TRAINTYPE_STRING_YD;
+	details.duration = RFToTimeString(s_eyemode_start) + _T("-") + RFToTimeString(s_eyemode_stop);
+	details.traintime = RFToTimeLenth(s_eyemode_start, s_eyemode_stop);
+	details.createtime = RFToDateTimeString(s_eyemode_start);
 
-    details.lasttreattime = RFToDateString(s_eyemode_stop);
-    details.totaltreattime = details.traintime;
-    details.recoverdetail = details.content;
+	details.lasttreattime = RFToDateString(s_eyemode_stop);
+	details.totaltreattime = details.traintime;
+	details.recoverdetail = details.content;
 
-    for (int i = 0; i < s_active_data[0].size(); i++) {
-        details.target_angle.push_back(s_eyemode_data[0].at(i));
-        details.target_angle.push_back(s_eyemode_data[1].at(i));
-    }
-
-    RFPatientsTrainDetails::get()->AddPatientTrainDetails(details);
+	for (int i = 0; i < s_active_data[0].size(); i++) {
+		details.target_angle.push_back(s_eyemode_data[0].at(i));
+		details.target_angle.push_back(s_eyemode_data[1].at(i));
+	}
+	
+	RFPatientsTrainDetails::get()->AddPatientTrainDetails(details);
 }
 
 void RFMainWindow::SaveActiveGameDetectData()
 {
-    CWkeWebkitUI *game4 = static_cast<CWkeWebkitUI *>(RFMainWindow::MainWindow->m_pm.FindControl(_T("game4")));
-    if (!game4) {
-        return;
-    }
-    std::wstring gamename = game4->RunJS(_T("getGameType();"));
-    // std::wstring nandu = game4->RunJS(_T("getNandu();"));
-    std::wstring score = game4->RunJS(_T("getScore();"));
+	CWkeWebkitUI* game4 = static_cast<CWkeWebkitUI*>(RFMainWindow::MainWindow->m_pm.FindControl(_T("game4")));
+	if (!game4) {
+		return;
+	}
+	std::wstring gamename = game4->RunJS(_T("getGameType();"));
+	//std::wstring nandu = game4->RunJS(_T("getNandu();"));
+	std::wstring score = game4->RunJS(_T("getScore();"));
 
-    PatientTrainDetails details;
+	PatientTrainDetails details;
 
-    details.patientid = m_current_patient.id;
-    details.traindate = RFToDateString(s_active_game4_start);
-    details.traintype = RF_TRAINTYPE_STRING_ZD;
-    details.content = RF_TRAINTYPE_STRING_ZD;
-    details.content += _T("-");
-    details.content += gamename;
-    // details.content += _T("-");
-    // details.content += nandu;
-    details.content += _T("-");
-    details.content += score;
-    details.duration = RFToTimeString(s_active_game4_start) + _T("-") + RFToTimeString(s_active_game4_stop);
-    details.traintime = RFToTimeLenth(s_active_game4_start, s_active_game4_stop);
-    details.createtime = RFToDateTimeString(s_active_game4_start);
+	details.patientid = m_current_patient.id;
+	details.traindate = RFToDateString(s_active_game4_start);
+	details.traintype = RF_TRAINTYPE_STRING_ZD;
+	details.content = RF_TRAINTYPE_STRING_ZD;
+	details.content += _T("-");
+	details.content += gamename; 
+	//details.content += _T("-");
+	//details.content += nandu;
+	details.content += _T("-");
+	details.content += score;
+	details.duration = RFToTimeString(s_active_game4_start) + _T("-") + RFToTimeString(s_active_game4_stop);
+	details.traintime = RFToTimeLenth(s_active_game4_start, s_active_game4_stop);
+	details.createtime = RFToDateTimeString(s_active_game4_start);
 
-    for (int i = 0; i < s_active_data[0].size(); i++) {
-        details.target_angle.push_back(s_active_data[0].at(i));
-        details.target_angle.push_back(s_active_data[1].at(i));
-    }
-    details.target_wl = s_active_data_wl;
+	for (int i = 0; i < s_active_data[0].size(); i++) {
+		details.target_angle.push_back(s_active_data[0].at(i));
+		details.target_angle.push_back(s_active_data[1].at(i));
+	}
+	details.target_wl = s_active_data_wl;
 
-    details.lasttreattime = RFToDateString(s_active_game4_stop);
-    details.totaltreattime = details.traintime;
-    details.recoverdetail = details.content;
+	details.lasttreattime = RFToDateString(s_active_game4_stop);
+	details.totaltreattime = details.traintime;
+	details.recoverdetail = details.content;
 
-    RFPatientsTrainDetails::get()->AddPatientTrainDetails(details);
+	RFPatientsTrainDetails::get()->AddPatientTrainDetails(details);
 }
 
 DWORD GetFileSize(LPCTSTR fileName)
 {
-    HANDLE hFile = ::CreateFile(fileName, 0, 0, NULL, OPEN_EXISTING, 0, NULL);
-    DWORD dwSize = ::GetFileSize(hFile, 0);
-    if (dwSize != INVALID_FILE_SIZE) {
-        return dwSize;
-    }
-    else
-        return 0;
+	HANDLE hFile = ::CreateFile(fileName, 0, 0, NULL,OPEN_EXISTING, 0, NULL);
+	DWORD dwSize = ::GetFileSize(hFile,0);
+	if (dwSize != INVALID_FILE_SIZE)
+	{
+		return dwSize;
+	}
+	else
+		return 0;
 
-    CloseHandle(hFile);
+	CloseHandle(hFile);
+
 }
 
 LPCTSTR FileSizeToString(DWORD dwSize)
 {
-    TCHAR *strSize = new TCHAR[20];
-    ZeroMemory(strSize, sizeof(TCHAR) * 20);
-    _stprintf_s(strSize, 20, _T("%.2f M"), float(dwSize) / 1024 / 1024);
-    return strSize;
+	TCHAR* strSize = new TCHAR[20];
+	ZeroMemory(strSize,sizeof(TCHAR) * 20);
+	_stprintf_s(strSize,20,_T("%.2f M"),float(dwSize) / 1024 /1024);
+	return strSize;
 }
 
 
 std::wstring GetSaveFilePath(HWND hWnd)
 {
-    TCHAR szFilter[] = L"Report(*.xlsx)\0*.xlsx\0";
+	TCHAR  szFilter[] = L"Report(*.xlsx)\0*.xlsx\0";
 
-    OPENFILENAME ofn;
-    int buffer_size = 256 * MAX_PATH;
-    wchar_t *buffer = new wchar_t[buffer_size];
-    ZeroMemory(&ofn, sizeof(ofn));
-    ofn.lStructSize = sizeof(ofn);
-    ofn.hwndOwner = hWnd;
-    ofn.lpstrFilter = szFilter;
-    ofn.nFilterIndex = 1;
-    ofn.lpstrFile = buffer;
-    ofn.lpstrFile[0] = L'\0';
-    ofn.nMaxFile = buffer_size;
-    ofn.lpstrFileTitle = 0;
-    ofn.lpstrInitialDir = NULL;
-    ofn.nFileExtension = 0;
-    ofn.lpstrDefExt = L"xlsx";
-    ofn.lpstrTitle = L"保存文件";
-    ofn.Flags = OFN_OVERWRITEPROMPT;
+	OPENFILENAME ofn;
+	int buffer_size = 256*MAX_PATH;
+	wchar_t *buffer = new wchar_t[buffer_size];
+	ZeroMemory(&ofn, sizeof(ofn));
+	ofn.lStructSize = sizeof(ofn);
+	ofn.hwndOwner = hWnd;
+	ofn.lpstrFilter = szFilter;
+	ofn.nFilterIndex = 1;
+	ofn.lpstrFile = buffer;
+	ofn.lpstrFile[0] = L'\0';
+	ofn.nMaxFile = buffer_size;
+	ofn.lpstrFileTitle = 0;
+	ofn.lpstrInitialDir = NULL;
+	ofn.nFileExtension = 0;
+	ofn.lpstrDefExt = L"xlsx";
+	ofn.lpstrTitle = L"保存文件";
+	ofn.Flags = OFN_OVERWRITEPROMPT;
 
-    GetSaveFileName(&ofn);
+	GetSaveFileName(&ofn);
 
-    return buffer;
+	return buffer;
 }
 
-int GetFilesFromDialog(HWND wnd, std::vector<std::wstring> &files, const wchar_t *filter, int flags)
+int GetFilesFromDialog(HWND wnd, std::vector<std::wstring>& files, const wchar_t *filter, int flags)
 {
-    int r = 0;
-    OPENFILENAME ofn;
-    int buffer_size = 256 * MAX_PATH;
-    wchar_t *buffer = new wchar_t[buffer_size];
-    ZeroMemory(&ofn, sizeof(ofn));
-    ofn.lStructSize = sizeof(ofn);
-    ofn.hwndOwner = wnd;
-    ofn.lpstrFilter = filter;
-    ofn.nFilterIndex = 1;
-    ofn.lpstrFile = buffer;
-    ofn.lpstrFile[0] = L'\0';
-    ofn.nMaxFile = buffer_size;
-    ofn.lpstrFileTitle = 0;
-    ofn.lpstrInitialDir = NULL;
-    ofn.lpstrTitle = L"请选择文件";
-    ofn.Flags = flags;
+	int r = 0;
+	OPENFILENAME ofn;
+	int buffer_size = 256*MAX_PATH;
+	wchar_t *buffer = new wchar_t[buffer_size];
+	ZeroMemory(&ofn, sizeof(ofn));
+	ofn.lStructSize = sizeof(ofn);
+	ofn.hwndOwner = wnd;
+	ofn.lpstrFilter = filter;
+	ofn.nFilterIndex = 1;
+	ofn.lpstrFile = buffer;
+	ofn.lpstrFile[0] = L'\0';
+	ofn.nMaxFile = buffer_size;
+	ofn.lpstrFileTitle = 0;
+	ofn.lpstrInitialDir = NULL;
+	ofn.lpstrTitle = L"请选择文件";
+	ofn.Flags = flags;
 
-    std::wstring dir;
-    int n = 0;
-    if (::GetOpenFileName(&ofn)) {
-        n = lstrlen(buffer);
-        dir = std::wstring(buffer, buffer + n);
-        if (buffer[ofn.nFileOffset - 1] == L'\\') {
-            files.push_back(dir);
-        }
-        else {
-            const wchar_t *dir_p = (wchar_t *)dir.c_str();
-            int dir_len = dir.size();
-            if (dir_p[dir_len - 1] != L'\\') {
-                dir += L"\\";
-            }
+	std::wstring dir;
+	int n = 0;
+	if (::GetOpenFileName(&ofn)) {
+		n = lstrlen(buffer);
+		dir = std::wstring(buffer, buffer+n);
+		if (buffer[ofn.nFileOffset-1] == L'\\') {
+			files.push_back(dir);
+		} else {
+			const wchar_t* dir_p = (wchar_t*)dir.c_str();
+			int dir_len = dir.size();
+			if (dir_p[dir_len - 1] != L'\\') {
+				dir += L"\\";
+			}
 
-            wchar_t *p = buffer + ofn.nFileOffset;
-            while (*p) {
-                n = lstrlen(p);
-                files.push_back(dir + std::wstring(p, p + n));
-                p += n + 1;
-            }
-        }
-    }
-    else {
-        r = -1;
-    }
+			wchar_t *p = buffer + ofn.nFileOffset;
+			while (*p) {
+				n = lstrlen(p);
+				files.push_back(dir + std::wstring(p, p+n));
+				p += n+1;
+			}
+		}
+	} else {
+		r = -1;
+	}
 
-    delete[] buffer;
+	delete [] buffer;
 
-    return r;
+	return r;
 }
 
 
 std::wstring RFToTimeString(time_t in_t)
 {
-    time_t t = in_t;
-    if (t < 0 || t > 0x7fffd27f) {
-        t = 0;
-    }
-    wchar_t buffer[BUFSIZ];
-    wcsftime(buffer, BUFSIZ, L"%H:%M:%S", localtime(&t));
-    return buffer;
+	time_t t = in_t;
+	if (t < 0 || t > 0x7fffd27f) {
+		t = 0;
+	}
+	wchar_t buffer[BUFSIZ];
+	wcsftime(buffer, BUFSIZ, L"%H:%M:%S", localtime(&t));
+	return buffer;
 }
 
 std::wstring RFToDateString(time_t in_t)
 {
-    time_t t = in_t;
-    if (t < 0 || t > 0x7fffd27f) {
-        t = 0;
-    }
-    wchar_t buffer[BUFSIZ];
-    wcsftime(buffer, BUFSIZ, L"%Y-%m-%d", localtime(&t));
-    return buffer;
+	time_t t = in_t;
+	if (t < 0 || t > 0x7fffd27f) {
+		t = 0;
+	}
+	wchar_t buffer[BUFSIZ];
+	wcsftime(buffer, BUFSIZ, L"%Y-%m-%d", localtime(&t));
+	return buffer;
 }
 
 std::wstring RFToTimeLenth(time_t start, time_t end)
 {
-    wchar_t buffer[BUFSIZ];
+	wchar_t buffer[BUFSIZ];
 
-    DWORD dwDiff = end - start;
+	DWORD dwDiff = end - start;
 
-    std::wstring buffer_format = _T("");
+	std::wstring buffer_format = _T("");
+	
+	if (dwDiff / 3600 < 10) {
+		buffer_format += _T("0%d:");
+	} else {
+		buffer_format += _T("%d:");
+	} 
 
-    if (dwDiff / 3600 < 10) {
-        buffer_format += _T("0%d:");
-    }
-    else {
-        buffer_format += _T("%d:");
-    }
+	if ((dwDiff % 3600) / 60 < 10) {
+		buffer_format += _T("0%d:");
+	}  else {
+		buffer_format += _T("%d:");
+	} 
 
-    if ((dwDiff % 3600) / 60 < 10) {
-        buffer_format += _T("0%d:");
-    }
-    else {
-        buffer_format += _T("%d:");
-    }
+	if ((dwDiff % 3600) % 60 < 10) {
+		buffer_format += _T("0%d");
+	}  else {
+		buffer_format += _T("%d");
+	} 
 
-    if ((dwDiff % 3600) % 60 < 10) {
-        buffer_format += _T("0%d");
-    }
-    else {
-        buffer_format += _T("%d");
-    }
+	wsprintf(buffer, buffer_format.c_str(), dwDiff / 3600, (dwDiff % 3600) / 60 , (dwDiff % 3600) % 60);
 
-    wsprintf(buffer, buffer_format.c_str(), dwDiff / 3600, (dwDiff % 3600) / 60, (dwDiff % 3600) % 60);
-
-    return buffer;
+	return buffer;
 }
 
 std::wstring RFToDateTimeString(time_t in_t)
 {
-    time_t t = in_t;
-    if (t < 0 || t > 0x7fffd27f) {
-        t = 0;
-    }
-    wchar_t buffer[BUFSIZ];
-    wcsftime(buffer, BUFSIZ, L"%Y-%m-%d %H:%M:%S", localtime(&t));
-    return buffer;
+	time_t t = in_t;
+	if (t < 0 || t > 0x7fffd27f) {
+		t = 0;
+	}
+	wchar_t buffer[BUFSIZ];
+	wcsftime(buffer, BUFSIZ, L"%Y-%m-%d %H:%M:%S", localtime(&t));
+	return buffer;
 }

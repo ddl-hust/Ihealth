@@ -16,14 +16,14 @@ int FormatTimeValue(std::wstring time)
 	return minute * 60 * 1000 + second * 1000;
 }
 
-// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð±ï¿½ï¿½ï¿½ï¿½Ë¶ï¿½Ê±ï¿½ï¿½timerï¿½ï¿½Ã¿200msï¿½ï¿½ï¿½ï¿½Ò»ï¿½Î¡ï¿½
+// ÕâÊÇÔÚÔËÐÐ±»¶¯ÔË¶¯Ê±µÄtimer£¬Ã¿200msÔËÐÐÒ»´Î¡£
 void OnTimer(HWND hWnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime) {
 	RFPassiveTrainAction* action = &RFMainWindow::MainWindow->m_passive_train_action;	
 	if (!action) {
 		return;
 	}
 
-	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼Ç°ï¿½ï¿½ï¿½Å¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½
+	// ¶¯×÷¿ªÊ¼Ç°²¥·Å¶¯×÷µÄÌáÊ¾Òô
 	std::wstring mediapath = action->m_curmedia.pathFileName;
 	if (action->m_timeplay == 0 && !mediapath.empty() && _waccess(mediapath.c_str(), 0) != -1) {
 		sndPlaySound(action->m_curmedia.pathFileName.c_str(), SND_ASYNC);
@@ -33,10 +33,10 @@ void OnTimer(HWND hWnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime) {
 	MEDIA media = action->m_curmedia;
 	int timelen = FormatTimeValue(media.train.timelen);
 	if (action->m_timeplay < timelen) {
-		// ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã»ï¿½ï¿½Ö´ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½Ê±ï¿½ï¿½ï¿½Â¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ðµï¿½Ê±ï¿½ï¿½
+		// µ±Ò»¸ö¶¯×÷Ã»ÓÐÖ´ÐÐÍêµÄÊ±ºò£¬ÐèÒªËæÊ±¸üÐÂ¶¯×÷½øÐÐµÄÊ±¼ä
 		RFMainWindow::MainWindow->SetPassiveTrainProgress(action->m_timeplay, timelen, true);
 	} else {
-		// ï¿½ï¿½ï¿½ï¿½Ö´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½Ç°Ñµï¿½ï¿½ï¿½ï¿½ï¿½Ý±ï¿½ï¿½æµ½ï¿½ï¿½ï¿½Ý¿â£¬ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+		// ¶¯×÷Ö´ÐÐÍêºó£¬ÐèÒª½«µ±Ç°ÑµÁ·Êý¾Ý±£´æµ½Êý¾Ý¿â£¬²¢¿ªÊ¼ÏÂÒ»¸öÊý¾Ý
 		if (!RFMainWindow::MainWindow->m_robot.PassiveIsBusy()) {
 			action->SaveMovingData();
 			if (action->m_medias.size() > 0) {

@@ -49,6 +49,8 @@ public:
 	static const int ShoulderAxisId = 0;
 	static const int ElbowAxisId = 1;
 	static const double Unit_Convert;
+	//在拉力报警后控制复位停止
+	bool is_reset_stop;
 
 private:
 	ControlCard();

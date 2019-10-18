@@ -216,14 +216,22 @@ void ControlCard::GetEncoderData(double EncoderData[2]) {
 }
 
 void ControlCard::ResetPosition() {
+	is_reset_stop = false;
 	SetMotor(MotorOn);
-	SetClutch(ClutchOn);
+	//SetClutch(ClutchOn);
 	UpdateDigitInput();
-	while (!IsReset()) {
+	while (!IsReset()&& is_reset_stop==false) {
 		VelocityMove(ElbowAxisId, ResetVel);
 		VelocityMove(ShoulderAxisId, ResetVel);
 	}
 	SetMotor(MotorOff);
+	//if (IsReset()) {
+	//	SetMotor(MotorOff);
+	//}
+	//else {
+	//	APS_stop_move(ElbowAxisId);
+	//	APS_stop_move(ShoulderAxisId);
+	//}
 	//SetClutch(ClutchOff);
 	SetParamZero();
 }

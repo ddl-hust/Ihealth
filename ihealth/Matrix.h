@@ -35,8 +35,9 @@ const double InitAngle[5] = {
 
 extern Vector3d AxisDirection[5];
 extern Vector3d AxisPosition[5];
-extern Matrix3d sixdim_rotation;
 extern Matrix3d RF13;
+extern Matrix3d sixdim_rotation;
+
 
 ////#define LEFT_ARM 1
 //#ifdef LEFT_ARM
@@ -256,11 +257,11 @@ void MomentBalance(const MatrixBase<DerivedA>& shoulderforcevector, double motor
 	Matrix3d so3[4];
 	Matrix3d SO3[4];
 
-	Matrix3d R32;
-	Matrix3d R21;
 	Matrix3d P1_3;
 	Matrix3d to_zero;
 	MatrixXd Tf1_3(6, 6);
+	Matrix3d R32;
+	Matrix3d R21;
 
 	Vector3d pa1_3 = Vector3d(d3 - shouler_installationsite_to_coordinate4, 0, -dy_2);
 	Vector3d f1_3;
@@ -290,6 +291,17 @@ void MomentBalance(const MatrixBase<DerivedA>& shoulderforcevector, double motor
 		joint_angle(i) = (M_PI / 180)*joint_angle(i);
 	}
 
+	//Matrix3d ja1;
+	//Matrix3d ja2;
+	//ja1 <<
+	//	sin(joint_angle(1)), cos(joint_angle(1)), 1,
+	//	sin(joint_angle(1)), cos(joint_angle(1)), 1,
+	//	sin(joint_angle(1)), cos(joint_angle(1)), 1;
+	//ja2 <<
+	//	sin(joint_angle(2)), cos(joint_angle(2)), 1,
+	//	sin(joint_angle(2)), cos(joint_angle(2)), 1,
+	//	sin(joint_angle(2)), cos(joint_angle(2)), 1;
+
 	//各个关节间的旋转矩阵
 	R32 <<
 		cos(joint_angle(2)), -sin(joint_angle(2)), 0,
@@ -303,14 +315,14 @@ void MomentBalance(const MatrixBase<DerivedA>& shoulderforcevector, double motor
 
 	//力从套环到关节的旋转矩阵
 	to_zero.setZero();
-	// RF13 <<
-	// 	1, 0, 0,
-	// 	0, 0.8710, 0.4914,
-	// 	0, -0.4914, 0.8710;
-	// sixdim_rotation <<
-	// 	0, 1, 0,
-	// 	-1, 0, 0,
-	// 	0, 0, 1;
+	//RF13 <<
+	//	1, 0, 0,
+	//	0, 0.8710, 0.4914,
+	//	0, -0.4914, 0.8710;
+	//sixdim_rotation <<
+	//	0, 1, 0,
+	//	-1, 0, 0,
+	//	0, 0, 1;
 	VectorToMatrix(pa1_3, P1_3);
 	VectorToMatrix(sixdim_to_coordinate3, Sixdim_To_Coordinate3);
 	Tf1_3 <<

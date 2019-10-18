@@ -250,12 +250,12 @@ void boundaryDetection::check()
 {
     //急停开关提示
     // if (!m_emergency_stop_status) {
-    //	int ret = ::MessageBox(m_hWnd, _T("检测到急停开关被按下，请检查机器是否正常运行, 点击确定关闭软件。"), _T("硬件急停"), MB_OK | MB_ICONEXCLAMATION);
-    //	if (ret == IDOK) {
-    //		ControlCard::GetInstance().Close();
-    //		::PostMessage(m_hWnd, WM_QUIT, NULL, NULL);
-    //	}
-    //}
+    // 	int ret = ::MessageBox(m_hWnd, _T("检测到急停开关被按下，请检查机器是否正常运行, 点击确定关闭软件。"), _T("硬件急停"), MB_OK | MB_ICONEXCLAMATION);
+    // 	if (ret == IDOK) {
+    // 		ControlCard::GetInstance().Close();
+    // 		::PostMessage(m_hWnd, WM_QUIT, NULL, NULL);
+    // 	}
+    // }
 
     //// 力矩保护
     // DataAcquisition::GetInstance().AcquisiteTorqueData();
@@ -304,10 +304,10 @@ void boundaryDetection::check()
             m_pRobot->ActiveStopMove();
         }
     }
-    //	AllocConsole();
-    //	freopen("CONOUT$", "w", stdout);
-    //	printf("shoulder:%lf    %lf \n elbow:%lf     %lf\n", abs_shoulder_forward_pull,
-    //abs_shoulder_backward_pull,abs_elbow_forward_pull,abs_elbow_backward_pull);
+    // AllocConsole();
+    // freopen("CONOUT$", "w", stdout);
+    // printf("shoulder:%lf    %lf \n elbow:%lf     %lf\n", abs_shoulder_forward_pull,
+    // abs_shoulder_backward_pull,abs_elbow_forward_pull,abs_elbow_backward_pull);
 }
 
 

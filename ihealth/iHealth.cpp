@@ -1,4 +1,4 @@
-// iHealth.cpp : define the entry point of console application
+// iHealth.cpp : 定义控制台应用程序的入口点。
 //
 
 #include "stdafx.h"
@@ -16,7 +16,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*l
 	HANDLE m_hMutex = ::CreateMutex(NULL, TRUE, _T("ihealth") );
 	if (GetLastError() == ERROR_ALREADY_EXISTS)
 	{
-		AfxMessageBox(_T("You Already Run the App") );
+		AfxMessageBox(_T("您已经运行了本软件！") );//弹出对话框确认不能运行第二个实例。
 		return FALSE;
 	}
 	
@@ -43,7 +43,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPSTR /*l
 
 	RFMainWindow* pFrame = new RFMainWindow();
 	if( pFrame == NULL ) return 0;
-	pFrame->Create(NULL, _T("Ihealth"), UI_WNDSTYLE_FRAME, 0L, 0, 0, RF_WINDOW_WIDTH, RF_WINDOW_HEIGHT);
+	pFrame->Create(NULL, _T("上肢外骨骼康复机器人"), UI_WNDSTYLE_FRAME, 0L, 0, 0, RF_WINDOW_WIDTH, RF_WINDOW_HEIGHT);
 	pFrame->CenterWindow();
 	pFrame->SetIcon(_T("icon1.ico"));
 	::ShowWindow(pFrame->GetHWND(), SW_NORMAL);
