@@ -16,7 +16,6 @@ public:
     void Step(); // get six_dim_force data
     void PressureStep(); // get pressure data
     void SixDimForceStep(); //只使用六维力控制部分
-    bool IsFire(); // get gripper sensor to decide wheather to start active game, now Depreciated
     void CalculatePlaneXY(short Axis_X, short Axis_Y, double XY[2]); //get end-efftor position
     void CalculateRagXY(double XY[2]); //获取游戏中抹布位置
     void SetDamping(float FC = 0.1);

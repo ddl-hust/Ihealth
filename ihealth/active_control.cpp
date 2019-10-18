@@ -883,17 +883,6 @@ void ActiveControl::ActMove()
     ControlCard::GetInstance().ProtectedVelocityMove(ControlCard::ElbowAxisId, Ud_Arm);
 }
 
-bool ActiveControl::IsFire()
-{
-    bool fire = false;
-
-    double grip;
-    //这里就是采集握力的数据
-    DataAcquisition::GetInstance().AcquisiteGripData(&grip);
-    if (grip > 0.3) fire = true;
-    return fire;
-}
-
 void ActiveControl::CalculatePlaneXY(short rangeX, short rangeY, double XY[2])
 {
     // MatrixXd Theta(5, 1);

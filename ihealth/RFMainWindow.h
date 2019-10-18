@@ -388,8 +388,6 @@ public:
     RFFMA m_fma;
     int m_evalution_type;
     EvaluationYDGN m_evydgn;
-    // �����������Ƿ�ʹ��
-    bool m_grip_strength_enable = true;
 };
 
 

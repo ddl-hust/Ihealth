@@ -19,7 +19,6 @@ public:
 
 
     bool m_haveValue;
-    bool m_isFire;
     double m_fX;
     double m_fY;
 
