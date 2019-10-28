@@ -223,6 +223,7 @@ unsigned int __stdcall ActiveMoveThreadWithPressure(PVOID pParam) {
     ofstream torque_value(pathname+paitent_info+"torque_"+ch+".txt", ios::app | ios::out);
     ofstream sixdim_force_value(pathname+paitent_info+"sixdim_force_"+ch+".txt", ios::app | ios::out);
     ofstream sum_pressure_force_value(pathname+paitent_info+"sum_pressure_force_"+ch+".txt", ios::app | ios::out);
+	ofstream pull_force_value(pathname+paitent_info+"pull_force_"+ch+".txt", ios::app | ios::out);
 	double angle[2]{0};
     double torque[2]{0};
     double elbow_pressure[2]{0};
@@ -235,7 +236,7 @@ unsigned int __stdcall ActiveMoveThreadWithPressure(PVOID pParam) {
                 << "  elbow(N.m)  " << endl;
     sixdim_force_value<<" fx(N) "<<" fy(N) "<<" fz(N) "<<" tx(N.m) "<<" ty(N.m) "<<" tz(N.m) "<<endl;
     sum_pressure_force_value<<"F>0表示肘曲"<<"F<0表示肘伸"<<endl;
-
+	pull_force_value<<" shoulder_forward "<<" shoulder_backward "<<" elbow_forward "<<" elbow_backward "<<endl;
 	while (true) {
 		if (active->is_exit_thread_) {
 			break;
@@ -261,11 +262,19 @@ unsigned int __stdcall ActiveMoveThreadWithPressure(PVOID pParam) {
         DataAcquisition::GetInstance().AcquisiteTorqueData(torque);
         DataAcquisition::GetInstance().AcquisiteTensionData(elbow_pressure);
         DataAcquisition::GetInstance().AcquisiteSixDemensionData(six_dim_force);
+		/***********new pull sensor **********************/
+		DataAcquisition::GetInstance().AcquisitePullSensorData();
+    	double abs_shoulder_forward_pull = fabs(DataAcquisition::GetInstance().ShoulderForwardPull());
+    	double abs_shoulder_backward_pull = fabs(DataAcquisition::GetInstance().ShoulderBackwardPull());
+    	double abs_elbow_forward_pull = fabs(DataAcquisition::GetInstance().ElbowForwardPull());
+    	double abs_elbow_backward_pull = fabs(DataAcquisition::GetInstance().ElbowBackwardPull());
+
         joint_value << angle[0] << "          " << angle[1] << std::endl;
         torque_value << torque[0] << "          " <<torque[1] << std::endl;
         sixdim_force_value << six_dim_force[0] << "          " << six_dim_force[1] << "          " << six_dim_force[2] << "          " << six_dim_force[3]
                            << "          " << six_dim_force[4] << "          " << six_dim_force[5] << std::endl;
 		sum_pressure_force_value<< elbow_pressure[0] * 10- elbow_pressure[1] * 10<<endl;
+		pull_force_value<< abs_elbow_forward_pull <<abs_shoulder_backward_pull << abs_elbow_forward_pull <<abs_shoulder_backward_pull <<endl;
 		
     
 	}
@@ -273,6 +282,7 @@ unsigned int __stdcall ActiveMoveThreadWithPressure(PVOID pParam) {
     torque_value.close();
     sixdim_force_value.close();
     sum_pressure_force_value.close();
+	pull_force_value.close();
 	//active->MomentExport();
 	//active->TorqueExport();
 	//std::cout << "ActiveMoveThreadWithPressure Thread ended." << std::endl;
@@ -308,6 +318,8 @@ unsigned int __stdcall ActiveMoveThread(PVOID pParam) {
 	ofstream joint_value(pathname+paitent_info+"joint_"+ch+"(只有六维力模式)"+".txt", ios::app | ios::out);
     ofstream torque_value(pathname+paitent_info+"torque_"+ch+"(只有六维力模式)"+".txt", ios::app | ios::out);
     ofstream sixdim_force_value(pathname+paitent_info+"sixdim_force_"+ch+"(只有六维力模式)"+".txt", ios::app | ios::out);
+	ofstream pull_force_value(pathname+paitent_info+"pull_force_"+ch+".txt", ios::app | ios::out);
+
 	double angle[2]{0};
     double torque[2]{0};
     double six_dim_force[6]{0};
@@ -318,6 +330,7 @@ unsigned int __stdcall ActiveMoveThread(PVOID pParam) {
     torque_value << " shoulder(N.m)  "
                 << "  elbow(N.m)  " << endl;
     sixdim_force_value<<" fx(N) "<<" fy(N) "<<" fz(N) "<<" tx(N.m) "<<" ty(N.m) "<<" tz(N.m) "<<endl;
+	pull_force_value<<" shoulder_forward "<<" shoulder_backward "<<" elbow_forward "<<" elbow_backward "<<endl;
 	while (true) {
 		if (active->is_exit_thread_) {
 			break;
@@ -339,17 +352,23 @@ unsigned int __stdcall ActiveMoveThread(PVOID pParam) {
 		ControlCard::GetInstance().GetEncoderData(angle);
         DataAcquisition::GetInstance().AcquisiteTorqueData(torque);
         DataAcquisition::GetInstance().AcquisiteSixDemensionData(six_dim_force);
+		/***********new pull sensor **********************/    
+		DataAcquisition::GetInstance().AcquisitePullSensorData(); 
+		double abs_shoulder_forward_pull = fabs(DataAcquisition::GetInstance().ShoulderForwardPull());    
+		double abs_shoulder_backward_pull = fabs(DataAcquisition::GetInstance().ShoulderBackwardPull());        
+		double abs_elbow_forward_pull = fabs(DataAcquisition::GetInstance().ElbowForwardPull());
+		double abs_elbow_backward_pull = fabs(DataAcquisition::GetInstance().ElbowBackwardPull());
+
         joint_value << angle[0] << "          " << angle[1] << std::endl;
         torque_value << torque[0] << "          " <<torque[1] << std::endl;
         sixdim_force_value << six_dim_force[0] << "          " << six_dim_force[1] << "          " << six_dim_force[2] << "          " << six_dim_force[3]
                            << "          " << six_dim_force[4] << "          " << six_dim_force[5] << std::endl;
+		pull_force_value<< abs_elbow_forward_pull <<abs_shoulder_backward_pull << abs_elbow_forward_pull <<abs_shoulder_backward_pull <<endl;
 	}
 	joint_value.close();
 	torque_value.close();
 	sixdim_force_value.close();
-	//active->MomentExport();
-	//active->TorqueExport();
-	//std::cout << "ActiveMoveThread Thread ended." << std::endl;
+	pull_force_value.close();
 	return 0;
 }
 
