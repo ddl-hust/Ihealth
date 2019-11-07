@@ -1,99 +1,101 @@
 #pragma once
-#include"passive_control.h"
+#include "passive_control.h"
 #include "boundarydetection.h"
 #include "control_card.h"
-#include"active_control.h"
-#include"emgcontrl.h"
+#include "active_control.h"
+#include "emgcontrl.h"
 #include "EyeMode.h"
 
 
-class Robot {
+class Robot
+{
 public:
-	Robot();
-	~Robot();
-	/************************************************************************/
-	/*                           ±»¶¯Ä£Ê½½Ó¿Ú                                */
-	/************************************************************************/
-	//¿ªÊ¼±»¶¯ÔË¶¯£¬index-±íÊ¾¶¯×÷µÄË÷Òı
-	void PassiveStartMove(int index);
-	//Í£Ö¹±»¶¯ÔË¶¯
-	void PassiveStopMove();
-	//¿ªÊ¼Â¼ÖÆ¶¯×÷
-	void PassiveBeginRecord();
-	//½áÊøÊ¾½Ì
-	void PassiveStopRecord();
-	// ·µ»Ø×î½üµÄÒ»´Î±»¶¯ÔË¶¯
-	void PassiveGetCurrentMove(PassiveData& move);
-	// ·µ»Ø×î½üµÄÒ»´ÎÂ¼ÖÆ
-	void PassiveGetCurrentRecord(PassiveData& teach);
-	// Çå³ı±»¶¯ÔË¶¯¶¯×÷ĞòÁĞ
-	void PassiveClearMovementSet();
-	// ½«×î½üµÄÂ¼ÖÆÊı¾İ±£´æÔÚ±»¶¯ÔË¶¯¶¯×÷ĞòÁĞÖĞ
-	void PassiveStoreCurrentRecord();
-	// ±£´æÖ¸¶¨µÄ±»¶¯¶¯×÷
-	void PassiveStoreMovement(const PassiveData& move);
-	// ·µ»Ø±»¶¯ÔË¶¯ÊÇ·ñÕıÔÚÔË¶¯»òÂ¼ÖÆ
-	bool PassiveIsBusy();
-	// ·µ»Ø±»¶¯ÔË¶¯ÊÇ·ñÕıÔÚÂ¼ÖÆ
-	bool IsPassiveRecording();
+    Robot();
+    ~Robot();
+    /************************************************************************/
+    /*                           è¢«åŠ¨æ¨¡å¼æ¥å£                                */
+    /************************************************************************/
+    //å¼€å§‹è¢«åŠ¨è¿åŠ¨ï¼Œindex-è¡¨ç¤ºåŠ¨ä½œçš„ç´¢å¼•
+    void PassiveStartMove(int index);
+    //åœæ­¢è¢«åŠ¨è¿åŠ¨
+    void PassiveStopMove();
+    //å¼€å§‹å½•åˆ¶åŠ¨ä½œ
+    void PassiveBeginRecord();
+    //ç»“æŸç¤ºæ•™
+    void PassiveStopRecord();
+    // è¿”å›æœ€è¿‘çš„ä¸€æ¬¡è¢«åŠ¨è¿åŠ¨
+    void PassiveGetCurrentMove(PassiveData &move);
+    // è¿”å›æœ€è¿‘çš„ä¸€æ¬¡å½•åˆ¶
+    void PassiveGetCurrentRecord(PassiveData &teach);
+    // æ¸…é™¤è¢«åŠ¨è¿åŠ¨åŠ¨ä½œåºåˆ—
+    void PassiveClearMovementSet();
+    // å°†æœ€è¿‘çš„å½•åˆ¶æ•°æ®ä¿å­˜åœ¨è¢«åŠ¨è¿åŠ¨åŠ¨ä½œåºåˆ—ä¸­
+    void PassiveStoreCurrentRecord();
+    // ä¿å­˜æŒ‡å®šçš„è¢«åŠ¨åŠ¨ä½œ
+    void PassiveStoreMovement(const PassiveData &move);
+    // è¿”å›è¢«åŠ¨è¿åŠ¨æ˜¯å¦æ­£åœ¨è¿åŠ¨æˆ–å½•åˆ¶
+    bool PassiveIsBusy();
+    // è¿”å›è¢«åŠ¨è¿åŠ¨æ˜¯å¦æ­£åœ¨å½•åˆ¶
+    bool IsPassiveRecording();
 
-	/************************************************************************/
-	/*                           Ö÷¶¯Ä£Ê½½Ó¿Ú                                */
-	/************************************************************************/
-	//¿ªÊ¼Ö÷¶¯ÔË¶¯
-	void ActiveStartMove(int id);
-	//½áÊøÖ÷¶¯ÔË¶¯
-	void ActiveStopMove();
-	//·µ»ØÎÕÁ¦-Êı¾İ½Ó¿Ú
-	double GetGripStrength();
-	bool	IsFire();
-	void	GetPlanePos(short w, short h, double XY[2]);
-	// ²Á´°»§ÓÎÏ·ÀïÃæ£¬»ñÈ¡´°»§µÄXY
-	void	CalculateRagPos(double XY[2]);
-	void	SetDamping(float FC=0.1);
-	void    SetPressureSensorOn();
-	void    SetPressureSensorOff();
+    /************************************************************************/
+    /*                           ä¸»åŠ¨æ¨¡å¼æ¥å£                                */
+    /************************************************************************/
+    //å¼€å§‹ä¸»åŠ¨è¿åŠ¨
+    void ActiveStartMove(int id);
+    //ç»“æŸä¸»åŠ¨è¿åŠ¨
+    void ActiveStopMove();
+    //è¿”å›æ¡åŠ›-æ•°æ®æ¥å£
+    double GetGripStrength();
+    bool IsFire();
+    void GetPlanePos(short w, short h, double XY[2]);
+    // æ“¦çª—æˆ·æ¸¸æˆé‡Œé¢ï¼Œè·å–çª—æˆ·çš„XY
+    void CalculateRagPos(double XY[2]);
+    void SetDamping(float FC = 0.1);
+    void SetPressureSensorOn();
+    void SetPressureSensorOff();
 
-	/************************************************************************/
-	/*                           sEMGÄ£Ê½½Ó¿Ú                                */
-	/************************************************************************/
-	bool EMGIsMove();
-	//¿ªÊ¼EMGÔË¶¯
-	void EMGStartMove();
-	//Í£Ö¹EMGÔË¶¯
-	void EMGStopMove();
-	//»ñÈ¡EMGĞÅºÅ-Êı¾İ½Ó¿Ú£¬index-ĞÅºÅ±àºÅ£¬·Ö±ğÎª0£¬1£¬2£¬3
-	double EMGGetSignal(int index = 0);
+    /************************************************************************/
+    /*                           sEMGæ¨¡å¼æ¥å£                                */
+    /************************************************************************/
+    bool EMGIsMove();
+    //å¼€å§‹EMGè¿åŠ¨
+    void EMGStartMove();
+    //åœæ­¢EMGè¿åŠ¨
+    void EMGStopMove();
+    //è·å–EMGä¿¡å·-æ•°æ®æ¥å£ï¼Œindex-ä¿¡å·ç¼–å·ï¼Œåˆ†åˆ«ä¸º0ï¼Œ1ï¼Œ2ï¼Œ3
+    double EMGGetSignal(int index = 0);
 
-	/************************************************************************/
-	/*                           ÑÛ¶¯Ä£Ê½½Ó¿Ú                                */
-	/************************************************************************/
-	//·µ»Ø¹Ø½Ú½Ç¶È-Êı¾İ½Ó¿Ú,0-¼ç²¿¹Ø½Ú½Ç¶È£¬1-Öâ²¿¹Ø½Ú½Ç¶È(Í¬ÉÏÃæÖ÷¶¯Ä£Ê½½Ó¿Ú) 
-	void enterEyeMode(); // call it while enter eye mode.
-	void exitEyeMode();  // call it while enter eye mode.
-	void getLeftRGB24(unsigned char* data, int _width, int _height);  // get image data of left eye
-	void getRightRGB24(unsigned char* data, int _width, int _height); // get image data of right eye
-	void startEyeMove(); // call it while clicking the start
-	void stopEyeMove();  // call it while clicking the stop
-	void setEyeVel(double factor); // set velocity
-	void eyeCalibrate(); // call it before startEyeControl.
+    /************************************************************************/
+    /*                           çœ¼åŠ¨æ¨¡å¼æ¥å£                                */
+    /************************************************************************/
+    //è¿”å›å…³èŠ‚è§’åº¦-æ•°æ®æ¥å£,0-è‚©éƒ¨å…³èŠ‚è§’åº¦ï¼Œ1-è‚˜éƒ¨å…³èŠ‚è§’åº¦(åŒä¸Šé¢ä¸»åŠ¨æ¨¡å¼æ¥å£)
+    void enterEyeMode(); // call it while enter eye mode.
+    void exitEyeMode(); // call it while enter eye mode.
+    void getLeftRGB24(unsigned char *data, int _width, int _height); // get image data of left eye
+    void getRightRGB24(unsigned char *data, int _width, int _height); // get image data of right eye
+    void startEyeMove(); // call it while clicking the start
+    void stopEyeMove(); // call it while clicking the stop
+    void setEyeVel(double factor); // set velocity
+    void eyeCalibrate(); // call it before startEyeControl.
 
-	//¸´Î»
-	void resetPos();
-	void stopResetPos();
+    //å¤ä½
+    void resetPos();
+    void stopResetPos();
 
-	void setWindow(HWND hWnd);
+    void setWindow(HWND hWnd);
+
 public:
-	PassiveControl *pasvMode;//±»¶¯¿ØÖÆÄ£Ê½
-	boundaryDetection *bDetect;//±ß½ç¼ì²â
-	ActiveControl *activeCtrl;
-	emgcontrl *EMGContrl;
-	EyeMode *eyeModeCtl;
-	
-	HWND m_hWnd = NULL;
-	bool m_isPasvModeStart;
-	bool m_isActiveModeStart;
-	bool m_isEmgModeStart;
+    PassiveControl *pasvMode; //è¢«åŠ¨æ§åˆ¶æ¨¡å¼
+    boundaryDetection *bDetect; //è¾¹ç•Œæ£€æµ‹
+    ActiveControl *activeCtrl;
+    emgcontrl *EMGContrl;
+    EyeMode *eyeModeCtl;
+
+    HWND m_hWnd = NULL;
+    bool m_isPasvModeStart;
+    bool m_isActiveModeStart;
+    bool m_isEmgModeStart;
 };
 
 void getSensorData(bool Travel_Switch[4]);

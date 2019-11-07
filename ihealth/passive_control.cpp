@@ -71,7 +71,7 @@ unsigned int __stdcall RecordOrMoveThread(PVOID pParam) {
 		//是否开始运动
 		if (passive->in_move_status_) {
 			passive->MoveStep();
-			passive->SampleStep();
+			// passive->SampleStep();
 		}
 		
 		loop_counter_in_thread++;
@@ -260,6 +260,8 @@ void PassiveControl::MoveStep() {
 		//APS_absolute_move(Axis[j], pos / ControlCard::Unit_Convert, 15 / ControlCard::Unit_Convert);
 		APS_ptp_v(Axis[j], option, pos / ControlCard::Unit_Convert, 15 / ControlCard::Unit_Convert, NULL);
 	}
+	//export data
+	
 	is_busy_ = true;
 }
 

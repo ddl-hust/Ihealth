@@ -9,16 +9,16 @@
 
 #define WM_EMG_DATA_SAMPLE_MSG 2050
 
-#define RF_TRAIN_TYPE_ZD _T("����ѵ��")
-#define RF_TRAIN_TYPE_BD _T("����ѵ��")
-#define RF_TRAIN_TYPE_YD _T("�۶�ѵ��")
+#define RF_TRAIN_TYPE_ZD _T("???????")
+#define RF_TRAIN_TYPE_BD _T("???????")
+#define RF_TRAIN_TYPE_YD _T("??????")
 #define RF_TRAIN_TYPE_EMG _T("EMG")
 
-#define RF_GAME_NAME_PLANE_CHUJI _T("�ɻ���ս����")
-#define RF_GAME_NAME_PLANE_ZHONGJI _T("�ɻ���ս�м�")
-#define RF_GAME_NAME_PLANE_GAOJI _T("�ɻ���ս�߼�")
-#define RF_GAME_NAME_CLEAN_WINDOW _T("������")
-#define RF_GAME_NAME_FRY_EGG _T("�弦��")
+#define RF_GAME_NAME_PLANE_CHUJI _T("??????????")
+#define RF_GAME_NAME_PLANE_ZHONGJI _T("???????��?")
+#define RF_GAME_NAME_PLANE_GAOJI _T("?????????")
+#define RF_GAME_NAME_CLEAN_WINDOW _T("??????")
+#define RF_GAME_NAME_FRY_EGG _T("?��??")
 
 #define RF_DESIGN_WINDOW_WIDTH 1200
 #define RF_DESIGN_WINDOW_HEIGHT 675
@@ -37,7 +37,7 @@ public:
 	void OnFinalMessage(HWND /*hWnd*/);
 	CControlUI* CreateControl(LPCTSTR pstrClass);
 
-	// ��ʼ����������Ҫ����UI�����ݿ�ĳ�ʼ��
+	// ??????????????????UI????????????
 	void Init();
 	void Closing();
 	void OnPrepare();
@@ -47,7 +47,7 @@ public:
 	void BindManagerPatientPageEvent();
 
 	LRESULT OnCommunicate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
-	// �������������Ӧ�����������ﴦ����ѡ���ߵĹ���
+	// ???????????????????????????????????????
 	LRESULT OnAppClick(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT OnDuiCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
 	LRESULT OnClose(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled);
@@ -104,7 +104,7 @@ public:
 	bool		OnPage4(void *pParam);
 	bool		OnNextPage(void *pParam);
 	bool		OnReturnMainPage(void *pParam);
-	// ��ϵͳ���÷��ص���Ӧ����
+	// ???????��???????????
 	bool		OnSystemSetReturn(void *pParam);
 	bool		OnSearch(void *pParam);
 	
@@ -200,16 +200,16 @@ public:
 	
 	bool		OnEMGModeStart(void *pParam);
 	bool		OnEMGModeRecovery(void *pParam);
-	// �����ɻ���Ϸҳ��
+	// ?????????????
 	bool		OnActiveGamePlaneBattle(void *pParam);
-	// �����������Ϸҳ��
+	// ???????????????
 	bool		OnActiveGameCleanWindow(void *pParam);
-	// �����ľͷ��Ϸҳ��
+	// ?????????????
 	bool		OnActiveGameFryEgg(void *pParam);
 	bool		OnGame4(void *pParam);
 	bool		OnGame3(void *pParam);
 	bool		OnGame2(void *pParam);
-	bool		OnGame4Start(void *pParam);
+	bool		OnGame4Start(void *pParam); // ��ʼ/start ��ť��Ϣ��Ӧ����
 	bool		OnGame4Recovery(void *pParam);
 	bool		OnMusicItemDelete(void *pParam);
 	bool        OnGripStrengthClicked(void *pParam);
@@ -225,7 +225,7 @@ public:
 	void		ShowManagerPatientPage();
 	void		ShowTrainPage();
 	void		ShowActiveTrainPage();
-	// ��ҳ��ת������ѵ������ҳ�棬�������������Ҫˢ�µ�ǰչʾ�Ķ����б��
+	// ?????????????????????��???????????????????????????��??
 	void		ShowPassiveTrainPage();
 	void		ShowPatientDetail(int page, int index);
 	void		ShowPatientEdit(int page, int index);
@@ -233,14 +233,14 @@ public:
 	void		ShowPatientAdd(std::wstring patientid);
 	void		ShowAboutPage();
 	void		ShowPersonorPage();
-	// ��ҳ��ת��ϵͳ����ҳ��
+	// ?????????????????
 	void		ShowSetSystemPage();
 	void		ShowPatientTrainInformation();
 	void		ShowPatientTrainDetail(std::wstring patientid);
 	void		ShowEyeModeTrainPage();
 	void		ShowEmgModeTrainPage();
 	void		ShowTrainDataChartPage(int id);
-	// չʾ��Ϸҳ�棬ע�⣬���е���Ϸ���������ҳ����еġ�
+	// ???????��??????��??????????????????��??
 	void		ShowActiveGameWebkit();
 	void		ShowEvaluationPage();
 	void		ShowEvaluationHistoryPage();
@@ -391,7 +391,7 @@ public:
 	RFFMA							m_fma;
 	int								m_evalution_type;
 	EvaluationYDGN					m_evydgn;
-	// �����������Ƿ�ʹ��
+	// ????????????????
 	bool m_grip_strength_enable = false;
 };
 

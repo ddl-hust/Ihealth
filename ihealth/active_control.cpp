@@ -36,7 +36,8 @@ static const int kRagMaxY = 596;
 double ActiveControl::six_dimforce[6]{ 0 };
 double ActiveControl::elbow_Sensitivity_ = 0;
 double ActiveControl::shoulder_Sensitivity_ = 0;
-
+double ActiveControl::six_dimension_offset_[6]{0}; //偏置在整个程序周期都存在
+double ActiveControl::pressure_offset_[2]{0};
 extern Vector3d AxisDirection[5] {
 	Vector3d(0, 0, 0),
 	Vector3d(0, 0, 0),
@@ -160,14 +161,8 @@ void ActiveControl::LoadParamFromFile() {
 ActiveControl:: ~ActiveControl() {
 	//DataAcquisition::GetInstance().StopTask();
 }
-
-unsigned int __stdcall ActiveMoveThreadWithPressure(PVOID pParam) {
-	ExportPaitentData *export_data= (ExportPaitentData*)pParam;
-    ActiveControl *active = export_data->active_control;
-    int paitent_id=export_data->paitent_id;
-	UINT start, end;
-	start = GetTickCount();
-	// 求六维力传感器的偏置
+void ActiveControl::CalculateSixDimentionSensorOffset()
+{
 	double sum[6]{ 0.0 };
 	double buf[6]{ 0.0 };
 	for (int i = 0;i < 10;++i) {
@@ -177,10 +172,11 @@ unsigned int __stdcall ActiveMoveThreadWithPressure(PVOID pParam) {
 		}
 	}
 	for (int i = 0;i < 6;++i) {
-		active->six_dimension_offset_[i] = sum[i] / 10;
+		six_dimension_offset_[i] = sum[i] / 10;
 	}
-
-	//求压力传感器的偏置
+}
+void ActiveControl::CalculatePressureSensorOffset()
+{
 	double two_arm_buf[2] { 0.0 };
 	double two_arm_sum[2] { 0.0 };
 
@@ -191,8 +187,21 @@ unsigned int __stdcall ActiveMoveThreadWithPressure(PVOID pParam) {
 		}
 	}
 	for (int i = 0; i < 2; ++i) {
-		active->elbow_offset[i]= two_arm_sum[i] / 10;
+		pressure_offset_[i]= two_arm_sum[i] / 10;
 	}
+}
+
+unsigned int __stdcall ActiveMoveThreadWithPressure(PVOID pParam) {
+	ExportPaitentData *export_data= (ExportPaitentData*)pParam;
+    ActiveControl *active = export_data->active_control;
+    int paitent_id=export_data->paitent_id;
+	UINT start, end;
+	start = GetTickCount();
+	// 求六维力传感器的偏置
+	active->CalculateSixDimentionSensorOffset();
+
+	//求压力传感器的偏置
+	active->CalculatePressureSensorOffset();
 
 	////求力矩传感器偏置
 	//double torque_sum_offset[2]{ 0 };
@@ -252,8 +261,8 @@ unsigned int __stdcall ActiveMoveThreadWithPressure(PVOID pParam) {
 				SwitchToThread();
 			}
 		}
-		//六维力线程
-		active->Step();
+		//六维力线程 ,仅仅为了计算减去偏置之后的六维力数据
+		active->CalSubOffsetSixDimSensor(ActiveControl::six_dimforce);
 		//力矩传感器线程
 		//active->TorqueStep();
 		//压力传感器线程
@@ -274,7 +283,7 @@ unsigned int __stdcall ActiveMoveThreadWithPressure(PVOID pParam) {
         sixdim_force_value << six_dim_force[0] << "          " << six_dim_force[1] << "          " << six_dim_force[2] << "          " << six_dim_force[3]
                            << "          " << six_dim_force[4] << "          " << six_dim_force[5] << std::endl;
 		sum_pressure_force_value<< elbow_pressure[0] * 10- elbow_pressure[1] * 10<<endl;
-		pull_force_value<< abs_elbow_forward_pull <<abs_shoulder_backward_pull << abs_elbow_forward_pull <<abs_shoulder_backward_pull <<endl;
+		pull_force_value<< abs_elbow_forward_pull<<"  "<<abs_shoulder_backward_pull<<"  " << abs_elbow_forward_pull<<"  " <<abs_shoulder_backward_pull <<endl;
 		
     
 	}
@@ -289,6 +298,54 @@ unsigned int __stdcall ActiveMoveThreadWithPressure(PVOID pParam) {
 	return 0;
 }
 
+//void ActiveControl::ExportAllSensorData(const string&control_method)
+//{
+//	std::string pathname="..\\..\\resource\\ExportData\\";
+//    time_t t = time(0);
+//    char ch[64];
+//    strftime(ch, sizeof(ch), "%Y-%m-%d %H-%M-%S", localtime(&t)); //年-月-日 时-分-秒
+//    std::string paitent_info="patient_"+std::to_string(paitent_id)+"_";
+//	double angle[2]{0};
+//    double torque[2]{0};
+//    double six_dim_force[6]{0};
+//	double pull_force[4]{0};
+//	//创建文件流
+//	ofstream joint_value(pathname+paitent_info+"joint_"+ch+control_method+".txt", ios::app | ios::out);
+//    ofstream torque_value(pathname+paitent_info+"torque_"+ch+control_method+".txt", ios::app | ios::out);
+//    ofstream sixdim_force_value(pathname+paitent_info+"sixdim_force_"+ch+control_method+".txt", ios::app | ios::out);
+//	ofstream pull_force_value(pathname+paitent_info+"pull_force_"+ch+control_method+".txt", ios::app | ios::out);
+//    joint_value << " shoulder/degree(-360-360)  "
+//                << "  elbow/degree(-360-360)  " << endl;
+//    torque_value << " shoulder(N.m)  "
+//                << "  elbow(N.m)  " << endl;
+//    sixdim_force_value<<" fx(N) "<<" fy(N) "<<" fz(N) "<<" tx(N.m) "<<" ty(N.m) "<<" tz(N.m) "<<endl;
+//	pull_force_value<<" shoulder_forward "<<" shoulder_backward "<<" elbow_forward "<<" elbow_backward "<<endl;
+//	//获取数据
+//	while(true)
+//	{
+//	if(this->is_exit_thread_) break;
+//	ControlCard::GetInstance().GetEncoderData(angle);
+//    DataAcquisition::GetInstance().AcquisiteTorqueData(torque);
+//    DataAcquisition::GetInstance().AcquisiteSixDemensionData(six_dim_force);   
+//	DataAcquisition::GetInstance().AcquisitePullSensorData(); 
+//	pull_force[0] = fabs(DataAcquisition::GetInstance().ShoulderForwardPull());    
+//	pull_force[1] = fabs(DataAcquisition::GetInstance().ShoulderBackwardPull());        
+//	pull_force[2] = fabs(DataAcquisition::GetInstance().ElbowForwardPull());
+//	pull_force[3] = fabs(DataAcquisition::GetInstance().ElbowBackwardPull());
+//	//写入数据
+//	joint_value << angle[0] << "          " << angle[1] << std::endl;
+//    torque_value << torque[0] << "          " <<torque[1] << std::endl;
+//    sixdim_force_value << six_dim_force[0] << "          " << six_dim_force[1] << "          " << six_dim_force[2] << "          " << six_dim_force[3]
+//                           << "          " << six_dim_force[4] << "          " << six_dim_force[5] <<endl;
+//	pull_force_value<< pull_force[0]<<"  " <<pull_force[1]<<"  " << pull_force[2]<<"  " <<pull_force[3] <<endl;
+//	}
+//	//关闭文件流
+//	joint_value.close();
+//	torque_value.close();
+//	sixdim_force_value.close();
+//	pull_force_value.close();
+//
+//}
 unsigned int __stdcall ActiveMoveThread(PVOID pParam) {
 	ExportPaitentData *export_data= (ExportPaitentData*)pParam;
     ActiveControl *active = export_data->active_control;
@@ -296,17 +353,7 @@ unsigned int __stdcall ActiveMoveThread(PVOID pParam) {
 	UINT start, end;
 	start = GetTickCount();
 	// 求六维力传感器的偏置
-	double sum[6]{ 0.0 };
-	double buf[6]{ 0.0 };
-	for (int i = 0; i < 10; ++i) {
-		DataAcquisition::GetInstance().AcquisiteSixDemensionData(buf);
-		for (int j = 0; j < 6; ++j) {
-			sum[j] += buf[j];
-		}
-	}
-	for (int i = 0; i < 6; ++i) {
-		active->six_dimension_offset_[i] = sum[i] / 10;
-	}
+	active->CalculateSixDimentionSensorOffset();
 
 	DataAcquisition::GetInstance().StopSixDemTask();
 	DataAcquisition::GetInstance().StartSixDemTask();
@@ -318,7 +365,7 @@ unsigned int __stdcall ActiveMoveThread(PVOID pParam) {
 	ofstream joint_value(pathname+paitent_info+"joint_"+ch+"(只有六维力模式)"+".txt", ios::app | ios::out);
     ofstream torque_value(pathname+paitent_info+"torque_"+ch+"(只有六维力模式)"+".txt", ios::app | ios::out);
     ofstream sixdim_force_value(pathname+paitent_info+"sixdim_force_"+ch+"(只有六维力模式)"+".txt", ios::app | ios::out);
-	ofstream pull_force_value(pathname+paitent_info+"pull_force_"+ch+".txt", ios::app | ios::out);
+	ofstream pull_force_value(pathname+paitent_info+"pull_force_"+ch+"(只有六维力模式)"+".txt", ios::app | ios::out);
 
 	double angle[2]{0};
     double torque[2]{0};
@@ -363,7 +410,7 @@ unsigned int __stdcall ActiveMoveThread(PVOID pParam) {
         torque_value << torque[0] << "          " <<torque[1] << std::endl;
         sixdim_force_value << six_dim_force[0] << "          " << six_dim_force[1] << "          " << six_dim_force[2] << "          " << six_dim_force[3]
                            << "          " << six_dim_force[4] << "          " << six_dim_force[5] << std::endl;
-		pull_force_value<< abs_elbow_forward_pull <<abs_shoulder_backward_pull << abs_elbow_forward_pull <<abs_shoulder_backward_pull <<endl;
+		pull_force_value<< abs_elbow_forward_pull<<"  " <<abs_shoulder_backward_pull<<"  " << abs_elbow_forward_pull<<"  " <<abs_shoulder_backward_pull <<endl;
 	}
 	joint_value.close();
 	torque_value.close();
@@ -407,80 +454,25 @@ void ActiveControl::StopMove() {
 	ExitMoveThread();
 }
 
-void ActiveControl::Step() {
+void ActiveControl::CalSubOffsetSixDimSensor(double filterdata[6]){
 	double readings[6] = { 0 };
-	double distData[6] = { 0 };
-	double filtedData[6] = { 0 };
 	double bias[6] = { 0 };
 	double sub_bias[6] = { 0 };
-
 	DataAcquisition::GetInstance().AcquisiteSixDemensionData(readings);
-
-	torque_data[0].push_back(detect.shoulder_torque);
-	torque_data[1].push_back(detect.elbow_torque);
-
-	// 求减去偏置之后的六维力，这里对z轴的力和力矩做了一个反向
 	for (int i = 0; i < 6; ++i) {
 		sub_bias[i] = readings[i] - six_dimension_offset_[i];
 	}
 	sub_bias[2] = -sub_bias[2];
 	sub_bias[5] = -sub_bias[5];
-
-	Trans2Filter(sub_bias, filtedData);
-
-
-	for (int i = 0; i < 6; ++i) {
-		six_dimforce[i] = filtedData[i];
-	}
-
-	//Sleep(100);
-	//AllocConsole();
-	//freopen("CONOUT$", "w", stdout);
-	//printf("fx:%lf    fy:%lf    fz:%lf \n Mx:%lf    My:%lf    Mz:%lf \n", sub_bias[0], sub_bias[1], sub_bias[2], sub_bias[3], sub_bias[4], sub_bias[5]);
-
-	//Raw2Trans(sub_bias, distData);
-	//Trans2Filter(distData, filtedData);
-	//FiltedVolt2Vel(filtedData);
-
-	//if (is_moving_) {
-	//	 ActMove();
-	//}
-
-	//qDebug()<<"readings is "<<filtedData[0]<<" "<<filtedData[1]<<" "<<filtedData[2]<<" "<<filtedData[3]<<" "<<filtedData[4]<<" "<<filtedData[5];
+	Trans2Filter(sub_bias, filterdata);
+	
 }
-
 void ActiveControl::SixDimForceStep() {
-	double readings[6] = { 0 };
-	double distData[6] = { 0 };
-	double filtedData[6] = { 0 };
-	double bias[6] = { 0 };
-	double sub_bias[6] = { 0 };
-	double force_vector = 0;
 	double vel[2] = { 0 };
+	double filterdata[6] = { 0 };
 
-	DataAcquisition::GetInstance().AcquisiteSixDemensionData(readings);
-
-	torque_data[0].push_back(detect.shoulder_torque);
-	torque_data[1].push_back(detect.elbow_torque);
-
-	// 求减去偏置之后的六维力，这里对z轴的力和力矩做了一个反向
-	for (int i = 0; i < 6; ++i) {
-		sub_bias[i] = readings[i] - six_dimension_offset_[i];
-	}
-	sub_bias[2] = -sub_bias[2];
-	sub_bias[5] = -sub_bias[5];
-
-	Trans2Filter(sub_bias, filtedData);
-
-	//这里是把六维力计算成力矩，然后输出肩部的力矩值，
-    //所以压力数据force_vector的输入这里其实是没用的，但是为了后面全压力传感器方案铺路，还是选择把它留下
-	SixDimForceMomentCalculation(filtedData, vel);
-
-	//AllocConsole();
-	//freopen("CONOUT$", "w", stdout);
-	//printf("fx:%lf    fy:%lf    fz:%lf \n Mx:%lf    My:%lf    Mz:%lf \n", sub_bias[0], sub_bias[1], sub_bias[2], sub_bias[3], sub_bias[4], sub_bias[5]);
-	//printf("vel1:%lf      vel2:%lf \n", vel[0], vel[1]);
-
+	CalSubOffsetSixDimSensor(filterdata);
+	SixDimForceMomentCalculation(filterdata, vel);
 	Ud_Shoul = shoulder_Sensitivity_ * vel[0];
 	Ud_Arm = shoulder_Sensitivity_ * vel[1];
 
@@ -576,7 +568,7 @@ void ActiveControl::PressureStep() {
 
 	//减偏置
 	for (int i = 0; i < 2; ++i) {
-		elbow_suboffset[i] = elbow_pressure_data[i] - elbow_offset[i];
+		elbow_suboffset[i] = elbow_pressure_data[i] - pressure_offset_[i];
 	}
 
 	//把单位从电压转换成力

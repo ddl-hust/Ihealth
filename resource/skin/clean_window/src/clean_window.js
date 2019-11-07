@@ -29,6 +29,7 @@ function begin(){
 	// 最右是710
 	m_rag = new Rag(0, 596, "image/rag.png", 2)	
 	tid = setInterval(main_loop, 200)
+	return 'start'
 }
 
 var main_loop = function() {

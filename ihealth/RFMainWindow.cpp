@@ -26,7 +26,7 @@ static bool	  s_active_begin_recode = false;
 static time_t s_active_game4_start = 0;
 static time_t s_active_game4_stop = 0;
 static int active_timer = 0;
-
+  
 static std::vector<double>	s_active_data[2];
 static std::vector<double>  s_active_data_wl;
 
@@ -444,24 +444,21 @@ void RFMainWindow::BindManagerPatientPageEvent()
 	CButtonUI* active_game_fry_egg = static_cast<CButtonUI*>(m_pm.FindControl(_T("active_game_fry_egg")));
 	if (active_game_fry_egg != NULL) active_game_fry_egg->OnNotify += MakeDelegate(this, &RFMainWindow::OnActiveGameFryEgg);
 
-	CButtonUI* btn_game4 = static_cast<CButtonUI*>(m_pm.FindControl(_T("btn_game4")));
-	btn_game4->OnNotify += MakeDelegate(this, &RFMainWindow::OnGame4);
+	// CButtonUI* btn_game4 = static_cast<CButtonUI*>(m_pm.FindControl(_T("btn_game4"))); //这个按钮对应的界面没有显示，可能被覆盖掉了
+	// btn_game4->OnNotify += MakeDelegate(this, &RFMainWindow::OnGame4);
 
 
-	CButtonUI* btn_game3 = static_cast<CButtonUI*>(m_pm.FindControl(_T("btn_game3")));
-	btn_game3->OnNotify += MakeDelegate(this, &RFMainWindow::OnGame3);
+	// CButtonUI* btn_game3 = static_cast<CButtonUI*>(m_pm.FindControl(_T("btn_game3")));
+	// btn_game3->OnNotify += MakeDelegate(this, &RFMainWindow::OnGame3);
 
 
-	CButtonUI* btn_game2 = static_cast<CButtonUI*>(m_pm.FindControl(_T("btn_game2")));
-	btn_game2->OnNotify += MakeDelegate(this, &RFMainWindow::OnGame2);
+	// CButtonUI* btn_game2 = static_cast<CButtonUI*>(m_pm.FindControl(_T("btn_game2")));
+	// btn_game2->OnNotify += MakeDelegate(this, &RFMainWindow::OnGame2);
 
 	// 主动运动中的计时器
 	CLabelUI* active_train_timer = static_cast<CButtonUI*>(m_pm.FindControl(_T("active_train_timer")));
-
-	CCheckBoxUI* game4_nandu_select = static_cast<CCheckBoxUI*>(m_pm.FindControl(_T("game4_nandu_select")));
-	game4_nandu_select->OnNotify += MakeDelegate(this, &RFMainWindow::OnGame4NanduSetingMenu); 
-	
-	CButtonUI* game4_start = static_cast<CButtonUI*>(m_pm.FindControl(_T("game4_start")));
+ 	
+	CButtonUI* game4_start = static_cast<CButtonUI*>(m_pm.FindControl(_T("game4_start"))); //对应开始/start 按钮
 	game4_start->OnNotify += MakeDelegate(this, &RFMainWindow::OnGame4Start);
 
 	CButtonUI* game4_recovery = static_cast<CButtonUI*>(m_pm.FindControl(_T("game4_recovery")));
@@ -1154,34 +1151,6 @@ LRESULT RFMainWindow::OnMenuClick(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL&
 		::PostQuitMessage(0L);
 	}
 
-	if (*name == _T("nandu1")) {
-		CWkeWebkitUI* game4 = static_cast<CWkeWebkitUI*>(m_pm.FindControl(_T("game4")));
-		if (game4) {
-			//CDuiString respath = CPaintManagerUI::GetResourcePath() + _T("/Plane2/index.html");
-			//game4->SetFile((std::wstring)respath);
-
-			game4->RunJS(_T("Checkpoint1();"));
-		}
-		m_robot.SetDamping(0.1);
-	} 
-	if (*name == _T("nandu2")) {
-		CWkeWebkitUI* game4 = static_cast<CWkeWebkitUI*>(m_pm.FindControl(_T("game4")));
-		if (game4) {
-			//CDuiString respath = CPaintManagerUI::GetResourcePath() + _T("/Plane1/index.html");
-			//game4->SetFile((std::wstring)respath);
-			game4->RunJS(_T("Checkpoint2();"));
-		}
-		m_robot.SetDamping(0.3);
-	}
-	if (*name == _T("nandu3")) {
-		CWkeWebkitUI* game4 = static_cast<CWkeWebkitUI*>(m_pm.FindControl(_T("game4")));
-		if (game4) {
-			//CDuiString respath = CPaintManagerUI::GetResourcePath() + _T("/Plane/index.html");
-			//game4->SetFile((std::wstring)respath);
-			game4->RunJS(_T("Checkpoint3();"));
-		}
-		m_robot.SetDamping(0.5);
-	}
 	return 0;
 }
 
@@ -3106,7 +3075,7 @@ bool RFMainWindow::OnActiveGamePlaneBattle(void *pParam)
 	//CVerticalLayoutUI* active_train_page_list = static_cast<CVerticalLayoutUI*>(m_pm.FindControl(_T("active_train_page_list")));
 	//active_train_page_list->SetVisible(true);
 }
-
+//这个只是负责显示擦窗户游戏界面，实际的webkit运行，游戏运行都还没有开始
 bool RFMainWindow::OnActiveGameCleanWindow(void *pParam)
 {
 	TNotifyUI *pMsg = static_cast<TNotifyUI*>(pParam);
@@ -3120,13 +3089,17 @@ bool RFMainWindow::OnActiveGameCleanWindow(void *pParam)
 	pLabelUI->SetText(_T("擦玻璃"));
 
 	CWkeWebkitUI* game4 = static_cast<CWkeWebkitUI*>(m_pm.FindControl(_T("game4")));
+	//打开控制台
+	AllocConsole();
+	freopen("CONOUT$", "w", stdout);
+	std::cout<<" run game"<<std::endl;
 	if (game4) {
 		CDuiString respath = CPaintManagerUI::GetResourcePath() + _T("/clean_window/index.html");
 		game4->SetFile((std::wstring)respath);
 	}
 
 	CButtonUI* game4_start = static_cast<CButtonUI*>(m_pm.FindControl(_T("game4_start")));
-	game4_start->SetVisible(true);
+	game4_start->SetVisible(true); //控制 开始/start 是否可见
 
 	ShowActiveGameWebkit();
 	return true;
@@ -6880,10 +6853,8 @@ void OnActiveGameDetectTimer(HWND hWnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTim
 	if (!game_webkit) {
 		return;
 	}
-
 	// 得到主动运动是否进行
 	bool start = RFMainWindow::MainWindow->m_robot.m_isActiveModeStart;
-
 	// 根据计时器计时来改变
 	if (start) {
 		active_timer += 200;
@@ -6909,7 +6880,7 @@ void OnActiveGameDetectTimer(HWND hWnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTim
 		RFMainWindow::MainWindow->StopGameRecord();
 	}
 
-	bool fire = false;
+	bool fire = true;
 	// 这里采集握力传感器的值决定是否fire，只有在使能的情况下才进行采集
 	if (RFMainWindow::MainWindow->m_grip_strength_enable) {
 		if (RFMainWindow::MainWindow->m_robot.IsFire()) {
